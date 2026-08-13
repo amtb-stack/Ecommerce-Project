@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shopee Reply Tracker</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --ink:#14171c; --muted:#6b7280; --line:#e4e7ec;
+  --brand:#ee4d2d; --brand-ink:#ffffff;
+  --ok:#0f9d58; --warn:#d99400; --late:#e8590c; --over:#d92d20; --done:#8b93a1;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.10);
+  --radius:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#0f1115; --card:#171a21; --ink:#e9ebef; --muted:#98a1ae; --line:#272c35;
+         --shadow:0 1px 2px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:14px 14px 80px}
+
+/* ---------- header ---------- */
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.logo{width:30px;height:30px;border-radius:8px;background:var(--brand);color:var(--brand-ink);
+  display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}
+h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.2px}
+.clock{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 11px;
+  font-size:13px;font-weight:500;box-shadow:var(--shadow)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:600}
+.btn.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--over);border-color:var(--over)}
+.btn.sm{padding:4px 8px;font-size:12px}
+
+/* ---------- banners ---------- */
+.banner{border-radius:var(--radius);padding:10px 12px;font-size:13px;margin-bottom:10px;
+  border:1px solid var(--line);background:var(--card)}
+.banner.bad{border-color:var(--over);color:var(--over);background:color-mix(in srgb,var(--over) 8%,var(--card))}
+.banner b{font-weight:700}
+
+/* ---------- split bar ---------- */
+.split{display:flex;height:6px;border-radius:99px;overflow:hidden;background:var(--line);margin-bottom:4px}
+.split i{display:block;height:100%}
+.splitkey{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:14px}
+.splitkey span{display:flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:99px;display:inline-block}
+
+/* ---------- add form ---------- */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px;box-shadow:var(--shadow);margin-bottom:16px}
+.panel h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label.f{display:block}
+label.f span{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+input[type=text],select,textarea,input[type=time]{
+  width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:-1px}
+textarea{resize:vertical;min-height:58px}
+.urow{display:flex;gap:6px;flex-wrap:wrap}
+.upick{flex:1;min-width:74px;border:1px solid var(--line);border-radius:8px;background:var(--bg);
+  padding:7px 4px;font-size:12px;font-weight:600;text-align:center}
+.upick[aria-pressed=true]{color:#fff;border-color:transparent}
+.upick[data-u="1"][aria-pressed=true]{background:var(--ok)}
+.upick[data-u="2"][aria-pressed=true]{background:var(--late)}
+.upick[data-u="3"][aria-pressed=true]{background:var(--over)}
+
+/* ---------- board ---------- */
+.board{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:900px){.board{grid-template-columns:repeat(4,1fr);align-items:start}}
+.group{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden}
+.group.drop{outline:2px dashed var(--brand);outline-offset:-2px}
+.ghead{display:flex;align-items:center;gap:8px;padding:10px 11px;cursor:pointer;user-select:none}
+.ghead .cnt{margin-left:auto;font-size:12px;color:var(--muted);background:var(--bg);
+  border-radius:99px;padding:1px 8px;min-width:22px;text-align:center}
+.ghead .caret{color:var(--muted);font-size:11px;width:10px}
+.gname{font-weight:650;font-size:13.5px}
+.gbar{height:3px}
+.glist{padding:8px;display:flex;flex-direction:column;gap:8px;min-height:8px}
+.group.collapsed .glist{display:none}
+.empty{color:var(--muted);font-size:12.5px;text-align:center;padding:12px 4px}
+
+/* ---------- ticket card ---------- */
+.tk{border:1px solid var(--line);border-left-width:4px;border-radius:9px;padding:9px 10px;background:var(--card)}
+.tk:active{cursor:grabbing}
+.tk.dragging{opacity:.45}
+.tk .r1{display:flex;align-items:center;gap:7px}
+.tk .buyer{font-weight:650;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{border:0;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;flex:none}
+.pill[data-u="1"]{background:var(--ok)} .pill[data-u="2"]{background:var(--late)} .pill[data-u="3"]{background:var(--over)}
+.tk .meta{font-size:12px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk .left{font-size:12.5px;font-weight:650;margin-top:6px;font-variant-numeric:tabular-nums}
+.tk .acts{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.tk .acts select{padding:3px 5px;font-size:11.5px;border-radius:6px;flex:1;min-width:96px}
+
+/* ---------- modal ---------- */
+.mask{position:fixed;inset:0;background:rgba(10,12,16,.55);display:none;place-items:center;padding:14px;z-index:50}
+.mask.open{display:grid}
+.modal{background:var(--card);border-radius:14px;width:min(560px,100%);max-height:88vh;overflow:auto;
+  box-shadow:0 18px 48px rgba(0,0,0,.3)}
+.mhead{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--card)}
+.mhead h3{margin:0;font-size:16px}
+.mbody{padding:14px 16px}
+.mfoot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.x{margin-left:auto;background:none;border:0;font-size:20px;color:var(--muted);line-height:1;padding:0 4px}
+
+/* ---------- misc ---------- */
+.log{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.log li{border-left:2px solid var(--line);padding:0 0 0 10px}
+.log .when{font-size:11.5px;color:var(--muted)}
+.kv{display:flex;gap:8px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--line)}
+.kv b{min-width:96px;color:var(--muted);font-weight:500}
+.tmpl{border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:9px;background:var(--bg)}
+.tmpl h4{margin:0 0 6px;font-size:13px}
+.stat{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:13px}
+.stat .bar{height:8px;border-radius:99px;background:var(--brand);flex:none;min-width:3px}
+.stat .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat .n{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.hr{height:1px;background:var(--line);margin:14px 0}
+.alertlist{list-style:none;margin:0;padding:0}
+.alertlist li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.alertlist li:last-child{border:0}
+.chipline{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:3px 10px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="logo">S</div>
+    <h1>Shopee Reply Tracker</h1>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <div id="storeWarn" class="banner bad" style="display:none">
+    <b>This browser is not saving your tickets.</b> Anything you add will disappear when you close the tab.
+    Open this file in Chrome or Edge, or use <b>Backup &rarr; Save file</b> every time before you close it.
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary" id="btnAdd">+ New ticket</button>
+    <button class="btn" id="btnSound">🔔 Turn on sound alerts</button>
+    <button class="btn" id="btnTmpl">Saved replies</button>
+    <button class="btn" id="btnStats">What keeps coming up</button>
+    <button class="btn" id="btnBackup">Backup</button>
+    <button class="btn" id="btnSet">Settings</button>
+  </div>
+
+  <div class="split" id="split"></div>
+  <div class="splitkey" id="splitkey"></div>
+
+  <div class="board" id="board"></div>
+
+  <p class="note" id="footnote"></p>
+</div>
+
+<!-- ===== add / edit ticket ===== -->
+<div class="mask" id="mAdd"><div class="modal">
+  <div class="mhead"><h3 id="addTitle">New ticket</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody">
+    <div class="grid">
+      <label class="f"><span>Buyer name or username</span><input type="text" id="fBuyer" autocomplete="off"></label>
+      <label class="f"><span>Order / ref no. (optional)</span><input type="text" id="fRef" autocomplete="off"></label>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <label class="f"><span>What is it about</span><select id="fCase"></select></label>
+      <label class="f"><span>Where it sits</span><select id="fStatus"></select></label>
+    </div>
+    <div style="margin-top:10px">
+      <span style="display:block;font-size:12px;color:var(--muted);margin-bottom:3px">How urgent</span>
+      <div class="urow" id="fUrg"></div>
+    </div>
+    <label class="f" style="margin-top:10px"><span>Note to yourself</span>
+      <textarea id="fNote" placeholder="What they asked, what you promised"></textarea></label>
+  </div>
+  <div class="mfoot">
+    <button class="btn" data-close>Cancel</button>
+    <button class="btn primary" id="fSave">Save ticket</button>
+  </div>
+</div></div>
+
+<!-- ===== ticket detail ===== -->
+<div class="mask" id="mDet"><div class="modal">
+  <div class="mhead"><h3 id="dTitle">Ticket</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody" id="dBody"></div>
+  <div class="mfoot">
+    <button class="btn danger" id="dDel">Delete</button>
+    <button class="btn" id="dEdit">Edit details</button>
+    <button class="btn primary" id="dLog">Log update &amp; reset clock</button>
+  </div>
+</div></div>
+
+<!-- ===== alarm ===== -->
+<div class="mask" id="mAlarm"><div class="modal">
+  <div class="mhead"><h3 id="aTitle">Reminder</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody"><ul class="alertlist" id="aList"></ul></div>
+  <div class="mfoot">
+    <button class="btn" id="aSnooze">Snooze 30 min</button>
+    <button class="btn primary" data-close>Got it</button>
+  </div>
+</div></div>
+
+<!-- ===== templates ===== -->
+<div class="mask" id="mTmpl"><div class="modal">
+  <div class="mhead"><h3>Saved replies</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody" id="tBody"></div>
+  <div class="mfoot"><button class="btn primary" data-close>Done</button></div>
+</div></div>
+
+<!-- ===== stats ===== -->
+<div class="mask" id="mStats"><div class="modal">
+  <div class="mhead"><h3>What keeps coming up</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody" id="sBody"></div>
+  <div class="mfoot"><button class="btn primary" data-close>Close</button></div>
+</div></div>
+
+<!-- ===== backup ===== -->
+<div class="mask" id="mBack"><div class="modal">
+  <div class="mhead"><h3>Backup</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody">
+    <p style="margin-top:0;font-size:13.5px">Your tickets live inside this one browser on this one computer.
+      Clearing browsing data wipes them. Save a file now and then.</p>
+    <div class="chipline">
+      <button class="btn" id="expJson">Save file (.json)</button>
+      <button class="btn" id="expCsv">Save spreadsheet (.csv)</button>
+    </div>
+    <div class="hr"></div>
+    <p style="font-size:13.5px;margin:0 0 6px"><b>Restore</b> — loads a .json backup. This replaces everything currently on the board.</p>
+    <input type="file" id="impFile" accept=".json,application/json">
+    <p class="note" id="backNote"></p>
+  </div>
+  <div class="mfoot"><button class="btn primary" data-close>Close</button></div>
+</div></div>
+
+<!-- ===== settings ===== -->
+<div class="mask" id="mSet"><div class="modal">
+  <div class="mhead"><h3>Settings</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody">
+    <label class="f"><span>Your name (goes on updates you log)</span><input type="text" id="sMe"></label>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">Check-in times</b>
+    <p class="note" style="margin-top:4px">A popup fires at each of these while this page is open.</p>
+    <div class="grid" id="sTimes" style="margin-top:8px"></div>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">How long each urgency level gets</b>
+    <div class="grid" style="margin-top:8px">
+      <label class="f"><span>L1 — hours</span><input type="text" id="sU1" inputmode="numeric"></label>
+      <label class="f"><span>L2 — hours</span><input type="text" id="sU2" inputmode="numeric"></label>
+      <label class="f"><span>L3 — hours</span><input type="text" id="sU3" inputmode="numeric"></label>
+    </div>
+    <p class="note">Shopee only counts a reply toward your Chat Response Rate if it lands within 12 hours
+      of the buyer's message. Set L3 to 12 if you want the board to match that window exactly.</p>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">Case types</b>
+    <p class="note" style="margin-top:4px">One per line. These drive the "what keeps coming up" counts, so keep them steady.</p>
+    <textarea id="sCases" style="min-height:130px;margin-top:6px"></textarea>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">People who answer chats</b>
+    <p class="note" style="margin-top:4px">One per line. Leave it as just your name if you work alone.</p>
+    <textarea id="sPeople" style="min-height:70px;margin-top:6px"></textarea>
+  </div>
+  <div class="mfoot">
+    <button class="btn" data-close>Cancel</button>
+    <button class="btn primary" id="sSave">Save settings</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   storage
+   ========================================================= */
+var KEY = "shopee-reply-tracker-v1";
+var storageOK = true;
+try {
+  window.localStorage.setItem(KEY + "-probe", "1");
+  window.localStorage.removeItem(KEY + "-probe");
+} catch (e) { storageOK = false; }
+
+var DEFAULT_CASES = [
+  "Postage or shipping cost",
+  "Stock or restock",
+  "Size, colour or specs",
+  "Order status or tracking",
+  "Return or refund",
+  "Damaged or wrong item",
+  "Price or discount",
+  "Other"
+];
+
+var STATUSES = [
+  { id: "new",   name: "Need reply",        color: "#d92d20" },
+  { id: "mine",  name: "I owe an update",   color: "#e8590c" },
+  { id: "buyer", name: "Waiting on buyer",  color: "#2563eb" },
+  { id: "done",  name: "Closed",            color: "#8b93a1" }
+];
+
+function blankState() {
+  return {
+    tickets: [],
+    settings: {
+      me: "",
+      people: [],
+      checkIns: ["09:00", "14:00", "21:00"],
+      urgencyHours: { 1: 72, 2: 48, 3: 24 },
+      sound: false,
+      caseTypes: DEFAULT_CASES.slice(),
+      templates: {},
+      collapsed: {}
+    },
+    meta: { checkInFired: {} }
+  };
+}
+
+var state = blankState();
+
+function load() {
+  if (!storageOK) return;
+  var raw = null;
+  try { raw = window.localStorage.getItem(KEY); } catch (e) { return; }
+  if (!raw) return;
+  try {
+    var d = JSON.parse(raw);
+    var base = blankState();
+    state.tickets = Array.isArray(d.tickets) ? d.tickets : [];
+    state.settings = Object.assign(base.settings, d.settings || {});
+    state.meta = Object.assign(base.meta, d.meta || {});
+  } catch (e) { /* corrupt save — start clean rather than crash */ }
+}
+
+function save() {
+  if (!storageOK) return;
+  try { window.localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch (e) { storageOK = false; document.getElementById("storeWarn").style.display = ""; }
+}
+
+/* =========================================================
+   helpers
+   ========================================================= */
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function $(id) { return document.getElementById(id); }
+function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+function fmtDateTime(ms) {
+  var d = new Date(ms);
+  return pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+
+function hoursFor(t) {
+  var h = Number(state.settings.urgencyHours[t.urgency]);
+  if (!isFinite(h) || h <= 0) h = 24;
+  return h;
+}
+function deadlineOf(t) { return t.clockFrom + hoursFor(t) * 3600000; }
+
+/* returns {text, color, over} */
+function countdown(t, now) {
+  if (t.status === "done") return { text: "Closed " + fmtDateTime(t.closedAt || t.clockFrom), color: "var(--done)", over: false };
+  var left = deadlineOf(t) - now;
+  var over = left < 0;
+  var a = Math.abs(left);
+  var d = Math.floor(a / 86400000);
+  var h = Math.floor((a % 86400000) / 3600000);
+  var m = Math.floor((a % 3600000) / 60000);
+  var span = d > 0 ? (d + "d " + h + "h") : (h > 0 ? (h + "h " + m + "m") : (m + "m"));
+  var frac = left / (hoursFor(t) * 3600000);
+  var color = over ? "var(--over)" : frac < 0.2 ? "var(--late)" : frac < 0.5 ? "var(--warn)" : "var(--ok)";
+  return { text: over ? (span + " OVERDUE") : (span + " left"), color: color, over: over };
+}
+
+function statusById(id) {
+  for (var i = 0; i < STATUSES.length; i++) if (STATUSES[i].id === id) return STATUSES[i];
+  return STATUSES[0];
+}
+
+/* =========================================================
+   render
+   ========================================================= */
+var isDragging = false;
+
+/* the board repaints on a timer — never yank it out from under a drag or an open dialog */
+function busy() {
+  return isDragging || document.querySelectorAll(".mask.open").length > 0;
+}
+
+function render() {
+  var now = Date.now();
+  renderSplit(now);
+  renderBoard(now);
+  renderFootnote(now);
+  document.getElementById("storeWarn").style.display = storageOK ? "none" : "";
+}
+
+function renderSplit(now) {
+  var counts = {}, total = 0;
+  STATUSES.forEach(function (s) { counts[s.id] = 0; });
+  state.tickets.forEach(function (t) { counts[t.status] = (counts[t.status] || 0) + 1; total++; });
+
+  var bar = "", key = "";
+  STATUSES.forEach(function (s) {
+    var n = counts[s.id] || 0;
+    if (total > 0 && n > 0) bar += '<i style="width:' + ((n / total) * 100) + '%;background:' + s.color + '"></i>';
+    key += '<span><i class="dot" style="background:' + s.color + '"></i>' + esc(s.name) + " " + n + "</span>";
+  });
+  $("split").innerHTML = bar || '<i style="width:100%;background:var(--line)"></i>';
+  $("splitkey").innerHTML = key;
+}
+
+function renderBoard(now) {
+  var board = $("board");
+  board.innerHTML = "";
+
+  STATUSES.forEach(function (s) {
+    var list = state.tickets.filter(function (t) { return t.status === s.id; });
+
+    // most urgent first; closed tickets newest first
+    list.sort(function (a, b) {
+      if (s.id === "done") return (b.closedAt || 0) - (a.closedAt || 0);
+      return deadlineOf(a) - deadlineOf(b);
+    });
+    if (s.id === "done") list = list.slice(0, 25);
+
+    var sec = document.createElement("section");
+    sec.className = "group" + (state.settings.collapsed[s.id] ? " collapsed" : "");
+    sec.setAttribute("data-status", s.id);
+
+    var head = document.createElement("div");
+    head.className = "ghead";
+    head.innerHTML = '<span class="caret">' + (state.settings.collapsed[s.id] ? "&#9654;" : "&#9660;") + "</span>" +
+      '<span class="gname">' + esc(s.name) + "</span>" +
+      '<span class="cnt">' + list.length + "</span>";
+    head.addEventListener("click", function () {
+      state.settings.collapsed[s.id] = !state.settings.collapsed[s.id];
+      save(); render();
+    });
+
+    var bar = document.createElement("div");
+    bar.className = "gbar";
+    bar.style.background = s.color;
+
+    var wrap = document.createElement("div");
+    wrap.className = "glist";
+    if (!list.length) {
+      wrap.innerHTML = '<div class="empty">Nothing here</div>';
+    } else {
+      list.forEach(function (t) { wrap.appendChild(card(t, now)); });
+    }
+
+    sec.appendChild(head); sec.appendChild(bar); sec.appendChild(wrap);
+
+    // drop target — drag a card anywhere onto the group
+    sec.addEventListener("dragover", function (e) { e.preventDefault(); sec.classList.add("drop"); });
+    sec.addEventListener("dragleave", function () { sec.classList.remove("drop"); });
+    sec.addEventListener("drop", function (e) {
+      e.preventDefault(); sec.classList.remove("drop");
+      isDragging = false;
+      var id = e.dataTransfer.getData("text/plain");
+      moveTicket(id, s.id);
+    });
+
+    board.appendChild(sec);
+  });
+}
+
+function card(t, now) {
+  var c = countdown(t, now);
+  var el = document.createElement("article");
+  el.className = "tk";
+  el.style.borderLeftColor = c.color;
+  el.setAttribute("draggable", "true");
+  el.setAttribute("data-id", t.id);
+
+  var last = t.updates && t.updates.length ? t.updates[t.updates.length - 1] : null;
+  var metaBits = [];
+  if (t.ref) metaBits.push(t.ref);
+  if (t.caseType) metaBits.push(t.caseType);
+
+  el.innerHTML =
+    '<div class="r1">' +
+      '<button class="pill" data-u="' + t.urgency + '" data-act="cycle" title="Tap to change urgency">L' + t.urgency + "</button>" +
+      '<span class="buyer">' + esc(t.buyer || "(no name)") + "</span>" +
+    "</div>" +
+    '<div class="meta">' + esc(metaBits.join(" · ") || "—") + "</div>" +
+    '<div class="left" style="color:' + c.color + '">' + esc(c.text) + "</div>" +
+    (last ? '<div class="meta">Last: ' + esc(last.text.slice(0, 60)) + "</div>" : "") +
+    '<div class="acts">' +
+      '<button class="btn sm" data-act="open">Open</button>' +
+      '<select data-act="move">' + STATUSES.map(function (s) {
+        return '<option value="' + s.id + '"' + (s.id === t.status ? " selected" : "") + ">" + esc(s.name) + "</option>";
+      }).join("") + "</select>" +
+    "</div>";
+
+  el.addEventListener("dragstart", function (e) {
+    e.dataTransfer.setData("text/plain", t.id);
+    e.dataTransfer.effectAllowed = "move";
+    el.classList.add("dragging");
+    isDragging = true;
+  });
+  el.addEventListener("dragend", function () { el.classList.remove("dragging"); isDragging = false; });
+
+  el.querySelector('[data-act="cycle"]').addEventListener("click", function (e) {
+    e.stopPropagation();
+    t.urgency = t.urgency >= 3 ? 1 : t.urgency + 1;
+    t.alerted = 0;
+    save(); render();
+  });
+  el.querySelector('[data-act="open"]').addEventListener("click", function () { openDetail(t.id); });
+  el.querySelector('[data-act="move"]').addEventListener("change", function (e) {
+    moveTicket(t.id, e.target.value);
+  });
+
+  return el;
+}
+
+function renderFootnote(now) {
+  var open = state.tickets.filter(function (t) { return t.status !== "done"; });
+  var over = open.filter(function (t) { return countdown(t, now).over; }).length;
+  var times = state.settings.checkIns.join(", ");
+  $("footnote").textContent =
+    open.length + " open · " + over + " overdue · check-in times " + times +
+    (state.settings.sound ? " · sound on" : " · sound off");
+}
+
+function findTicket(id) {
+  for (var i = 0; i < state.tickets.length; i++) if (state.tickets[i].id === id) return state.tickets[i];
+  return null;
+}
+
+function moveTicket(id, status) {
+  var t = findTicket(id);
+  if (!t || t.status === status) { render(); return; }
+  t.status = status;
+  if (status === "done") { t.closedAt = Date.now(); }
+  else { t.closedAt = null; t.clockFrom = Date.now(); t.alerted = 0; t.snoozeUntil = 0; }
+  save(); render();
+}
+
+/* =========================================================
+   modals
+   ========================================================= */
+function openModal(id) { $(id).classList.add("open"); }
+function closeModal(id) { $(id).classList.remove("open"); }
+document.addEventListener("click", function (e) {
+  var t = e.target;
+  if (t && t.hasAttribute && t.hasAttribute("data-close")) {
+    var m = t.closest(".mask"); if (m) m.classList.remove("open");
+  }
+  if (t && t.classList && t.classList.contains("mask")) t.classList.remove("open");
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    var open = document.querySelectorAll(".mask.open");
+    for (var i = 0; i < open.length; i++) open[i].classList.remove("open");
+  }
+});
+
+/* ---------- add / edit ---------- */
+var editingId = null;
+var formUrgency = 2;
+
+function fillSelect(sel, items, value) {
+  sel.innerHTML = items.map(function (o) {
+    var v = o.v == null ? o : o.v, n = o.n == null ? o : o.n;
+    return '<option value="' + esc(v) + '"' + (v === value ? " selected" : "") + ">" + esc(n) + "</option>";
+  }).join("");
+}
+
+function paintUrgency() {
+  var lbl = { 1: "L1", 2: "L2", 3: "L3" };
+  $("fUrg").innerHTML = [1, 2, 3].map(function (u) {
+    return '<button type="button" class="upick" data-u="' + u + '" aria-pressed="' + (u === formUrgency) + '">' +
+      lbl[u] + "<br>" + state.settings.urgencyHours[u] + "h</button>";
+  }).join("");
+  Array.prototype.forEach.call($("fUrg").children, function (b) {
+    b.addEventListener("click", function () { formUrgency = Number(b.getAttribute("data-u")); paintUrgency(); });
+  });
+}
+
+function openAdd(id) {
+  editingId = id || null;
+  var t = id ? findTicket(id) : null;
+  $("addTitle").textContent = t ? "Edit ticket" : "New ticket";
+  fillSelect($("fCase"), state.settings.caseTypes, t ? t.caseType : state.settings.caseTypes[0]);
+  fillSelect($("fStatus"), STATUSES.map(function (s) { return { v: s.id, n: s.name }; }), t ? t.status : "new");
+  $("fBuyer").value = t ? t.buyer : "";
+  $("fRef").value = t ? t.ref : "";
+  $("fNote").value = t ? t.note : "";
+  formUrgency = t ? t.urgency : 2;
+  paintUrgency();
+  openModal("mAdd");
+  setTimeout(function () { $("fBuyer").focus(); }, 30);
+}
+
+$("fSave").addEventListener("click", function () {
+  var buyer = $("fBuyer").value.trim();
+  if (!buyer) { $("fBuyer").focus(); return; }
+  var now = Date.now();
+  if (editingId) {
+    var t = findTicket(editingId);
+    t.buyer = buyer; t.ref = $("fRef").value.trim(); t.caseType = $("fCase").value;
+    t.note = $("fNote").value.trim(); t.urgency = formUrgency;
+    if (t.status !== $("fStatus").value) { moveTicket(t.id, $("fStatus").value); }
+    t.alerted = 0;
+  } else {
+    state.tickets.push({
+      id: uid(), buyer: buyer, ref: $("fRef").value.trim(), caseType: $("fCase").value,
+      note: $("fNote").value.trim(), urgency: formUrgency, status: $("fStatus").value,
+      createdAt: now, clockFrom: now, closedAt: null, updates: [], alerted: 0, snoozeUntil: 0
+    });
+  }
+  editingId = null;
+  save(); render(); closeModal("mAdd");
+});
+
+$("btnAdd").addEventListener("click", function () { openAdd(null); });
+
+/* ---------- detail ---------- */
+var detailId = null;
+
+function openDetail(id) {
+  var t = findTicket(id); if (!t) return;
+  detailId = id;
+  var c = countdown(t, Date.now());
+  $("dTitle").textContent = t.buyer || "(no name)";
+
+  var people = state.settings.people.length ? state.settings.people : (state.settings.me ? [state.settings.me] : []);
+  var who = people.length
+    ? '<select id="dWho">' + people.map(function (p) {
+        return '<option' + (p === state.settings.me ? " selected" : "") + ">" + esc(p) + "</option>";
+      }).join("") + "</select>"
+    : '<input type="text" id="dWho" placeholder="Your name">';
+
+  $("dBody").innerHTML =
+    '<div class="kv"><b>Status</b><span>' + esc(statusById(t.status).name) + "</span></div>" +
+    '<div class="kv"><b>Urgency</b><span>L' + t.urgency + " — " + hoursFor(t) + " hours</span></div>" +
+    '<div class="kv"><b>Clock</b><span style="color:' + c.color + ';font-weight:600">' + esc(c.text) + "</span></div>" +
+    '<div class="kv"><b>Due by</b><span>' + fmtDateTime(deadlineOf(t)) + "</span></div>" +
+    '<div class="kv"><b>Order ref</b><span>' + esc(t.ref || "—") + "</span></div>" +
+    '<div class="kv"><b>About</b><span>' + esc(t.caseType || "—") + "</span></div>" +
+    '<div class="kv"><b>Opened</b><span>' + fmtDateTime(t.createdAt) + "</span></div>" +
+    (t.note ? '<p style="margin:12px 0 0;font-size:13.5px">' + esc(t.note) + "</p>" : "") +
+    '<div class="hr"></div>' +
+    '<b style="font-size:13.5px">Log an update</b>' +
+    '<p class="note" style="margin-top:4px">Saving this restarts the countdown from now.</p>' +
+    '<textarea id="dText" placeholder="What you told the buyer" style="margin-top:6px"></textarea>' +
+    '<div class="grid" style="margin-top:8px">' +
+      '<label class="f"><span>Handled by</span>' + who + "</label>" +
+      '<label class="f"><span>Move to</span><select id="dStatus">' +
+        STATUSES.map(function (s) {
+          return '<option value="' + s.id + '"' + (s.id === t.status ? " selected" : "") + ">" + esc(s.name) + "</option>";
+        }).join("") + "</select></label>" +
+    "</div>" +
+    (t.updates.length ? '<div class="hr"></div><b style="font-size:13.5px">History</b><ul class="log">' +
+      t.updates.slice().reverse().map(function (u) {
+        return "<li><div>" + esc(u.text) + '</div><div class="when">' + fmtDateTime(u.at) +
+          (u.by ? " · " + esc(u.by) : "") + "</div></li>";
+      }).join("") + "</ul>" : "");
+
+  openModal("mDet");
+}
+
+$("dLog").addEventListener("click", function () {
+  var t = findTicket(detailId); if (!t) return;
+  var txt = $("dText").value.trim();
+  var who = $("dWho") ? ($("dWho").value || "").trim() : "";
+  if (txt) t.updates.push({ at: Date.now(), by: who, text: txt });
+  var newStatus = $("dStatus").value;
+  t.clockFrom = Date.now(); t.alerted = 0; t.snoozeUntil = 0;
+  if (newStatus !== t.status) {
+    t.status = newStatus;
+    t.closedAt = newStatus === "done" ? Date.now() : null;
+  }
+  save(); render(); closeModal("mDet");
+});
+
+$("dEdit").addEventListener("click", function () { closeModal("mDet"); openAdd(detailId); });
+
+$("dDel").addEventListener("click", function () {
+  var t = findTicket(detailId); if (!t) return;
+  if (!window.confirm("Delete the ticket for " + (t.buyer || "this buyer") + "? This cannot be undone.")) return;
+  state.tickets = state.tickets.filter(function (x) { return x.id !== detailId; });
+  save(); render(); closeModal("mDet");
+});
+
+/* =========================================================
+   sound + alarms
+   ========================================================= */
+var audioCtx = null;
+
+function beep(count) {
+  if (!state.settings.sound || !audioCtx) return;
+  var n = count || 2;
+  for (var i = 0; i < n; i++) {
+    (function (i) {
+      var t0 = audioCtx.currentTime + i * 0.35;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.28);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(t0); osc.stop(t0 + 0.3);
+    })(i);
+  }
+}
+
+function paintSoundBtn() {
+  var b = $("btnSound");
+  if (state.settings.sound) { b.textContent = "🔔 Sound is on"; b.classList.add("on"); }
+  else { b.textContent = "🔔 Turn on sound alerts"; b.classList.remove("on"); }
+}
+
+$("btnSound").addEventListener("click", function () {
+  if (state.settings.sound) {
+    state.settings.sound = false; paintSoundBtn(); save(); render(); return;
+  }
+  // browsers only allow audio to start from a real click, which is why this is a button
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    state.settings.sound = true;
+    paintSoundBtn(); beep(1); save(); render();
+  } catch (e) {
+    window.alert("This browser will not let the page play sound. The popup and the tab title will still work.");
+  }
+});
+
+/* desktop notification only exists on https/localhost — silently skipped on file:// */
+function desktopNotify(title, body) {
+  try {
+    if (!window.isSecureContext || !("Notification" in window)) return;
+    if (Notification.permission === "granted") { new Notification(title, { body: body }); }
+    else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(function (p) {
+        if (p === "granted") new Notification(title, { body: body });
+      });
+    }
+  } catch (e) { /* not available — the in-page popup already fired */ }
+}
+
+var baseTitle = "Shopee Reply Tracker";
+var flashOn = false;
+function paintTitle() {
+  var now = Date.now();
+  var over = state.tickets.filter(function (t) {
+    return t.status !== "done" && countdown(t, now).over;
+  }).length;
+  if (!over) { document.title = baseTitle; return; }
+  flashOn = !flashOn;
+  document.title = flashOn ? ("(" + over + ") ⚠ REPLY NOW") : (baseTitle + " (" + over + ")");
+}
+
+function showAlarm(title, lines) {
+  $("aTitle").textContent = title;
+  $("aList").innerHTML = lines.map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("");
+  openModal("mAlarm");
+  beep(3);
+  desktopNotify(title, lines.slice(0, 3).join(" · "));
+}
+
+$("aSnooze").addEventListener("click", function () {
+  var until = Date.now() + 30 * 60000;
+  state.tickets.forEach(function (t) {
+    if (t.status !== "done" && countdown(t, Date.now()).over) t.snoozeUntil = until;
+  });
+  save(); closeModal("mAlarm"); render();
+});
+
+function checkAlarms() {
+  var now = Date.now();
+
+  /* 1. deadlines crossed */
+  var due = [];
+  state.tickets.forEach(function (t) {
+    if (t.status === "done") return;
+    var dl = deadlineOf(t);
+    if (now < dl) return;
+    if (t.snoozeUntil && now < t.snoozeUntil) return;
+    if (t.alerted === dl) return;          // already alerted for this exact deadline
+    t.alerted = dl;
+    due.push((t.buyer || "(no name)") + " — L" + t.urgency + (t.ref ? " · " + t.ref : "") +
+             (t.caseType ? " · " + t.caseType : ""));
+  });
+  if (due.length) {
+    save();
+    showAlarm(due.length === 1 ? "1 buyer is past the deadline" : due.length + " buyers are past the deadline", due);
+  }
+
+  /* 2. scheduled check-ins */
+  var d = new Date();
+  var today = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  var mins = d.getHours() * 60 + d.getMinutes();
+  state.settings.checkIns.forEach(function (hhmm) {
+    var parts = String(hhmm).split(":");
+    var target = Number(parts[0]) * 60 + Number(parts[1]);
+    if (!isFinite(target)) return;
+    var stamp = today + " " + hhmm;
+    if (state.meta.checkInFired[hhmm] === stamp) return;
+    if (mins < target) return;
+    state.meta.checkInFired[hhmm] = stamp;
+    save();
+    // opened the file long after the time — mark it done, don't nag about a window that passed
+    if (mins - target > 45) return;
+    var open = state.tickets.filter(function (t) { return t.status !== "done"; });
+    var over = open.filter(function (t) { return countdown(t, now).over; }).length;
+    showAlarm("Check-in — " + hhmm, [
+      "Clear unread chats in Shopee first.",
+      over + " ticket" + (over === 1 ? " is" : "s are") + " overdue on the board.",
+      open.length + " open in total."
+    ]);
+  });
+
+  if (!busy()) render();
+  paintTitle();
+}
+
+/* =========================================================
+   templates
+   ========================================================= */
+function copyText(text, btn) {
+  var done = function () {
+    var old = btn.textContent; btn.textContent = "Copied";
+    setTimeout(function () { btn.textContent = old; }, 1200);
+  };
+  // clipboard API needs https, so fall back to execCommand for file:// use
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done, function () { legacyCopy(text, done); });
+  } else { legacyCopy(text, done); }
+}
+function legacyCopy(text, done) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed"; ta.style.top = "-1000px";
+  document.body.appendChild(ta);
+  ta.select(); ta.setSelectionRange(0, text.length);
+  var ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  if (ok) done(); else window.prompt("Copy this with Ctrl+C:", text);
+}
+
+function renderTemplates() {
+  var body = $("tBody");
+  body.innerHTML = '<p class="note" style="margin-top:0">One saved reply per case type. Edit it here, hit Copy, ' +
+    "then paste into the Shopee chat. Shopee's own Quick Reply in Seller Centre does the same thing inside their app " +
+    "— worth setting up there too, since replies you pick yourself still count toward your response rate.</p>";
+
+  state.settings.caseTypes.forEach(function (ct) {
+    var box = document.createElement("div");
+    box.className = "tmpl";
+    box.innerHTML = "<h4>" + esc(ct) + "</h4>" +
+      '<textarea style="min-height:66px"></textarea>' +
+      '<div class="chipline"><button class="btn sm" data-a="copy">Copy</button>' +
+      '<button class="btn sm" data-a="save">Save</button></div>';
+    var ta = box.querySelector("textarea");
+    ta.value = state.settings.templates[ct] || "";
+    box.querySelector('[data-a="copy"]').addEventListener("click", function (e) {
+      if (!ta.value.trim()) return;
+      state.settings.templates[ct] = ta.value; save();
+      copyText(ta.value, e.target);
+    });
+    box.querySelector('[data-a="save"]').addEventListener("click", function (e) {
+      state.settings.templates[ct] = ta.value; save();
+      var b = e.target, old = b.textContent; b.textContent = "Saved";
+      setTimeout(function () { b.textContent = old; }, 1200);
+    });
+    body.appendChild(box);
+  });
+}
+$("btnTmpl").addEventListener("click", function () { renderTemplates(); openModal("mTmpl"); });
+
+/* =========================================================
+   stats — the point of the whole thing
+   ========================================================= */
+function renderStats(days) {
+  var now = Date.now();
+  var since = days ? now - days * 86400000 : 0;
+  var pool = state.tickets.filter(function (t) { return t.createdAt >= since; });
+
+  var counts = {}, total = 0;
+  pool.forEach(function (t) {
+    var k = t.caseType || "Other";
+    counts[k] = (counts[k] || 0) + 1; total++;
+  });
+  var rows = Object.keys(counts).map(function (k) { return { k: k, n: counts[k] }; })
+    .sort(function (a, b) { return b.n - a.n; });
+  var max = rows.length ? rows[0].n : 1;
+
+  // first-reply speed, and how often the first reply landed after the deadline
+  var spans = [], lateFirst = 0, replied = 0;
+  pool.forEach(function (t) {
+    if (!t.updates || !t.updates.length) return;
+    replied++;
+    var first = t.updates[0].at;
+    spans.push(first - t.createdAt);
+    if (first - t.createdAt > hoursFor(t) * 3600000) lateFirst++;
+  });
+  var avgH = spans.length ? (spans.reduce(function (a, b) { return a + b; }, 0) / spans.length / 3600000) : 0;
+
+  var html = '<div class="chipline" style="margin-bottom:12px">' +
+    [[30, "Last 30 days"], [90, "Last 90 days"], [0, "All time"]].map(function (o) {
+      return '<button class="btn sm" data-days="' + o[0] + '"' +
+        (o[0] === days ? ' style="border-color:var(--brand);color:var(--brand)"' : "") + ">" + o[1] + "</button>";
+    }).join("") + "</div>";
+
+  if (!total) {
+    html += '<p class="note">No tickets in this window yet. Come back after a couple of weeks of logging — ' +
+      "that's when this view starts earning its keep.</p>";
+  } else {
+    html += "<b style='font-size:13.5px'>" + total + " ticket" + (total === 1 ? "" : "s") + " by type</b><div style='margin-top:10px'>";
+    rows.forEach(function (r) {
+      var pct = Math.round((r.n / total) * 100);
+      html += '<div class="stat">' +
+        '<span class="bar" style="width:' + Math.max(3, (r.n / max) * 120) + 'px"></span>' +
+        '<span class="lbl">' + esc(r.k) + "</span>" +
+        '<span class="n">' + r.n + " · " + pct + "%</span></div>";
+    });
+    html += "</div><div class='hr'></div>" +
+      '<div class="kv"><b>Replied</b><span>' + replied + " of " + total + "</span></div>" +
+      '<div class="kv"><b>Avg first reply</b><span>' + (spans.length ? avgH.toFixed(1) + " hours" : "—") + "</span></div>" +
+      '<div class="kv"><b>First reply after deadline</b><span>' + lateFirst + "</span></div>";
+
+    if (rows.length && rows[0].n / total >= 0.2) {
+      html += '<p class="note"><b>' + esc(rows[0].k) + "</b> is " + Math.round((rows[0].n / total) * 100) +
+        "% of your tickets. If that answer can go into the listing description or a pinned FAQ, " +
+        "those messages stop arriving at all — which beats answering them faster.</p>";
+    }
+  }
+
+  $("sBody").innerHTML = html;
+  Array.prototype.forEach.call($("sBody").querySelectorAll("[data-days]"), function (b) {
+    b.addEventListener("click", function () { renderStats(Number(b.getAttribute("data-days"))); });
+  });
+}
+$("btnStats").addEventListener("click", function () { renderStats(30); openModal("mStats"); });
+
+/* =========================================================
+   backup
+   ========================================================= */
+function download(name, text, mime) {
+  var blob = new Blob([text], { type: mime });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+function stamp() {
+  var d = new Date();
+  return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+}
+$("btnBackup").addEventListener("click", function () { $("backNote").textContent = ""; openModal("mBack"); });
+
+$("expJson").addEventListener("click", function () {
+  download("shopee-tracker-" + stamp() + ".json", JSON.stringify(state, null, 2), "application/json");
+});
+
+$("expCsv").addEventListener("click", function () {
+  var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
+  var rows = [["Buyer", "Order ref", "About", "Urgency", "Hours", "Status", "Opened", "Due by",
+               "Updates", "Last update", "Last handled by", "Note"].map(q).join(",")];
+  state.tickets.forEach(function (t) {
+    var last = t.updates && t.updates.length ? t.updates[t.updates.length - 1] : null;
+    rows.push([t.buyer, t.ref, t.caseType, "L" + t.urgency, hoursFor(t), statusById(t.status).name,
+      fmtDateTime(t.createdAt), fmtDateTime(deadlineOf(t)), (t.updates || []).length,
+      last ? last.text : "", last ? last.by : "", t.note].map(q).join(","));
+  });
+  download("shopee-tracker-" + stamp() + ".csv", "﻿" + rows.join("\r\n"), "text/csv");
+});
+
+$("impFile").addEventListener("change", function (e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  var fr = new FileReader();
+  fr.onload = function () {
+    var d;
+    try { d = JSON.parse(fr.result); }
+    catch (err) { $("backNote").textContent = "That file is not a tracker backup."; return; }
+    if (!d || !Array.isArray(d.tickets)) { $("backNote").textContent = "That file is not a tracker backup."; return; }
+    if (!window.confirm("Replace all " + state.tickets.length + " tickets on the board with the " +
+        d.tickets.length + " in this file?")) { e.target.value = ""; return; }
+    var base = blankState();
+    state.tickets = d.tickets;
+    state.settings = Object.assign(base.settings, d.settings || {});
+    state.meta = Object.assign(base.meta, d.meta || {});
+    save(); paintSoundBtn(); render();
+    $("backNote").textContent = "Restored " + d.tickets.length + " tickets.";
+    e.target.value = "";
+  };
+  fr.readAsText(file);
+});
+
+/* =========================================================
+   settings
+   ========================================================= */
+$("btnSet").addEventListener("click", function () {
+  var s = state.settings;
+  $("sMe").value = s.me || "";
+  $("sU1").value = s.urgencyHours[1];
+  $("sU2").value = s.urgencyHours[2];
+  $("sU3").value = s.urgencyHours[3];
+  $("sCases").value = s.caseTypes.join("\n");
+  $("sPeople").value = s.people.join("\n");
+  $("sTimes").innerHTML = s.checkIns.map(function (t, i) {
+    return '<label class="f"><span>Check-in ' + (i + 1) + '</span><input type="time" data-i="' + i + '" value="' + esc(t) + '"></label>';
+  }).join("");
+  openModal("mSet");
+});
+
+$("sSave").addEventListener("click", function () {
+  var s = state.settings;
+  s.me = $("sMe").value.trim();
+
+  var times = [];
+  Array.prototype.forEach.call($("sTimes").querySelectorAll("input"), function (i) {
+    if (i.value) times.push(i.value);
+  });
+  if (times.length) { s.checkIns = times.sort(); state.meta.checkInFired = {}; }
+
+  [1, 2, 3].forEach(function (n) {
+    var v = parseFloat($("sU" + n).value);
+    if (isFinite(v) && v > 0) s.urgencyHours[n] = v;
+  });
+
+  var cases = $("sCases").value.split("\n").map(function (x) { return x.trim(); })
+    .filter(function (x) { return x; });
+  if (cases.length) s.caseTypes = cases;
+
+  s.people = $("sPeople").value.split("\n").map(function (x) { return x.trim(); })
+    .filter(function (x) { return x; });
+  if (!s.people.length && s.me) s.people = [s.me];
+
+  state.tickets.forEach(function (t) { t.alerted = 0; });
+  save(); render(); closeModal("mSet");
+});
+
+/* =========================================================
+   boot
+   ========================================================= */
+load();
+if (!storageOK) $("storeWarn").style.display = "";
+paintSoundBtn();
+render();
+checkAlarms();
+
+setInterval(function () {
+  var d = new Date();
+  $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes());
+}, 1000);
+
+setInterval(checkAlarms, 20000);
+setInterval(paintTitle, 1500);
+
+// seed a first ticket so the board is not a blank wall on day one
+if (!state.tickets.length && storageOK) {
+  var t0 = Date.now();
+  state.tickets.push({
+    id: uid(), buyer: "Example buyer — open me, then delete me",
+    ref: "", caseType: state.settings.caseTypes[0],
+    note: "Tap the L pill to change urgency. Drag this card onto another column, or use the dropdown. " +
+          "Logging an update restarts the countdown.",
+    urgency: 2, status: "new", createdAt: t0, clockFrom: t0,
+    closedAt: null, updates: [], alerted: 0, snoozeUntil: 0
+  });
+  save(); render();
+}
+</script>
+</body>
+</html>
