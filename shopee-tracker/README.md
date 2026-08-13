@@ -84,14 +84,27 @@ next window closes instead of glowing red forever.
 **The ring** is the share of open tickets that are not overdue. 100% means nothing is late. **The
 streak** counts days in a row you ended with nothing overdue.
 
-## Reminders, ranked by how reliably they reach you
+## Reminders that reach a locked phone
 
-1. **Three repeating alarms on your phone, labelled "Check board."** Costs nothing, works whether or
-   not the app is open. This is the one that actually works — set it today.
-2. **Notifications**, if you allow them when asked. Only available when hosted (routes 1–3 above),
-   not on a double-clicked file.
-3. **In-app popup, sound and flashing tab title.** Only fires while the app is open. A backup for
-   when you're already looking at it, not something to depend on.
+**No web app can wake a locked phone on a schedule.** The browser API for it (Notification Triggers)
+was trialled in Chrome and abandoned, and Web Push needs a server to send every message. So the
+reminder has to live somewhere the phone already trusts — your calendar or your clock app.
+
+Ranked by how reliably they'll actually reach you:
+
+1. **Three repeating alarms in your phone's clock app, labelled "Check board."** Two minutes to set
+   up, works forever, no app needed. Do this one regardless.
+2. **⏰ Phone alerts → check-in reminders.** Downloads a calendar file with three daily repeating
+   events and alarms. Import it once and your phone reminds you every day, app open or not.
+3. **⏰ Phone alerts → open ticket deadlines.** A calendar alarm per open ticket, 30 minutes before
+   the deadline and again when it hits. This is a snapshot — closed tickets leave stale events
+   behind, so use it for the ones you can't afford to miss, not daily.
+4. **In-app popup, sound and flashing tab title.** Only while the app is open. A backup for when
+   you're already at the desk.
+
+Getting the calendar file in: easiest is **calendar.google.com** on a computer → Settings → Import,
+which syncs to the phone by itself. On iPhone, tapping the file opens Calendar directly. The Android
+Google Calendar app can't import files — email it to yourself or use the computer route.
 
 Sound needs the button tapped once per session — browsers block audio until you tap something.
 

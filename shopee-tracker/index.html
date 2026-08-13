@@ -262,6 +262,7 @@ textarea{resize:vertical;min-height:62px}
     <button class="btn" id="btnSound">🔔 Sound off</button>
     <button class="btn" id="btnTmpl">💬 Saved replies</button>
     <button class="btn" id="btnStats">📊 Patterns</button>
+    <button class="btn" id="btnAlerts">⏰ Phone alerts</button>
     <button class="btn" id="btnBackup">💾 Backup</button>
     <button class="btn" id="btnSet">⚙️ Settings</button>
     <button class="btn" id="btnHelp">❓ Help</button>
@@ -399,6 +400,46 @@ textarea{resize:vertical;min-height:62px}
     <button class="btn" data-close>Cancel</button>
     <button class="btn primary" id="sSave">Save settings</button>
   </div>
+</div></div>
+
+<!-- ===== phone alerts ===== -->
+<div class="mask" id="mAlerts"><div class="modal">
+  <div class="mhead"><h3>Alerts that reach a locked phone</h3><button class="x" data-close>&times;</button></div>
+  <div class="mbody">
+    <p style="margin-top:0;font-size:13.5px">This app can only pop up while it's open. To be
+      interrupted when it's closed, the reminder has to live in your <b>calendar</b> or your
+      <b>clock app</b> — those are the only things allowed to wake a locked phone.</p>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">1. Daily check-in reminders — set this up once</b>
+    <p class="note" style="margin-top:4px">Three repeating events at your check-in times, each with an
+      alarm. Import once and it reminds you every day, forever, whether or not this app is open.</p>
+    <button class="btn primary" id="icsCheck" style="margin-top:8px">Download check-in reminders</button>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">2. Deadlines for tickets open right now</b>
+    <p class="note" style="margin-top:4px">One calendar alarm per open ticket, 30 minutes before its
+      deadline and again when it hits. This is a snapshot — closed tickets leave the old event behind,
+      so use it for the ones you really can't miss, not every day.</p>
+    <button class="btn" id="icsDue" style="margin-top:8px">Download open ticket deadlines</button>
+    <p class="note" id="icsNote"></p>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">How to get the file into your calendar</b>
+    <p class="note"><b>Most reliable:</b> download on your computer, go to
+      <b>calendar.google.com</b> → gear icon → Settings → Import &amp; export → Import. It syncs to
+      your phone by itself within a minute.<br><br>
+      <b>iPhone:</b> tapping the downloaded file opens it straight in the Calendar app — tap Add All.<br>
+      <b>Android:</b> the Google Calendar app can't import files directly. Email the file to yourself
+      and open it on the phone, or use the computer route above.</p>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">Or just use your clock app</b>
+    <p class="note">Three repeating alarms labelled "Check board" costs nothing, takes two minutes,
+      and is the single most reliable reminder on any phone. Do this even if you also import the
+      calendar file.</p>
+  </div>
+  <div class="mfoot"><button class="btn primary" data-close>Done</button></div>
 </div></div>
 
 <!-- ===== help ===== -->
@@ -1380,6 +1421,107 @@ $("impFile").addEventListener("change", function (e) {
 });
 
 /* =========================================================
+   calendar export — the only reminder that reaches a locked phone,
+   since scheduled web notifications don't exist without a server
+   ========================================================= */
+function icsEsc(s) {
+  return String(s == null ? "" : s)
+    .replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+function icsUTC(ms) {
+  var d = new Date(ms);
+  return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + "T" +
+         pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + "Z";
+}
+/* floating local time: a 9am reminder should be 9am wherever the phone is */
+function icsFloat(d) {
+  return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "T" +
+         pad(d.getHours()) + pad(d.getMinutes()) + "00";
+}
+/* RFC 5545 caps lines at 75 octets; long buyer names and notes will exceed it */
+function icsFold(line) {
+  if (line.length <= 73) return line;
+  var out = line.slice(0, 73), rest = line.slice(73);
+  while (rest.length > 72) { out += "\r\n " + rest.slice(0, 72); rest = rest.slice(72); }
+  return out + "\r\n " + rest;
+}
+function icsWrap(lines) {
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Shopee Reply Tracker//EN",
+    "CALSCALE:GREGORIAN", "METHOD:PUBLISH"]
+    .concat(lines, ["END:VCALENDAR"])
+    .map(icsFold).join("\r\n") + "\r\n";
+}
+
+function icsCheckIns() {
+  var now = Date.now(), lines = [];
+  state.settings.checkIns.forEach(function (hhmm, i) {
+    var p = String(hhmm).split(":");
+    var d = new Date();
+    d.setHours(Number(p[0]), Number(p[1]), 0, 0);
+    lines = lines.concat([
+      "BEGIN:VEVENT",
+      "UID:checkin-" + String(hhmm).replace(":", "") + "@shopee-reply-tracker",
+      "DTSTAMP:" + icsUTC(now),
+      "DTSTART:" + icsFloat(d),
+      "DURATION:PT10M",
+      "RRULE:FREQ=DAILY",
+      "SUMMARY:" + icsEsc("Check Shopee replies (" + hhmm + ")"),
+      "DESCRIPTION:" + icsEsc("1. Clear unread chats in Shopee.\n2. Clear anything red on the board." +
+        "\n3. Can't answer yet? Tell the buyer when you will, and park it in I owe an update."),
+      "BEGIN:VALARM", "ACTION:DISPLAY",
+      "DESCRIPTION:" + icsEsc("Check Shopee replies"),
+      "TRIGGER:PT0S", "END:VALARM",
+      "END:VEVENT"
+    ]);
+  });
+  return icsWrap(lines);
+}
+
+function icsDeadlines() {
+  var now = Date.now(), lines = [], n = 0;
+  openTickets().forEach(function (t) {
+    var due = deadlineOf(t);
+    n++;
+    var title = "Reply to " + (t.buyer || "buyer") + " (L" + t.urgency + ")";
+    lines = lines.concat([
+      "BEGIN:VEVENT",
+      "UID:" + t.id + "@shopee-reply-tracker",
+      "DTSTAMP:" + icsUTC(now),
+      "SEQUENCE:" + ((t.updates || []).length),
+      "DTSTART:" + icsUTC(due),
+      "DURATION:PT15M",
+      "SUMMARY:" + icsEsc(title),
+      "DESCRIPTION:" + icsEsc(
+        (t.ref ? "Ref: " + t.ref + "\n" : "") +
+        (t.caseType ? "About: " + t.caseType + "\n" : "") +
+        (t.note ? t.note + "\n" : "") +
+        "Deadline from the reply tracker."),
+      "BEGIN:VALARM", "ACTION:DISPLAY",
+      "DESCRIPTION:" + icsEsc(title + " — 30 minutes left"),
+      "TRIGGER:-PT30M", "END:VALARM",
+      "BEGIN:VALARM", "ACTION:DISPLAY",
+      "DESCRIPTION:" + icsEsc(title + " — due now"),
+      "TRIGGER:PT0S", "END:VALARM",
+      "END:VEVENT"
+    ]);
+  });
+  return { text: icsWrap(lines), count: n };
+}
+
+$("btnAlerts").addEventListener("click", function () { $("icsNote").textContent = ""; openModal("mAlerts"); });
+$("icsCheck").addEventListener("click", function () {
+  download("shopee-check-ins.ics", icsCheckIns(), "text/calendar");
+  toast("Check-in reminders downloaded");
+});
+$("icsDue").addEventListener("click", function () {
+  var r = icsDeadlines();
+  if (!r.count) { $("icsNote").textContent = "Nothing open right now — no deadlines to export."; return; }
+  download("shopee-deadlines-" + stamp() + ".ics", r.text, "text/calendar");
+  $("icsNote").textContent = "Exported " + r.count + " deadline" + (r.count === 1 ? "" : "s") + ".";
+  toast("Exported " + r.count + " deadlines");
+});
+
+/* =========================================================
    settings
    ========================================================= */
 $("btnSet").addEventListener("click", function () {
@@ -1429,9 +1571,10 @@ $("btnHelp").addEventListener("click", function () {
     "<p style='font-size:13.5px'>The ring is the share of open tickets that are <i>not</i> overdue — 100% " +
     "means nothing is late. The streak counts days in a row you ended with nothing overdue.</p>" +
     "<div class='hr'></div><b style='font-size:13.5px'>Reminders</b>" +
-    "<p style='font-size:13.5px'>Popups fire at your check-in times and when a deadline passes — but only " +
-    "while this app is open. <b>Also set three repeating alarms on your phone.</b> That's the one that " +
-    "always works.</p>" +
+    "<p style='font-size:13.5px'>Popups here fire at your check-in times and when a deadline passes — " +
+    "but only while this app is open. Nothing in a web app can wake a locked phone on a schedule; " +
+    "that needs your calendar or clock app. Open <b>⏰ Phone alerts</b> and import the check-in file " +
+    "once — after that your phone reminds you every day whether or not this is open.</p>" +
     (iOS ? "<div class='hr'></div><b style='font-size:13.5px'>Install on iPhone</b>" +
       "<p style='font-size:13.5px'>Tap the <b>Share</b> button in Safari, then <b>Add to Home Screen</b>. " +
       "It then opens like an app and works without internet.</p>" : "") +

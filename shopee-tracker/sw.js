@@ -1,6 +1,6 @@
 /* Shopee Reply Tracker — offline service worker.
    Bump CACHE when index.html changes, otherwise phones keep serving the old copy. */
-var CACHE = "shopee-tracker-v3";
+var CACHE = "shopee-tracker-v4";
 
 var SHELL = [
   "./",
