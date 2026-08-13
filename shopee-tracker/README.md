@@ -109,11 +109,40 @@ One canned answer per case type. Tap Copy, paste into Shopee. Build 5–8 for yo
 questions and most of your backlog clears in seconds. Worth setting the same ones up as **Quick
 Reply** in Shopee Seller Centre too, since those work inside the Shopee app itself.
 
-## Backup
+## Backup and keeping two devices in step
 
 Everything is in one browser on one device. Clearing browser data wipes it. Hit **Backup → Save
-file (.json)** every week or so — that file also moves your whole board to a new phone. The `.csv`
-opens in Excel, for records and disputes.
+file (.json)** every week or so. The `.csv` opens in Excel, for records and disputes.
+
+**Merge, don't replace.** Loading a file offers two modes. *Merge* keeps every ticket from both
+devices — if the same ticket changed in two places the most recent edit wins, and history from both
+sides is kept. *Replace* wipes this device first. Merge is the one you want for moving between
+phone and desktop; merging the same file twice is harmless.
+
+Deletes are remembered, so a ticket you deleted on the phone does not come back from the desktop's
+older file.
+
+**The workflow:** save the .json into Google Drive from the device you just used, then load it on
+the other one before you start working there. Do it when you *switch* devices, not continuously,
+and don't work on both at once with a stale file in between.
+
+This is a hand-off, not live sync. Real live sync needs a server and an account — see below.
+
+## If you want real live sync
+
+The hand-off above covers most people. Live sync — both devices always current, nothing to
+remember — needs a database behind the app. The realistic free option is **Supabase**, and the
+trade-offs are real:
+
+- Free projects **pause after 7 days with no requests**, so a quiet week means logging in to wake it
+  before the board works again.
+- Your buyer names and order refs would leave your devices and live in a hosted database. That needs
+  proper login and row-level security, not just an API key in the page.
+- Supabase is retiring the legacy `anon` / `service_role` keys in favour of `sb_publishable_` /
+  `sb_secret_` keys, so anything built now should use the new ones.
+
+Worth it if two devices genuinely both stay busy. Otherwise pick the phone as the real board and use
+the merge hand-off.
 
 ## Files
 

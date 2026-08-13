@@ -342,15 +342,29 @@ textarea{resize:vertical;min-height:62px}
   <div class="mhead"><h3>Backup</h3><button class="x" data-close>&times;</button></div>
   <div class="mbody">
     <p style="margin-top:0;font-size:13.5px">Tickets are stored on <b>this device only</b>. Your phone and
-      your computer keep separate boards — they do not sync. Clearing browser data wipes them.</p>
+      your computer keep separate boards. Clearing browser data wipes them.</p>
     <div class="chipline">
       <button class="btn" id="expJson">Save file (.json)</button>
       <button class="btn" id="expCsv">Save spreadsheet (.csv)</button>
     </div>
+
     <div class="hr"></div>
-    <p style="font-size:13.5px;margin:0 0 7px"><b>Restore</b> — loads a .json backup and replaces everything here.</p>
-    <input type="file" id="impFile" accept=".json,application/json">
+    <b style="font-size:13.5px">Load a file from your other device</b>
+    <label class="f" style="margin-top:8px"><span>What to do with it</span>
+      <select id="impMode">
+        <option value="merge">Merge — keep both sides (recommended)</option>
+        <option value="replace">Replace — wipe this device first</option>
+      </select></label>
+    <input type="file" id="impFile" accept=".json,application/json" style="margin-top:9px">
     <p class="note" id="backNote"></p>
+    <p class="note">Merge keeps every ticket from both devices. If the same ticket changed in two
+      places, the most recent edit wins and both sets of history are kept.</p>
+
+    <div class="hr"></div>
+    <b style="font-size:13.5px">Keeping two devices in step</b>
+    <p class="note">Save the .json into Google Drive or Dropbox from the device you just used, then
+      load it on the other one before you start working there. Do it when you <i>switch</i> devices,
+      not continuously — and never work on both at once with an old file in between.</p>
   </div>
   <div class="mfoot"><button class="btn primary" data-close>Close</button></div>
 </div></div>
@@ -508,7 +522,72 @@ function findTicket(id) {
   for (var i = 0; i < state.tickets.length; i++) if (state.tickets[i].id === id) return state.tickets[i];
   return null;
 }
-function openTickets() { return state.tickets.filter(function (t) { return t.status !== "done"; }); }
+/* every content change stamps the ticket, so merging two devices can tell which copy is newer */
+function touch(t) { t.updatedAt = Date.now(); }
+/* deletes are tombstones, not removals — otherwise a merge resurrects them from the other device */
+function liveTickets() { return state.tickets.filter(function (t) { return !t.deleted; }); }
+function openTickets() {
+  return liveTickets().filter(function (t) { return t.status !== "done"; });
+}
+
+function stampOf(t) {
+  if (t.updatedAt) return t.updatedAt;
+  var m = Math.max(t.createdAt || 0, t.clockFrom || 0, t.closedAt || 0);
+  (t.updates || []).forEach(function (u) { if (u.at > m) m = u.at; });
+  return m;
+}
+function mergeUpdates(a, b) {
+  var out = [], seen = {};
+  (a || []).concat(b || []).forEach(function (u) {
+    var k = u.at + "|" + (u.text || "");
+    if (seen[k]) return;
+    seen[k] = 1; out.push(u);
+  });
+  out.sort(function (x, y) { return x.at - y.at; });
+  return out;
+}
+
+/* merge another device's backup into this one: newest edit per ticket wins,
+   history from both sides is kept, and deletes stick unless the other side
+   edited the ticket afterwards */
+function mergeState(inc) {
+  var byId = {}, added = 0, changed = 0;
+  state.tickets.forEach(function (t) { byId[t.id] = t; });
+
+  (inc.tickets || []).forEach(function (it) {
+    var cur = byId[it.id];
+    if (!cur) { state.tickets.push(it); byId[it.id] = it; added++; return; }
+
+    var a = stampOf(cur), b = stampOf(it);
+    var win = b > a ? it : cur;
+    var hist = mergeUpdates(cur.updates, it.updates);
+
+    Object.keys(it).forEach(function (k) { if (!(k in cur)) cur[k] = it[k]; });
+    Object.keys(win).forEach(function (k) { cur[k] = win[k]; });
+    cur.updates = hist;
+
+    var del = Math.max(cur.deleted || 0, it.deleted || 0);
+    if (del && del >= Math.max(a, b)) cur.deleted = del; else delete cur.deleted;
+
+    cur.updatedAt = Math.max(a, b);
+    if (b > a) changed++;
+  });
+
+  // settings: fill gaps, never clobber what this device already chose
+  var s = inc.settings || {};
+  (s.caseTypes || []).forEach(function (c) {
+    if (state.settings.caseTypes.indexOf(c) === -1) state.settings.caseTypes.push(c);
+  });
+  Object.keys(s.templates || {}).forEach(function (k) {
+    if (!state.settings.templates[k]) state.settings.templates[k] = s.templates[k];
+  });
+  (s.people || []).forEach(function (p) {
+    if (state.settings.people.indexOf(p) === -1) state.settings.people.push(p);
+  });
+  Object.keys((inc.meta || {}).clearDays || {}).forEach(function (d) { state.meta.clearDays[d] = 1; });
+
+  return { added: added, changed: changed };
+}
 function overdueTickets(now) {
   return openTickets().filter(function (t) { return countdown(t, now).over; });
 }
@@ -651,7 +730,7 @@ function renderScore(now) {
 
   // handled today = tickets you updated or closed today
   var today = dayKey(now), handled = 0;
-  state.tickets.forEach(function (t) {
+  liveTickets().forEach(function (t) {
     var hit = (t.closedAt && dayKey(t.closedAt) === today);
     if (!hit && t.updates) {
       for (var i = 0; i < t.updates.length; i++) if (dayKey(t.updates[i].at) === today) { hit = true; break; }
@@ -693,7 +772,7 @@ function renderScore(now) {
 function renderSplit() {
   var counts = {}, total = 0;
   STATUSES.forEach(function (s) { counts[s.id] = 0; });
-  state.tickets.forEach(function (t) { counts[t.status] = (counts[t.status] || 0) + 1; total++; });
+  liveTickets().forEach(function (t) { counts[t.status] = (counts[t.status] || 0) + 1; total++; });
   var bar = "", key = "";
   STATUSES.forEach(function (s) {
     var n = counts[s.id] || 0;
@@ -708,7 +787,7 @@ function renderBoard(now) {
   var board = $("board");
   board.innerHTML = "";
   STATUSES.forEach(function (s) {
-    var list = state.tickets.filter(function (t) { return t.status === s.id; });
+    var list = liveTickets().filter(function (t) { return t.status === s.id; });
     list.sort(function (a, b) {
       return s.id === "done" ? (b.closedAt || 0) - (a.closedAt || 0) : deadlineOf(a) - deadlineOf(b);
     });
@@ -803,7 +882,7 @@ function card(t, now, hint) {
   el.querySelector('[data-act="cycle"]').addEventListener("click", function (e) {
     e.stopPropagation();
     t.urgency = t.urgency >= 3 ? 1 : t.urgency + 1;
-    t.alerted = 0; buzz(12); save(); render();
+    t.alerted = 0; touch(t); buzz(12); save(); render();
   });
   el.querySelector('[data-act="open"]').addEventListener("click", function () { openDetail(t.id); });
   el.querySelector('[data-act="move"]').addEventListener("change", function (e) { moveTicket(t.id, e.target.value); });
@@ -857,13 +936,13 @@ function attachSwipe(el, t, hint) {
 function closeWithUndo(id) {
   var t = findTicket(id); if (!t) return;
   var prev = { status: t.status, clockFrom: t.clockFrom, closedAt: t.closedAt };
-  t.status = "done"; t.closedAt = Date.now();
+  t.status = "done"; t.closedAt = Date.now(); touch(t);
   save(); render();
   sfx("done");
   confetti(26, window.innerWidth / 2, window.innerHeight * 0.55);
   toast("Closed " + (t.buyer || "ticket"), function () {
     t.status = prev.status; t.clockFrom = prev.clockFrom; t.closedAt = prev.closedAt;
-    save(); render();
+    touch(t); save(); render();
   });
 }
 
@@ -876,12 +955,13 @@ function moveTicket(id, status) {
     t.closedAt = Date.now();
     sfx("done"); confetti(22, window.innerWidth / 2, window.innerHeight * 0.5);
     toast("Closed " + (t.buyer || "ticket"), function () {
-      t.status = prev.status; t.clockFrom = prev.clockFrom; t.closedAt = prev.closedAt; save(); render();
+      t.status = prev.status; t.clockFrom = prev.clockFrom; t.closedAt = prev.closedAt;
+      touch(t); save(); render();
     });
   } else {
     t.closedAt = null; t.clockFrom = Date.now(); t.alerted = 0; t.snoozeUntil = 0;
   }
-  buzz(12); save(); render();
+  touch(t); buzz(12); save(); render();
 }
 
 /* =========================================================
@@ -944,7 +1024,7 @@ function openAdd(id) {
 
   // tap a repeat buyer instead of typing the name again
   var seen = [], names = {};
-  state.tickets.slice().reverse().forEach(function (x) {
+  liveTickets().slice().reverse().forEach(function (x) {
     if (x.buyer && !names[x.buyer] && seen.length < 6) { names[x.buyer] = 1; seen.push(x.buyer); }
   });
   $("recent").innerHTML = (t || !seen.length) ? "" :
@@ -965,13 +1045,14 @@ $("fSave").addEventListener("click", function () {
   if (editingId) {
     var t = findTicket(editingId);
     t.buyer = buyer; t.ref = $("fRef").value.trim(); t.caseType = $("fCase").value;
-    t.note = $("fNote").value.trim(); t.urgency = formUrgency; t.alerted = 0;
+    t.note = $("fNote").value.trim(); t.urgency = formUrgency; t.alerted = 0; touch(t);
     if (t.status !== $("fStatus").value) moveTicket(t.id, $("fStatus").value);
   } else {
     state.tickets.push({
       id: uid(), buyer: buyer, ref: $("fRef").value.trim(), caseType: $("fCase").value,
       note: $("fNote").value.trim(), urgency: formUrgency, status: $("fStatus").value,
-      createdAt: now, clockFrom: now, closedAt: null, updates: [], alerted: 0, snoozeUntil: 0
+      createdAt: now, clockFrom: now, closedAt: null, updates: [], alerted: 0, snoozeUntil: 0,
+      updatedAt: now
     });
     buzz(14);
   }
@@ -1034,7 +1115,7 @@ $("dLog").addEventListener("click", function () {
   var who = $("dWho") ? ($("dWho").value || "").trim() : "";
   if (txt) t.updates.push({ at: Date.now(), by: who, text: txt });
   var ns = $("dStatus").value;
-  t.clockFrom = Date.now(); t.alerted = 0; t.snoozeUntil = 0;
+  t.clockFrom = Date.now(); t.alerted = 0; t.snoozeUntil = 0; touch(t);
   if (ns !== t.status) {
     t.status = ns;
     t.closedAt = ns === "done" ? Date.now() : null;
@@ -1047,8 +1128,11 @@ $("dEdit").addEventListener("click", function () { closeModal("mDet"); openAdd(d
 $("dDel").addEventListener("click", function () {
   var t = findTicket(detailId); if (!t) return;
   if (!confirm("Delete the ticket for " + (t.buyer || "this buyer") + "? This cannot be undone.")) return;
-  state.tickets = state.tickets.filter(function (x) { return x.id !== detailId; });
+  t.deleted = Date.now(); touch(t);
   save(); render(); closeModal("mDet");
+  toast("Deleted " + (t.buyer || "ticket"), function () {
+    delete t.deleted; touch(t); save(); render();
+  });
 });
 
 /* =========================================================
@@ -1084,7 +1168,7 @@ $("aSnooze").addEventListener("click", function () {
 
 function checkAlarms() {
   var now = Date.now(), due = [];
-  state.tickets.forEach(function (t) {
+  liveTickets().forEach(function (t) {
     if (t.status === "done") return;
     var dl = deadlineOf(t);
     if (now < dl) return;
@@ -1182,7 +1266,7 @@ $("btnTmpl").addEventListener("click", function () { renderTemplates(); openModa
    ========================================================= */
 function renderStats(days) {
   var now = Date.now(), since = days ? now - days * 86400000 : 0;
-  var pool = state.tickets.filter(function (t) { return t.createdAt >= since; });
+  var pool = liveTickets().filter(function (t) { return t.createdAt >= since; });
   var counts = {}, total = 0;
   pool.forEach(function (t) { var k = t.caseType || "Other"; counts[k] = (counts[k] || 0) + 1; total++; });
   var rows = Object.keys(counts).map(function (k) { return { k: k, n: counts[k] }; })
@@ -1252,7 +1336,7 @@ $("expCsv").addEventListener("click", function () {
   var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
   var rows = [["Buyer", "Order/TDO ref", "About", "Urgency", "Hours", "Status", "Opened", "Due by",
     "Updates", "Last update", "Last handled by", "Note"].map(q).join(",")];
-  state.tickets.forEach(function (t) {
+  liveTickets().forEach(function (t) {
     var last = t.updates && t.updates.length ? t.updates[t.updates.length - 1] : null;
     rows.push([t.buyer, t.ref, t.caseType, "L" + t.urgency, hoursFor(t), statusById(t.status).name,
       fmtDateTime(t.createdAt), fmtDateTime(deadlineOf(t)), (t.updates || []).length,
@@ -1269,17 +1353,28 @@ $("impFile").addEventListener("change", function (e) {
     var d;
     try { d = JSON.parse(fr.result); } catch (err) { $("backNote").textContent = "That file is not a tracker backup."; return; }
     if (!d || !Array.isArray(d.tickets)) { $("backNote").textContent = "That file is not a tracker backup."; return; }
-    if (!confirm("Replace all " + state.tickets.length + " tickets here with the " + d.tickets.length + " in this file?")) {
-      e.target.value = ""; return;
+
+    if ($("impMode").value === "replace") {
+      if (!confirm("Delete all " + liveTickets().length + " tickets on this device and use the " +
+                   d.tickets.length + " in this file instead?")) { e.target.value = ""; return; }
+      var base = blankState();
+      state.tickets = d.tickets;
+      state.settings = Object.assign(base.settings, d.settings || {});
+      state.meta = Object.assign(base.meta, d.meta || {});
+      save(); paintSoundBtn(); lastOverdue = null; render();
+      $("backNote").textContent = "Replaced with " + d.tickets.length + " tickets.";
+      e.target.value = "";
+      toast("Replaced with " + d.tickets.length + " tickets");
+      return;
     }
-    var base = blankState();
-    state.tickets = d.tickets;
-    state.settings = Object.assign(base.settings, d.settings || {});
-    state.meta = Object.assign(base.meta, d.meta || {});
+
+    var before = liveTickets().length;
+    var r = mergeState(d);
     save(); paintSoundBtn(); lastOverdue = null; render();
-    $("backNote").textContent = "Restored " + d.tickets.length + " tickets.";
+    var msg = r.added + " new, " + r.changed + " updated, " + before + " already here";
+    $("backNote").textContent = "Merged: " + msg + ".";
     e.target.value = "";
-    toast("Restored " + d.tickets.length + " tickets");
+    toast("Merged — " + msg);
   };
   fr.readAsText(file);
 });
@@ -1419,7 +1514,7 @@ document.addEventListener("visibilitychange", function () {
   if (!document.hidden) { checkAlarms(); }
 });
 
-if (!state.tickets.length && storageOK && !state.settings.seenHelp) {
+if (!liveTickets().length && storageOK && !state.settings.seenHelp) {
   var t0 = Date.now();
   state.tickets.push({
     id: uid(), buyer: "Practice on me, then swipe me away", ref: "TDO-0001",
