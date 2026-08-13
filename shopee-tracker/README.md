@@ -1,104 +1,136 @@
 # Shopee Reply Tracker
 
-A single file that tracks which buyers you still owe a reply to, and shouts at you before the
-deadline passes. Works fully offline — no signup, no server, no monthly fee.
+Tracks which buyers still owe you a reply, counts down to the deadline, and nags you before it
+passes. Installs on your phone like an app. Free, no signup, works with the internet off.
 
-## How to open it
+---
 
-Download `index.html` and double-click it. That's the whole install.
+## Getting it on your phone
 
-Put it somewhere you won't lose it (Documents, or a folder in OneDrive/Google Drive so it syncs),
-and right-click → **Pin to Start** or bookmark it so it's one click away every morning.
+The app is one folder of static files. It needs a web address before a phone can install it —
+`file://` won't do. Three routes, easiest first.
 
-## The routine (this is the part that actually fixes the problem)
+### 1. Netlify Drop — about 2 minutes, nothing to configure
 
-The board only works if it's wrapped in a habit. Three fixed times a day — 9am, 2pm, 9pm by default,
-editable in Settings. At each one, in this order:
+1. Download the `shopee-tracker` folder to your computer.
+2. Go to **https://app.netlify.com/drop**
+3. Drag the whole folder onto the page.
+4. You get an address like `https://random-name-123.netlify.app`. Open that on your phone.
+
+Free, and this repo stays private. Make a free account when it offers, otherwise the address expires.
+
+### 2. Cloudflare Pages — auto-updates, works with a private repo
+
+Connect this repo at **https://pages.cloudflare.com**, set the build output directory to
+`shopee-tracker` and leave the build command empty. Every push redeploys it. Free tier, and unlike
+GitHub Pages it does not require the repo to be public.
+
+### 3. GitHub Pages — free only if the repo is public
+
+This repo is currently **private**, and GitHub Pages on private repos needs a paid plan. Either make
+it public (the tracker holds no secrets — your tickets live in your browser, never in the repo), or
+use one of the routes above.
+
+### Then install it
+
+- **Android / Chrome** — an "Install" bar appears at the top. Tap it.
+- **iPhone / Safari** — tap **Share**, then **Add to Home Screen**.
+
+You get an icon on your home screen, it opens full-screen with no browser bars, and it works with no
+signal once installed.
+
+### Or just double-click the file
+
+`index.html` still works on its own with no hosting at all. You lose home-screen install and real
+notifications, and phones are awkward at opening local files. Fine for a computer-only setup.
+
+---
+
+## Read this before you rely on it
+
+**Your phone and your computer keep completely separate boards.** Tickets are stored in the browser
+on each device. There is no sync, because there is no server and no account.
+
+**Pick one device as the real board.** The phone is usually right — that's where Shopee chats
+happen. Use Backup → Save file to move everything across if you switch.
+
+---
+
+## The daily routine
+
+Three fixed times a day — 9am, 2pm, 9pm by default, editable in Settings. At each one:
 
 1. Clear unread chats in Shopee first.
-2. Clear anything red or orange on the board.
-3. Anything you can't answer yet (waiting on stock, waiting on supplier) doesn't get left in the
-   chat. Tell the buyer "I'll confirm by tomorrow", then log it as **I owe an update** so it comes
-   back to you instead of disappearing.
+2. Clear anything red on the board.
+3. Can't answer yet (waiting on stock, waiting on supplier)? Don't leave it in the chat. Tell the
+   buyer "I'll confirm by tomorrow", then park it in **I owe an update** so it comes back to you.
 
-## How the board works
+## How it works
 
-**Four columns.** Need reply → I owe an update → Waiting on buyer → Closed. Drag a card onto another
-column, or use the dropdown on the card (the dropdown is the one that works on a phone).
+**Swipe right to close a card. Swipe left to log an update.** There's an Undo on every close. On a
+computer, drag cards between columns instead.
 
-**Urgency sets the clock.** L1 = 72 hours, L2 = 48, L3 = 24. Tap the coloured L pill on any card to
-change it without opening the ticket. All three are editable in Settings.
+**Tap the coloured L pill** to change urgency without opening anything. L1 = 72 hours, L2 = 48,
+L3 = 24. All editable.
 
-**Set L3 to 12 hours if you want it to match Shopee exactly.** Shopee only counts your reply toward
-your Chat Response Rate if it lands within 12 hours of the buyer's message. Auto-replies are excluded
-from that calculation entirely — an auto-reply will not protect your rate. Quick Replies you select
-yourself do count.
+**Set L3 to 12 hours to match Shopee exactly.** Shopee only counts your reply toward your Chat
+Response Rate if it lands within 12 hours of the buyer's message. Auto-replies are excluded from
+that calculation — an auto-reply will not protect your rate. Quick Replies you pick yourself do
+count.
 
-**Logging an update restarts the countdown.** Once you've replied, the clock starts again from your
-reply, so the ticket goes quiet until the next window closes instead of glowing red forever.
+**Logging an update restarts the countdown**, so a ticket you've replied to goes quiet until the
+next window closes instead of glowing red forever.
 
-## The reminders, ranked by how reliably they'll reach you
+**The ring** is the share of open tickets that are not overdue. 100% means nothing is late. **The
+streak** counts days in a row you ended with nothing overdue.
 
-1. **Three alarms on your phone, labelled "Check board."** Costs nothing, works whether or not the
-   computer is on. This is the one that actually works. Set it today.
-2. **Windows Task Scheduler** opening this file at 9am / 2pm / 9pm — closest thing to a real popup.
-   Task Scheduler → Create Basic Task → Daily → Start a program → browse to `index.html`.
-3. **The in-app popup + sound.** Fires when a ticket goes past its deadline and at each check-in
-   time, and flashes the browser tab title so you catch it from another tab.
+## Reminders, ranked by how reliably they reach you
 
-Be clear about number 3's limit: **it only fires while this file is open in a tab.** Close the
-browser and nothing reminds you. Treat it as a backup for when you're already at the desk, not as
-the thing you rely on.
+1. **Three repeating alarms on your phone, labelled "Check board."** Costs nothing, works whether or
+   not the app is open. This is the one that actually works — set it today.
+2. **Notifications**, if you allow them when asked. Only available when hosted (routes 1–3 above),
+   not on a double-clicked file.
+3. **In-app popup, sound and flashing tab title.** Only fires while the app is open. A backup for
+   when you're already looking at it, not something to depend on.
 
-Sound needs the **"Turn on sound alerts"** button clicked once per session — browsers block audio
-until you click something, which is why it's a button and not automatic.
+Sound needs the button tapped once per session — browsers block audio until you tap something.
 
-Real Windows desktop notifications are not possible from a file opened by double-clicking. That
-needs an `https://` address, and a local file is `file://`. If this ever gets hosted on a real web
-address, the notification code is already there and will switch on by itself.
+## Patterns — the screen that actually saves you time
+
+After a month of logging, open it. If TDO requests are a quarter of your tickets, the fix isn't
+replying faster — it's putting that information where buyers see it before they ask. **A ticket you
+never have to open beats one you close in five minutes.**
+
+It also shows your average time to first reply and how many first replies landed after the deadline.
 
 ## Saved replies
 
-Settings → your case types, then **Saved replies** → write one canned answer per type. Click Copy,
-paste into Shopee. Build 5–8 of these for your most repeated questions (postage cost, restock, size,
-tracking) and most of your backlog clears in seconds instead of minutes.
+One canned answer per case type. Tap Copy, paste into Shopee. Build 5–8 for your most repeated
+questions and most of your backlog clears in seconds. Worth setting the same ones up as **Quick
+Reply** in Shopee Seller Centre too, since those work inside the Shopee app itself.
 
-Worth setting the same ones up as **Quick Reply** inside Shopee Seller Centre too — those work
-inside the Shopee app itself, and unlike auto-replies they still count toward your response rate.
+## Backup
 
-## "What keeps coming up" — the highest-payoff screen
+Everything is in one browser on one device. Clearing browser data wipes it. Hit **Backup → Save
+file (.json)** every week or so — that file also moves your whole board to a new phone. The `.csv`
+opens in Excel, for records and disputes.
 
-After a month of logging, open it. If "size, colour or specs" is a quarter of your tickets, the fix
-isn't replying faster — it's putting the specs in the listing so those messages stop arriving.
-**A ticket you never have to open beats one you close in five minutes.**
+## Files
 
-It also shows your average time to first reply and how many first replies landed after the deadline.
-Those two numbers tell you whether the misses were a tooling problem or a routine problem.
-
-## Backup — please read this one
-
-Your tickets live inside one browser on one computer. **Clearing your browsing data wipes them.**
-There's no cloud copy, because there's no server.
-
-Hit **Backup → Save file (.json)** every week or so. That file also moves your whole board to a new
-computer (Backup → Restore). The .csv export is for records and disputes — it opens in Excel.
-
-If the red warning bar appears at the top, this browser is refusing to save anything. Open the file
-in Chrome or Edge instead.
-
-## If more than one person answers chats
-
-Settings → "People who answer chats", one name per line. Every update you log gets a name attached,
-so you don't get two people replying to the same buyer or everyone assuming the other one did it.
+| File | What it is |
+| --- | --- |
+| `index.html` | The whole app — all logic, styling and storage |
+| `sw.js` | Service worker; makes it work offline. Bump `CACHE` when `index.html` changes |
+| `manifest.webmanifest` | Name, colours and icons for home-screen install |
+| `icons/` | App icons |
 
 ## Not included, on purpose
 
-This does not connect to Shopee. Shopee's API needs a registered partner account, HMAC-signed
-requests, an OAuth flow with token refresh, and a server you pay for — none of which can live inside
-a file on your desktop, because there's nowhere safe to keep the secret key. Direct API access is
-also limited to managed sellers with an assigned account manager.
+No Shopee connection. Shopee's API needs a registered partner account, HMAC-signed requests, an
+OAuth flow with token refresh, and a server you pay for — none of which can live in a static page,
+because there's nowhere safe to keep a secret key. Direct API access is also limited to managed
+sellers with an assigned account manager.
 
-If you want a real connection, that's a third-party platform's job — BigSeller has a permanent free
-tier (1,500 orders/month, 3 stores) and is a Shopee Preferred Partner. Just know that authorising one
-gives it ongoing access to your shop data and your buyer conversations. That's a normal trade-off,
-but it's a real decision, not a formality.
+For a real connection that's a third-party platform's job — BigSeller has a permanent free tier
+(1,500 orders/month, 3 stores) and is a Shopee Preferred Partner. Authorising one gives it ongoing
+access to your shop data and buyer conversations. Normal trade-off, but a real decision.
