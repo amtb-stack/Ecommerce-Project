@@ -1,0 +1,20 @@
+# Local analysis state — yours, not the repo's
+data/
+reports/*
+!reports/.gitkeep
+drop/*
+!drop/.gitkeep
+shopads.config.json
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
