@@ -98,8 +98,19 @@ DEFAULT_CONFIG = {
         "fashion", "mesin jahit", "basikal", "aircond", "mesin rumput",
         "mesin cuci", "baju", "kasut",
     ],
+    "business": {
+        # Fill these in to unlock profit and TACOS analysis. Neither figure
+        # exists in a Shopee ads export, so they have to come from you.
+        # total_shop_revenue: ALL revenue for the same period, ads or not.
+        # contribution_margin: what is left of a sale after product cost,
+        #   shipping, payment fees and returns. 0.35 means 35%.
+        "total_shop_revenue": None,
+        "contribution_margin": None,
+    },
     "thresholds": {
         "min_clicks_for_keyword_candidate": 2,
+        "block_after_impressions": 1000,
+        "ngram_min_spend": 3.0,
         "high_intent_ctr": 0.08,
         "cheap_cpc_ceiling": 0.15,
         "premium_cpc_floor": 0.45,
@@ -127,6 +138,9 @@ def load_config() -> dict:
     thresholds = dict(DEFAULT_CONFIG["thresholds"])
     thresholds.update(user.get("thresholds", {}))
     merged["thresholds"] = thresholds
+    business = dict(DEFAULT_CONFIG["business"])
+    business.update(user.get("business", {}))
+    merged["business"] = business
     return merged
 
 

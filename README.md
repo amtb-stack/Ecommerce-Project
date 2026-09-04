@@ -77,7 +77,12 @@ disagree with a rule and still see the number behind it.
 - **Themes** — where demand actually is, regardless of what you bid on.
 - **Bidding** — whether higher CPCs are buying better traffic, and how much of
   your spend sits in a long tail that never converts.
-- **Action** — queries worth their own keyword, and queries worth blocking.
+- **Phrases** — spend rolled up to every one-, two- and three-word phrase. A word
+  can drain budget across hundreds of queries while looking harmless in each one.
+- **Profit** — profit on ad spend, break-even ROAS and TACOS, once you supply
+  your contribution margin and total shop revenue in the config.
+- **Action** — queries worth their own keyword, queries that have earned a
+  block, and queries worth blocking.
 
 ### On trusting the numbers
 
@@ -103,6 +108,7 @@ CTR, share of voice and waste instead.
 | `themes` | Product categories, as regexes. Drives on-theme spend. |
 | `off_catalogue_patterns` | Things you do not sell. Becomes the negatives list. |
 | `thresholds` | When a finding fires, and what counts as high intent. |
+| `business` | Your contribution margin and total shop revenue. Neither exists in a Shopee export, so both have to come from you — and they unlock the profit section. |
 
 The themes and brand patterns are the two worth getting right first — they
 drive the segment and drift analysis.

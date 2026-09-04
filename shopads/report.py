@@ -183,6 +183,57 @@ def _hbar_svg(rows: list[tuple[str, float, str]], peak: float, width: int = 440)
     return "".join(parts)
 
 
+def _economics_section(economics: dict, totals: dict, cur: str, money) -> str:
+    """Profit and TACOS — only rendered once the shop supplies its own figures."""
+    if not (economics.get("has_margin") or economics.get("has_revenue")):
+        return (
+            '<section><div class="shead"><p class="eyebrow">Profit</p>'
+            "<h2>Two numbers away from profit analysis</h2>"
+            "<p>ROAS counts revenue, and revenue is not profit. Open "
+            '<span class="mono">shopads.config.json</span> and fill in <span class="mono">'
+            'business.contribution_margin</span> (what is left of a sale after product cost, '
+            "shipping, payment fees and returns) and <span class=\"mono\">"
+            "business.total_shop_revenue</span> (all revenue for this period, ads or not). "
+            "The next report will then show profit on ad spend, your break-even ROAS, and "
+            "TACOS.</p></div></section>"
+        )
+
+    tiles = []
+    if economics.get("has_margin"):
+        poas = economics["poas"]
+        tiles += [
+            ("Profit on ad spend", f"{poas:,.1f}×",
+             "above 1.0 makes money" if poas >= 1 else "below 1.0 loses money",
+             "win" if poas >= 1 else "flag"),
+            ("Break-even ROAS", f"{economics['breakeven_roas']:,.1f}×",
+             f"at {economics['contribution_margin']:.0%} margin", ""),
+            ("Contribution", money(economics["contribution"]), "before ad cost", ""),
+            ("Profit after ads", money(economics["profit_after_ads"]),
+             "contribution minus spend",
+             "win" if economics["profit_after_ads"] >= 0 else "flag"),
+        ]
+    if economics.get("has_revenue"):
+        tiles += [
+            ("TACOS", f"{economics['tacos'] * 100:,.2f}%", "spend / all revenue", ""),
+            ("Ad share of revenue", f"{economics['ad_share_of_revenue'] * 100:,.1f}%",
+             "rest is organic", ""),
+        ]
+
+    cells = "".join(
+        f'<div class="kpi"><p class="lab">{_e(label)}</p>'
+        f'<p class="val" style="{"color:var(--good-ink)" if cls == "win" else "color:var(--crit-ink)" if cls == "flag" else ""}">{_e(value)}</p>'
+        f'<p class="sub">{_e(note)}</p></div>'
+        for label, value, note, cls in tiles
+    )
+    return (
+        '<section><div class="shead"><p class="eyebrow">Profit</p>'
+        "<h2>Whether the advertising actually made money</h2>"
+        "<p>ROAS counts revenue. These count what is left after the cost of the goods, and what "
+        "advertising costs against the whole shop rather than only its attributed sales.</p></div>"
+        f'<div class="kpis">{cells}</div></section>'
+    )
+
+
 def render(
     export: Export,
     analysis: Analysis,
@@ -351,6 +402,26 @@ def render(
         max((x["impressions"] for x in analysis.themes), default=0),
     )
 
+    gram = lambda n: [[
+        f'<span class="q">{_e(x["phrase"])}</span>', money(x["spend"]),
+        f'{x["queries"]:,.0f}', _fmt(x["clicks"], "int"), _fmt(x["ctr"], "pct"),
+        f'{x["conversions"]:,.0f}' if x["conversions"] else '<span class="zero">0</span>',
+    ] for x in analysis.ngrams if x["size"] == n][:14]
+    gram1_rows, gram2_rows = gram(1), gram(2)
+
+    dead_rows = [[
+        f'<span class="q">{_e(x["phrase"])}</span>', f'{x["size"]}', money(x["spend"]),
+        f'{x["queries"]:,.0f}', _fmt(x["clicks"], "int"), _fmt(x["ctr"], "pct"),
+    ] for x in analysis.ngrams
+        if x["conversions"] == 0 and x["queries"] >= 5 and x["spend"] >= 5][:20]
+
+    block_rows = [[
+        f'<span class="q">{_e(b["query"])}</span>', _fmt(b["impressions"], "int"),
+        _fmt(b["clicks"], "int"), money(b["spend"]), _fmt(b["ctr"], "pct"),
+    ] for b in analysis.blocklist[:25]]
+
+    economics_block = _economics_section(analysis.economics, t, cur, money)
+
     p = analysis.pareto
     generated = datetime.now().strftime("%d %b %Y, %H:%M")
 
@@ -416,6 +487,30 @@ def render(
   </div>
 </section>
 
+{economics_block}
+
+<section>
+  <div class="shead"><p class="eyebrow">Phrases</p><h2>What single words are costing you</h2>
+  <p>Spend rolled up to every one-, two- and three-word phrase across all
+     {t['queries']:,} search queries. A word can drain budget across hundreds of queries while
+     looking harmless in each one; only this view catches that.</p></div>
+  <div class="grid2">
+    <div class="panel"><h3>Single words</h3>
+      <p class="cap">Ranked by spend. <strong>Queries</strong> is how many distinct searches
+         contained the word.</p>
+      {_table(["Word", "Spend", "Queries", "Clicks", "CTR", "Orders"], gram1_rows)}</div>
+    <div class="panel"><h3>Two-word phrases</h3>
+      <p class="cap">Usually the most actionable level — specific enough to act on, broad enough
+         to matter.</p>
+      {_table(["Phrase", "Spend", "Queries", "Clicks", "CTR", "Orders"], gram2_rows)}</div>
+  </div>
+  <div class="panel"><h3>Phrases that never convert</h3>
+    <p class="cap">Spend across five or more queries, no orders anywhere. Check each against your
+       catalogue: a phrase you do stock needs a listing fix, one you don't is a negative.</p>
+    {_table(["Phrase", "Words", "Spend", "Queries", "Clicks", "CTR"], dead_rows,
+            "Every phrase with meaningful spend has converted at least once.")}</div>
+</section>
+
 <section>
   <div class="shead"><p class="eyebrow">Bidding</p><h2>Price, concentration and the tail</h2>
   <p>{p.get('queries_for_50pct', 0):,} queries carry half your spend, out of
@@ -448,6 +543,12 @@ def render(
       <p class="cap">Matched your off-catalogue patterns and returned nothing. Safe negatives.</p>
       {_table(["Query", "Impr.", "Clicks", "Spend"], neg_rows, "No off-catalogue spend found.")}</div>
   </div>
+  <div class="panel"><h3>Queries that have earned a block</h3>
+    <p class="cap">Shown at least {int(config['thresholds'].get('block_after_impressions', 1000)):,}
+       times each and never converted. A term with that much exposure and no order has answered
+       the question — this is the safest negative list in the report.</p>
+    {_table(["Query", "Impr.", "Clicks", "Spend", "CTR"], block_rows,
+            "No query has passed the impression threshold without converting.")}</div>
   <div class="panel"><h3>Every order in the period</h3>
     <p class="cap">The keyword you bid on beside the query the shopper typed. A wide gap between
        the two is broad-match drift, not a keyword that earned the sale.</p>

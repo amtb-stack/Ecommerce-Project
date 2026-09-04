@@ -216,6 +216,87 @@ def test_analysis_survives_an_export_with_no_conversions(tmp_path, config):
     assert analysis.winners == []
 
 
+# ------------------------------------------------- phrases and economics ---
+
+def test_ngrams_roll_spend_up_to_phrases(export_file, config):
+    config = {**config, "thresholds": {**config["thresholds"], "ngram_min_spend": 0.0}}
+    ngrams = analyse(read_export(export_file), config).ngrams
+    by_phrase = {(n["size"], n["phrase"]): n for n in ngrams}
+
+    # "oven" appears in "steam oven" (10.00). "mesin tebu" carries no oven word.
+    assert by_phrase[(1, "oven")]["spend"] == pytest.approx(10.0)
+    # "mixer" appears in "the baker mixer" only, at 5.00.
+    assert by_phrase[(1, "mixer")]["spend"] == pytest.approx(5.0)
+    # Two- and three-word phrases are built as well.
+    assert (2, "baker mixer") in by_phrase
+    assert (3, "the baker mixer") in by_phrase
+    # Words of three letters and up are kept, deliberately: no stopword list.
+    # "the" is retained because for this shop it is half the brand name, and a
+    # stopword filter would erase the strongest brand signal in the data.
+    assert (1, "the") in by_phrase
+    assert (2, "the baker") in by_phrase
+    # One- and two-letter noise is dropped.
+    assert not any(len(n["phrase"]) <= 2 for n in ngrams if n["size"] == 1)
+
+
+def test_ngram_counts_each_query_once_per_phrase(tmp_path, config):
+    rows = [["1", "kw", "Broad Match", "oven oven oven", "1.00%", "100", "10", "10.00%",
+             "0", "0", "0", "0.00", "0.00", "4.00", "0.00", "0.00%", "100", "0", "0.00%"]]
+    config = {**config, "thresholds": {**config["thresholds"], "ngram_min_spend": 0.0}}
+    ngrams = analyse(read_export(_write_export(tmp_path / "rep.csv", rows=rows)), config).ngrams
+    oven = next(n for n in ngrams if n["size"] == 1 and n["phrase"] == "oven")
+    assert oven["spend"] == pytest.approx(4.0)   # not 12.0
+    assert oven["queries"] == 1
+
+
+def test_blocklist_needs_impressions_not_just_spend(export_file, config):
+    config = {**config, "thresholds": {**config["thresholds"], "block_after_impressions": 400}}
+    blocked = {b["query"] for b in analyse(read_export(export_file), config).blocklist}
+    assert "mesin tebu" in blocked          # 500 impressions, no conversion
+    assert "steam oven" not in blocked      # 1000 impressions but it converted
+    assert "the baker mixer" not in blocked  # only 200 impressions
+
+
+def test_economics_absent_without_shop_figures(export_file, config):
+    economics = analyse(read_export(export_file), config).economics
+    assert economics["has_margin"] is False
+    assert economics["has_revenue"] is False
+    assert "poas" not in economics
+
+
+def test_economics_computes_profit_and_tacos(export_file, config):
+    config = {**config, "business": {"total_shop_revenue": 8000.0, "contribution_margin": 0.25}}
+    economics = analyse(read_export(export_file), config).economics
+    # Ad GMV 2000 x 25% margin = 500 contribution, on 20 of spend.
+    assert economics["contribution"] == pytest.approx(500.0)
+    assert economics["poas"] == pytest.approx(25.0)
+    assert economics["profit_after_ads"] == pytest.approx(480.0)
+    assert economics["breakeven_roas"] == pytest.approx(4.0)
+    assert economics["tacos"] == pytest.approx(20.0 / 8000.0)
+    assert economics["organic_revenue"] == pytest.approx(6000.0)
+
+
+def test_incrementality_finding_fires_on_branded_spend(export_file, config):
+    titles = " ".join(f["title"] for f in analyse(read_export(export_file), config).findings)
+    assert "incremental" in titles
+
+
+def test_retail_readiness_finding_tracks_product_ctr(tmp_path, config):
+    # The shared fixture converts tiles at 15/3500 = 0.43%, above the 0.40%
+    # gate, so the finding correctly stays silent there.
+    baseline = " ".join(f["title"] for f in analyse(read_export(_write_export(
+        tmp_path / "ok.csv")), config).findings)
+    assert "retail-ready" not in baseline
+
+    # Drop the tile clicks and it must fire.
+    rows = [r[:] for r in ROWS]
+    for row in rows:
+        row[17] = "0"     # Product Clicks
+    poor = " ".join(f["title"] for f in analyse(read_export(_write_export(
+        tmp_path / "poor.csv", rows=rows)), config).findings)
+    assert "retail-ready" in poor
+
+
 # ----------------------------------------------------------------- store ---
 
 def test_run_is_stored_and_deduplicated(tmp_path, export_file, config):

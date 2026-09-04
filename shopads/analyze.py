@@ -47,8 +47,11 @@ class Analysis:
     negatives: list[dict] = field(default_factory=list)
     candidates: list[dict] = field(default_factory=list)
     findings: list[dict] = field(default_factory=list)
+    ngrams: list[dict] = field(default_factory=list)
+    blocklist: list[dict] = field(default_factory=list)
     pareto: dict[str, Any] = field(default_factory=dict)
     confidence: dict[str, Any] = field(default_factory=dict)
+    economics: dict[str, Any] = field(default_factory=dict)
 
 
 def analyse(export: Export, config: dict) -> Analysis:
@@ -78,6 +81,9 @@ def analyse(export: Export, config: dict) -> Analysis:
     result.negatives = _negatives(query_table, config)
     result.candidates = _candidates(query_table, thresholds)
     result.confidence = _confidence(frame, thresholds)
+    result.ngrams = _ngrams(query_table, thresholds)
+    result.blocklist = _blocklist(query_table, thresholds)
+    result.economics = _economics(result.totals, config)
     result.findings = _findings(result, config)
     return result
 
@@ -447,6 +453,109 @@ def _confidence(frame: pd.DataFrame, thresholds: dict) -> dict:
     }
 
 
+def _ngrams(queries: pd.DataFrame, thresholds: dict) -> list[dict]:
+    """Aggregate spend by 1-, 2- and 3-word phrases across all search queries.
+
+    A single word can quietly drain budget across hundreds of queries while
+    looking harmless in every one of them individually. Rolling spend up to
+    the phrase is how agencies find that; per-query tables cannot show it.
+    """
+    if queries.empty:
+        return []
+
+    min_spend = float(thresholds.get("ngram_min_spend", 3.0))
+    buckets: dict[tuple[int, str], dict[str, float]] = {}
+
+    for row in queries.itertuples(index=False):
+        words = [w for w in re.findall(r"[^\W\d_]+", str(row.query).lower()) if len(w) > 2]
+        seen: set[tuple[int, str]] = set()
+        for size in (1, 2, 3):
+            for i in range(len(words) - size + 1):
+                key = (size, " ".join(words[i : i + size]))
+                if key in seen:      # count each query once per distinct phrase
+                    continue
+                seen.add(key)
+                bucket = buckets.setdefault(
+                    key, {"spend": 0.0, "clicks": 0.0, "impressions": 0.0,
+                          "conversions": 0.0, "gmv": 0.0, "queries": 0.0}
+                )
+                bucket["spend"] += float(row.spend)
+                bucket["clicks"] += float(row.clicks)
+                bucket["impressions"] += float(row.impressions)
+                bucket["conversions"] += float(row.conversions)
+                bucket["gmv"] += float(row.gmv)
+                bucket["queries"] += 1
+
+    rows = [
+        {
+            "size": size, "phrase": phrase, **totals,
+            "ctr": _safe_div(totals["clicks"], totals["impressions"]),
+            "cpc": _safe_div(totals["spend"], totals["clicks"]),
+            "roas": _safe_div(totals["gmv"], totals["spend"]),
+        }
+        for (size, phrase), totals in buckets.items()
+        if totals["spend"] >= min_spend
+    ]
+    return sorted(rows, key=lambda r: r["spend"], reverse=True)[:150]
+
+
+def _blocklist(queries: pd.DataFrame, thresholds: dict) -> list[dict]:
+    """Queries that have had a fair hearing and never converted.
+
+    Shopee's own guidance is to negative-match a term once it has passed an
+    impression threshold with no conversion. Impressions rather than clicks,
+    because a term can be shown thousands of times, be ignored, and still be
+    telling you it is the wrong term.
+    """
+    if queries.empty:
+        return []
+    floor = float(thresholds.get("block_after_impressions", 1000))
+    ready = queries[(queries["impressions"] >= floor) & (queries["conversions"] <= 0)]
+    return [
+        {
+            "query": row["query"], "impressions": float(row["impressions"]),
+            "clicks": float(row["clicks"]), "spend": float(row["spend"]),
+            "ctr": float(row["ctr"]),
+        }
+        for _, row in ready.sort_values("spend", ascending=False).head(40).iterrows()
+    ]
+
+
+def _economics(totals: dict, config: dict) -> dict:
+    """TACOS and profit-on-ad-spend, when the shop's own figures are supplied.
+
+    ROAS answers "did the ad channel look efficient". Neither of these can be
+    read off an ads export alone, which is why the two inputs live in the
+    config: total shop revenue for the period, and contribution margin.
+    """
+    business = config.get("business") or {}
+    revenue = business.get("total_shop_revenue")
+    margin = business.get("contribution_margin")
+    spend, ad_gmv = totals["spend"], totals["gmv"]
+
+    result: dict[str, Any] = {
+        "has_revenue": revenue not in (None, "", 0),
+        "has_margin": margin not in (None, ""),
+        "total_shop_revenue": float(revenue) if revenue else None,
+        "contribution_margin": float(margin) if margin not in (None, "") else None,
+    }
+
+    if result["has_revenue"]:
+        revenue = float(revenue)
+        result["tacos"] = _safe_div(spend, revenue)
+        result["ad_share_of_revenue"] = _safe_div(ad_gmv, revenue)
+        result["organic_revenue"] = max(revenue - ad_gmv, 0.0)
+
+    if result["has_margin"]:
+        margin = float(margin)
+        # Profit on ad spend: contribution earned per unit of ad spend.
+        result["poas"] = _safe_div(ad_gmv * margin, spend)
+        result["contribution"] = ad_gmv * margin
+        result["profit_after_ads"] = ad_gmv * margin - spend
+        result["breakeven_roas"] = 1.0 / margin if margin > 0 else None
+    return result
+
+
 def _findings(result: Analysis, config: dict) -> list[dict]:
     """Plain-language findings, each carrying the number that triggered it."""
     totals, confidence = result.totals, result.confidence
@@ -533,6 +642,72 @@ def _findings(result: Analysis, config: dict) -> list[dict]:
         add("warning", f"{len(result.negatives)} off-catalogue queries took spend",
             f"{currency}{total:,.2f} on terms matching your off-catalogue list. Load these as "
             "phrase negatives.")
+
+    # -- practices borrowed from mature retail-media operators ------------
+    economics = result.economics
+    if economics.get("has_margin"):
+        breakeven = economics.get("breakeven_roas") or 0
+        poas = economics.get("poas") or 0
+        level = "good" if poas >= 1 else "critical"
+        add(level, f"Profit on ad spend is {poas:.1f}x",
+            f"At a {economics['contribution_margin']:.0%} contribution margin, "
+            f"{currency}{economics['contribution']:,.2f} of contribution came from "
+            f"{currency}{totals['spend']:,.2f} of spend, leaving "
+            f"{currency}{economics['profit_after_ads']:,.2f} after ad cost. Your break-even "
+            f"ROAS is {breakeven:.1f}x — below that a sale loses money however good the "
+            "ROAS looks.")
+    else:
+        add("info", "Add your margin to see profit, not just revenue",
+            "ROAS counts revenue, which is not profit. Put your contribution margin into "
+            "shopads.config.json under \"business\" and this report will show profit on ad "
+            "spend and your break-even ROAS instead.")
+
+    if economics.get("has_revenue"):
+        add("info", f"TACOS is {economics['tacos']:.2%}",
+            f"Ad spend against total shop revenue of "
+            f"{currency}{economics['total_shop_revenue']:,.2f}, of which "
+            f"{currency}{economics['organic_revenue']:,.2f} was not ad-attributed. Falling TACOS "
+            "across exports means advertising is building organic demand; flat or rising means "
+            "you are renting the traffic.")
+
+    brand = next((s for s in result.segments if s["segment"] == "Branded"), None)
+    if brand and brand["spend"] > 0 and brand["conversions"] > 0:
+        add("warning", "Test whether branded ads are actually incremental",
+            f"Branded queries show {brand['roas']:.1f}x on "
+            f"{currency}{brand['spend']:,.2f}. When eBay switched its branded search ads off in a "
+            "controlled experiment, 99.5% of the paid clicks simply came back through organic "
+            "results — the shoppers were already looking for them. Pause your brand keywords for "
+            "two weeks and watch total orders, not ad orders. If nothing drops, that budget is "
+            "buying traffic you already had.")
+
+    if totals["product_impressions"] and totals["product_ctr"] < thresholds["target_product_ctr"]:
+        add("warning", "Not retail-ready: fix the listing before spending more",
+            "Large marketplace sellers gate ad spend behind a listing-quality check, because ads "
+            "amplify whatever conversion rate a listing already has. At a "
+            f"{totals['product_ctr']:.3%} tile click rate, more budget buys more of the same "
+            "outcome. Images, price legibility, review count and stock status are the levers.")
+
+    if result.blocklist:
+        blocked_spend = sum(b["spend"] for b in result.blocklist)
+        floor = int(thresholds.get("block_after_impressions", 1000))
+        plural = "query has" if len(result.blocklist) == 1 else "queries have"
+        add("warning", f"{len(result.blocklist)} {plural} earned a block",
+            f"Each was shown at least {floor:,} times and never converted, costing "
+            f"{currency}{blocked_spend:,.2f} between them. A term with that much exposure and no "
+            "order has answered the question.")
+
+    dead_phrases = [
+        n for n in result.ngrams
+        if n["conversions"] == 0 and n["queries"] >= 5 and n["spend"] >= 5
+    ]
+    if dead_phrases:
+        worst = dead_phrases[0]
+        total = sum(n["spend"] for n in dead_phrases if n["size"] == 1)
+        add("warning", f"{len(dead_phrases)} phrases spend across many queries and never convert",
+            f"Worst is \u201c{worst['phrase']}\u201d: {currency}{worst['spend']:,.2f} spread over "
+            f"{worst['queries']:,.0f} different queries with no order. Single words alone account "
+            f"for {currency}{total:,.2f}. No individual query looks bad enough to catch this — "
+            "only rolling spend up to the phrase does.")
 
     order = {"critical": 0, "warning": 1, "good": 2, "info": 3}
     return sorted(findings, key=lambda f: order.get(f["level"], 9))
