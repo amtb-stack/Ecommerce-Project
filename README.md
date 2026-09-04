@@ -12,9 +12,10 @@ Nothing leaves your machine. No API keys, no accounts, no network calls.
 
 ## Quick start (Windows)
 
-1. Install [Python 3.10+](https://www.python.org/downloads/) — tick
-   **"Add Python to PATH"** during install.
-2. Double-click **`Setup.bat`** (once).
+1. Install [Python 3.10 or newer](https://www.python.org/downloads/) — tick
+   **"Add python.exe to PATH"** on the installer's first screen.
+2. Double-click **`Setup.bat`** (once). It checks your Python, installs what
+   it needs, and finishes by proving the install works.
 3. Double-click **`Start-Watcher.bat`** and leave the window open.
 4. Drag your Shopee export into the **`drop`** folder.
 
@@ -28,6 +29,16 @@ A report lands in `reports/` a second later. That's the whole loop.
 | `Start-Watcher.bat` | Watches `drop/` until you close the window. |
 | `Analyse-Now.bat` | Processes whatever is waiting, then exits. You can also **drag files onto it**. |
 | `History.bat` | Lists every export analysed so far. |
+| `Check-Setup.bat` | Diagnoses your setup and explains anything wrong, in plain English. |
+
+### Python version
+
+Anything from **3.10 to 3.14** works. On 3.14 the version floors in
+`requirements.txt` matter: numpy 2.5.0 and pandas 3.0.2 were the first releases
+to ship ready-built 3.14 packages, and without those floors pip may try to
+*compile* an older release from source — which fails on a normal Windows
+machine. The floors are set with version markers, so older Pythons are
+unaffected.
 
 ## Quick start (macOS / Linux)
 
@@ -44,6 +55,7 @@ python -m shopads watch                    # watch drop/ until Ctrl+C
 python -m shopads once                     # process what's waiting, then exit
 python -m shopads analyze report.csv --open  # analyse a file in place and open it
 python -m shopads history --limit 40       # list stored runs
+python -m shopads doctor                   # check the setup, explain problems
 python -m shopads where                    # print the folders in use
 ```
 
@@ -109,6 +121,12 @@ double-counted.
 
 A file that cannot be read is moved to `drop/failed/` with the reason printed;
 successfully analysed files move to `drop/processed/`.
+
+## When something goes wrong
+
+Run **`Check-Setup.bat`** (or `python -m shopads doctor`). It checks your
+Python version, the installed components, folder permissions and the history
+database, then prints exactly what to do about anything it finds.
 
 ## Known limits
 

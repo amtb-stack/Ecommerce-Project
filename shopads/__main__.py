@@ -8,6 +8,7 @@ import webbrowser
 from pathlib import Path
 
 from . import __version__, store
+from .doctor import run as run_doctor
 from .config import DB_PATH, DROP_DIR, REPORT_DIR, CONFIG_PATH, ensure_dirs
 from .pipeline import process_file
 from .watch import run_once, watch
@@ -54,6 +55,10 @@ def _cmd_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_doctor(_: argparse.Namespace) -> int:
+    return run_doctor()
+
+
 def _cmd_where(_: argparse.Namespace) -> int:
     ensure_dirs()
     print(f"drop folder : {DROP_DIR}")
@@ -91,6 +96,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_history.add_argument("--limit", type=int, default=25)
     p_history.set_defaults(func=_cmd_history)
 
+    sub.add_parser(
+        "doctor", help="check the setup and explain anything that is wrong"
+    ).set_defaults(func=_cmd_doctor)
     sub.add_parser("where", help="print the folders this tool uses").set_defaults(func=_cmd_where)
     return parser
 

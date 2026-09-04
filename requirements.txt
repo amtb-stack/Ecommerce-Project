@@ -1,3 +1,15 @@
-pandas>=2.0
-numpy>=1.24
+# Version floors are chosen so that pip always finds a ready-built wheel.
+# Without them, pip may pick an older release that has to be COMPILED from
+# source, which fails on a normal Windows machine with a wall of C errors.
+#
+# numpy 2.5.0 and pandas 3.0.2 are the first releases shipping Python 3.14
+# builds; the markers keep older Pythons working on the older floors.
+
+numpy>=2.5.0; python_version >= "3.14"
+numpy>=1.24; python_version < "3.14"
+
+pandas>=3.0.2; python_version >= "3.14"
+pandas>=2.0; python_version < "3.14"
+
+# Pure Python - one wheel works on every version.
 openpyxl>=3.1
