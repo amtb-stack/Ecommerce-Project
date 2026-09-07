@@ -65,9 +65,15 @@ PowerShell users can call `.\bin\shopads.ps1 <command>` instead.
 
 ## What the report tells you
 
+Every metric carries a small **i** button. Hover it (or tap, on a phone) and it
+explains in plain words what the number is, how it was worked out, why it
+matters and what a healthy value looks like — so someone who has never run an
+ad account can read the report unaided. Press Escape to dismiss.
+
 Findings are generated with the figure that triggered each one, so you can
 disagree with a rule and still see the number behind it.
 
+- **Read this first** — how to use the report, and what the severity colours mean.
 - **Diagnosis** — automatic findings graded *fix now / watch / strength / note*.
 - **Trend** — every headline metric against your previous export.
 - **Keywords** — including **on-theme spend**: the share of a keyword's budget

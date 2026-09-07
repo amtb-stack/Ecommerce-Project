@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .analyze import Analysis
+from .glossary import tip as glossary_tip
 from .ingest import Export
 
 # Validated categorical + ordinal steps (light / dark), see docs/DESIGN.md.
@@ -49,7 +50,8 @@ header.mast{padding:52px 0 0}
 h1{font-size:clamp(30px,4.6vw,46px);font-weight:700;letter-spacing:-.022em;line-height:1.06;margin:12px 0 0}
 .dek{font-size:18px;color:var(--ink-2);max-width:62ch;margin:16px 0 0}
 .plate{margin-top:26px;display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);
- border-radius:3px;overflow:hidden;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+ border-radius:3px;overflow:hidden;grid-template-columns:repeat(4,1fr)}
+@media(max-width:820px){.plate{grid-template-columns:repeat(2,1fr)}}
 .plate div{background:var(--surface);padding:10px 13px}
 .plate dt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.13em;
  text-transform:uppercase;color:var(--muted);margin:0}
@@ -116,6 +118,118 @@ tr:last-child td{border-bottom:none}
 .foot p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6}
 .foot b{color:var(--ink-2)}
 .empty{color:var(--muted);font-size:13px;font-style:italic}
+/* the little "i" that explains a metric */
+.i{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+ border-radius:50%;border:1px solid var(--muted);background:transparent;color:var(--muted);
+ font-family:"IBM Plex Sans",sans-serif;font-size:10px;font-weight:700;font-style:italic;
+ line-height:1;padding:0;margin-left:6px;cursor:help;flex:none;vertical-align:middle;
+ transition:color .12s,border-color .12s,background .12s}
+.i:hover,.i:focus-visible{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.i[aria-expanded="true"]{border-color:var(--accent);color:var(--surface);background:var(--accent)}
+th .i{margin-left:5px}
+.kpi .lab{display:flex;align-items:center}
+#tip{position:fixed;z-index:90;pointer-events:none;opacity:0;visibility:hidden;
+ transition:opacity .12s;width:max-content;max-width:min(340px,calc(100vw - 24px));
+ background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:5px;
+ padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:13px;line-height:1.55;
+ text-align:left;left:0;top:0}
+#tip.on{opacity:1;visibility:visible}
+#tip b{display:block;font-family:Archivo,sans-serif;font-size:13.5px;font-weight:600;
+ margin-bottom:2px;color:var(--ink)}
+#tip .tl{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:500;
+ letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+/* how-to-read opener */
+.howto{margin-top:16px;background:var(--surface);border:1px solid var(--rule);border-radius:4px;
+ box-shadow:var(--shadow);overflow:hidden}
+.howto>header{padding:17px 22px 15px;border-bottom:1px solid var(--rule)}
+.howto h2{font-size:18px;font-weight:600;letter-spacing:-.012em}
+.howto>header p{margin:6px 0 0;font-size:14px;color:var(--ink-2);max-width:76ch}
+.howto .grid{display:grid;gap:1px;background:var(--rule);grid-template-columns:repeat(3,1fr)}
+@media(max-width:820px){.howto .grid{grid-template-columns:1fr}}
+.howto .grid>div{background:var(--surface);padding:16px 22px}
+.howto .grid h3{font-size:13.5px;font-weight:600;display:flex;align-items:baseline;gap:8px}
+.howto .grid h3 em{font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:10px;
+ color:var(--accent);letter-spacing:.1em}
+.howto .grid p{margin:6px 0 0;font-size:13.5px;color:var(--ink-2)}
+.legendrow{display:flex;flex-wrap:wrap;gap:10px;padding:14px 22px;background:var(--surface);
+ border-top:1px solid var(--rule);align-items:center}
+.legendrow span:not(.tagx){font-size:13px;color:var(--ink-2)}
+"""
+
+TOOLTIP_HTML = """<div id="tip" role="tooltip"></div>
+<script>
+(function () {
+  "use strict";
+  var tip = document.getElementById("tip");
+  var pinned = null;
+
+  function place(button) {
+    var r = button.getBoundingClientRect();
+    var t = tip.getBoundingClientRect();
+    var pad = 10;
+    var left = r.left;
+    var top = r.bottom + 8;
+    if (left + t.width > window.innerWidth - pad) {
+      left = Math.max(pad, window.innerWidth - t.width - pad);
+    }
+    if (top + t.height > window.innerHeight - pad) {
+      top = r.top - t.height - 8;           // flip above when there is no room below
+    }
+    if (top < pad) { top = pad; }
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+
+  function show(button) {
+    tip.innerHTML = button.getAttribute("data-tip");
+    tip.classList.add("on");
+    place(button);
+    button.setAttribute("aria-expanded", "true");
+  }
+
+  function hide(button) {
+    tip.classList.remove("on");
+    if (button) { button.setAttribute("aria-expanded", "false"); }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(".i"), function (button) {
+    button.addEventListener("mouseenter", function () {
+      if (!pinned) { show(button); }
+    });
+    button.addEventListener("mouseleave", function () {
+      if (pinned !== button) { hide(button); }
+    });
+    button.addEventListener("focus", function () { show(button); });
+    button.addEventListener("blur", function () {
+      if (pinned !== button) { hide(button); }
+    });
+    // Tap to pin on touch screens, where there is no hover.
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (pinned === button) {
+        pinned = null;
+        hide(button);
+      } else {
+        if (pinned) { hide(pinned); }
+        pinned = button;
+        show(button);
+      }
+    });
+  });
+
+  document.addEventListener("click", function () {
+    if (pinned) { hide(pinned); pinned = null; }
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") { return; }
+    if (pinned) { hide(pinned); pinned = null; } else { hide(document.activeElement); }
+  });
+  window.addEventListener("scroll", function () {
+    if (pinned) { place(pinned); }
+  }, { passive: true });
+})();
+</script>
 """
 
 _LEVEL_LABEL = {"critical": "Fix now", "warning": "Watch", "good": "Strength", "info": "Note"}
@@ -145,10 +259,24 @@ def _fmt(value: float, kind: str = "num", currency: str = "RM") -> str:
     return f"{value:,.2f}"
 
 
-def _table(headers: list[str], rows: list[list[str]], empty: str = "No rows.") -> str:
+def _info(key: str) -> str:
+    """A small "i" button carrying the plain-language explanation of a metric."""
+    text = glossary_tip(key)
+    if not text:
+        return ""
+    return (
+        f'<button type="button" class="i" aria-label="What this means" '
+        f'aria-expanded="false" data-tip="{html.escape(text, quote=True)}">i</button>'
+    )
+
+
+def _table(headers, rows: list[list[str]], empty: str = "No rows.") -> str:
     if not rows:
         return f'<p class="empty">{_e(empty)}</p>'
-    head = "".join(f"<th>{_e(h)}</th>" for h in headers)
+    head = "".join(
+        f"<th>{_e(h[0])}{_info(h[1])}</th>" if isinstance(h, tuple) else f"<th>{_e(h)}</th>"
+        for h in headers
+    )
     body = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>" for r in rows)
     return f'<div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
 
@@ -204,30 +332,31 @@ def _economics_section(economics: dict, totals: dict, cur: str, money) -> str:
         tiles += [
             ("Profit on ad spend", f"{poas:,.1f}×",
              "above 1.0 makes money" if poas >= 1 else "below 1.0 loses money",
-             "win" if poas >= 1 else "flag"),
+             "win" if poas >= 1 else "flag", "poas"),
             ("Break-even ROAS", f"{economics['breakeven_roas']:,.1f}×",
-             f"at {economics['contribution_margin']:.0%} margin", ""),
-            ("Contribution", money(economics["contribution"]), "before ad cost", ""),
+             f"at {economics['contribution_margin']:.0%} margin", "", "breakeven_roas"),
+            ("Contribution", money(economics["contribution"]), "before ad cost",
+             "", "contribution_margin"),
             ("Profit after ads", money(economics["profit_after_ads"]),
              "contribution minus spend",
-             "win" if economics["profit_after_ads"] >= 0 else "flag"),
+             "win" if economics["profit_after_ads"] >= 0 else "flag", "poas"),
         ]
     if economics.get("has_revenue"):
         tiles += [
-            ("TACOS", f"{economics['tacos'] * 100:,.2f}%", "spend / all revenue", ""),
+            ("TACOS", f"{economics['tacos'] * 100:,.2f}%", "spend / all revenue", "", "tacos"),
             ("Ad share of revenue", f"{economics['ad_share_of_revenue'] * 100:,.1f}%",
-             "rest is organic", ""),
+             "rest is organic", "", "tacos"),
         ]
 
     cells = "".join(
-        f'<div class="kpi"><p class="lab">{_e(label)}</p>'
+        f'<div class="kpi"><p class="lab">{_e(label)}{_info(key)}</p>'
         f'<p class="val" style="{"color:var(--good-ink)" if cls == "win" else "color:var(--crit-ink)" if cls == "flag" else ""}">{_e(value)}</p>'
         f'<p class="sub">{_e(note)}</p></div>'
-        for label, value, note, cls in tiles
+        for label, value, note, cls, key in tiles
     )
     return (
         '<section><div class="shead"><p class="eyebrow">Profit</p>'
-        "<h2>Whether the advertising actually made money</h2>"
+        f"<h2>Whether the advertising actually made money{_info('poas')}</h2>"
         "<p>ROAS counts revenue. These count what is left after the cost of the goods, and what "
         "advertising costs against the whole shop rather than only its attributed sales.</p></div>"
         f'<div class="kpis">{cells}</div></section>'
@@ -264,32 +393,32 @@ def render(
 
     trend_by_metric = {d["metric"]: d for d in trend}
 
-    def kpi(label, value, sub, metric=None, flag=""):
+    def kpi(label, value, sub, metric=None, tip_key=None):
         note, cls = sub, ""
         if metric and metric in trend_by_metric:
             d = trend_by_metric[metric]
             sign = "+" if d["delta"] >= 0 else ""
             note = f"{sign}{d['delta']:.1f}{d['unit']} vs last"
             cls = d["verdict"] if d["verdict"] in {"better", "worse"} else ""
-        return (f'<div class="kpi"><p class="lab">{_e(label)}</p>'
-                f'<p class="val"{flag}>{value}</p>'
+        return (f'<div class="kpi"><p class="lab">{_e(label)}{_info(tip_key or metric or "")}</p>'
+                f'<p class="val">{value}</p>'
                 f'<p class="sub {cls}">{_e(note)}</p></div>')
 
     kpis = "".join([
-        kpi("Spend", _fmt(t["spend"], "money0", cur), f"{money(t['spend_per_day'])} / day", "spend"),
-        kpi("GMV", _fmt(t["gmv"], "money0", cur), f"direct {_fmt(t['direct_gmv'], 'money0', cur)}", "gmv"),
-        kpi("ROAS", _fmt(t["roas"], "x"), f"CI {c['roas_low']:.1f}–{c['roas_high']:.1f}", "roas"),
-        kpi("ACOS", _fmt(t["acos"], "pct"), "spend / GMV", "acos"),
-        kpi("AOV", _fmt(t["aov"], "money0", cur) if t["conversions"] else "—", "per order"),
+        kpi("Spend", _fmt(t["spend"], "money0", cur), f"{money(t['spend_per_day'])} / day", "spend", "cpc"),
+        kpi("GMV", _fmt(t["gmv"], "money0", cur), f"direct {_fmt(t['direct_gmv'], 'money0', cur)}", "gmv", "gmv"),
+        kpi("ROAS", _fmt(t["roas"], "x"), f"CI {c['roas_low']:.1f}–{c['roas_high']:.1f}", "roas", "roas"),
+        kpi("ACOS", _fmt(t["acos"], "pct"), "spend / GMV", "acos", "acos"),
+        kpi("AOV", _fmt(t["aov"], "money0", cur) if t["conversions"] else "—", "per order", None, "aov"),
         kpi("Cost / order", money(t["cpa"]) if t["conversions"] else "—",
-            "n too small" if not c["reliable"] else "per order"),
-        kpi("Impressions", _fmt(t["impressions"], "int"), f"{t['rows']:,} rows", "impressions"),
-        kpi("Share of voice", _fmt(t["sov"], "pct"), "impression-weighted", "sov"),
-        kpi("CTR", _fmt(t["ctr"], "pct"), f"{_fmt(t['clicks'], 'int')} clicks", "ctr"),
-        kpi("Conv. rate", _fmt(t["cvr"], "pct"), f"{t['conversions']:,.0f} orders", "cvr"),
-        kpi("CPC", money(t["cpc"]), "per click", "cpc"),
+            "n too small" if not c["reliable"] else "per order", None, "cpa"),
+        kpi("Impressions", _fmt(t["impressions"], "int"), f"{t['rows']:,} rows", "impressions", "impressions"),
+        kpi("Share of voice", _fmt(t["sov"], "pct"), "impression-weighted", "sov", "sov"),
+        kpi("CTR", _fmt(t["ctr"], "pct"), f"{_fmt(t['clicks'], 'int')} clicks", "ctr", "ctr"),
+        kpi("Conv. rate", _fmt(t["cvr"], "pct"), f"{t['conversions']:,.0f} orders", "cvr", "cvr"),
+        kpi("CPC", money(t["cpc"]), "per click", "cpc", "cpc"),
         kpi("Product CTR", _fmt(t["product_ctr"], "pct3"),
-            f"{t['product_clicks']:,.0f} tile clicks", "product_ctr"),
+            f"{t['product_clicks']:,.0f} tile clicks", "product_ctr", "product_ctr"),
     ])
 
     # -- trend strip ------------------------------------------------------
@@ -422,6 +551,12 @@ def render(
 
     economics_block = _economics_section(analysis.economics, t, cur, money)
 
+    _INFO_POAS = _info("poas")
+    _INFO_NGRAM = _info("ngram")
+    _INFO_ONTHEME = _info("on_theme_spend")
+    _INFO_SEGMENT = _info("segment")
+    _INFO_CONC = _info("spend_concentration")
+
     p = analysis.pareto
     generated = datetime.now().strftime("%d %b %Y, %H:%M")
 
@@ -444,6 +579,33 @@ def render(
 
 <div class="kpis">{kpis}</div>
 
+<div class="howto">
+  <header>
+    <h2>New to this report? Read this first.</h2>
+    <p>Every number here comes from your own Shopee export. You do not need to understand
+       advertising to use it &mdash; hover the small <span class="mono">i</span> beside any metric and
+       it explains, in plain words, what the number is, how it was worked out, why it matters and
+       what a healthy value looks like. On a phone, tap it instead.</p>
+  </header>
+  <div class="grid">
+    <div><h3><em>1</em>Start with the diagnosis</h3>
+      <p>The next section lists what is wrong and what is working, worst first. If you only read one
+         part of this report, read that one. Everything below it is the supporting evidence.</p></div>
+    <div><h3><em>2</em>Trust rates, not totals</h3>
+      <p>A big spend number means nothing on its own. The rates &mdash; click-through, conversion,
+         cost per click &mdash; are what tell you whether the money worked.</p></div>
+    <div><h3><em>3</em>Compare to yourself</h3>
+      <p>Ignore what other shops achieve. The useful comparison is this export against your last one,
+         which appears automatically from your second export onward.</p></div>
+  </div>
+  <div class="legendrow">
+    <span class="tagx critical">Fix now</span><span>costing you money or misleading you</span>
+    <span class="tagx warning">Watch</span><span>worth acting on soon</span>
+    <span class="tagx good">Strength</span><span>keep doing it</span>
+    <span class="tagx info">Note</span><span>context, no action needed</span>
+  </div>
+</div>
+
 <section>
   <div class="shead"><p class="eyebrow">Diagnosis</p><h2>What this export is telling you</h2>
   <p>Findings are generated from thresholds in <span class="mono">shopads.config.json</span>.
@@ -455,23 +617,26 @@ def render(
 {trend_block}
 
 <section>
-  <div class="shead"><p class="eyebrow">Keywords</p><h2>Where the money went</h2>
+  <div class="shead"><p class="eyebrow">Keywords</p><h2>Where the money went{_INFO_ONTHEME}</h2>
   <p><strong>On-theme</strong> is the share of a keyword&rsquo;s budget that reached queries in its
      own product category. Below 20&percnt; the keyword is not targeting its subject &mdash; it is a
      broad-match funnel wearing a product name.</p></div>
   <div class="panel">
-    {_table(["Keyword", "Spend", "", "On-theme", "CTR", "CPC", "GMV", "Orders", "ROAS", "Queries"], kw_rows)}
+    {_table(["Keyword", "Spend", "", ("On-theme", "on_theme_spend"), ("CTR", "ctr"),
+            ("CPC", "cpc"), ("GMV", "gmv"), ("Orders", "conversions"), ("ROAS", "roas"),
+            "Queries"], kw_rows)}
   </div>
 </section>
 
 <section>
-  <div class="shead"><p class="eyebrow">Intent</p><h2>Who is actually searching</h2>
+  <div class="shead"><p class="eyebrow">Intent</p><h2>Who is actually searching{_INFO_SEGMENT}</h2>
   <p>Segments are derived from the query text and are mutually exclusive, brand first.
      Edit the patterns in the config to match how your buyers really search.</p></div>
   <div class="grid2">
     <div class="panel"><h3>Segment performance</h3>
       <p class="cap">Rates recomputed from summed totals, never averaged across rows.</p>
-      {_table(["Segment", "Spend", "Share", "CTR", "CPC", "Orders", "GMV", "ROAS"], seg_rows)}</div>
+      {_table([("Segment", "segment"), "Spend", "Share", ("CTR", "ctr"), ("CPC", "cpc"),
+                ("Orders", "conversions"), ("GMV", "gmv"), ("ROAS", "roas")], seg_rows)}</div>
     <div class="panel"><h3>Click-through by segment</h3>
       <p class="cap">The segment that earns clicks most cheaply is usually where to defend first.</p>
       {seg_chart}</div>
@@ -480,7 +645,9 @@ def render(
     <div class="panel"><h3>Demand by product theme</h3>
       <p class="cap">Themes are regex rules in the config. Tile clicks are the closest signal this
          export offers that your catalogue matched the search.</p>
-      {_table(["Theme", "Queries", "Impr.", "Clicks", "CTR", "Spend", "Tile", "Orders"], theme_rows)}</div>
+      {_table([("Theme", "theme"), "Queries", ("Impr.", "impressions"), ("Clicks", "clicks"),
+                ("CTR", "ctr"), "Spend", ("Tile", "product_ctr"),
+                ("Orders", "conversions")], theme_rows)}</div>
     <div class="panel"><h3>Impression volume by theme</h3>
       <p class="cap">Where the demand actually is, regardless of what you currently bid on.</p>
       {theme_chart}</div>
@@ -490,7 +657,7 @@ def render(
 {economics_block}
 
 <section>
-  <div class="shead"><p class="eyebrow">Phrases</p><h2>What single words are costing you</h2>
+  <div class="shead"><p class="eyebrow">Phrases</p><h2>What single words are costing you{_INFO_NGRAM}</h2>
   <p>Spend rolled up to every one-, two- and three-word phrase across all
      {t['queries']:,} search queries. A word can drain budget across hundreds of queries while
      looking harmless in each one; only this view catches that.</p></div>
@@ -498,30 +665,35 @@ def render(
     <div class="panel"><h3>Single words</h3>
       <p class="cap">Ranked by spend. <strong>Queries</strong> is how many distinct searches
          contained the word.</p>
-      {_table(["Word", "Spend", "Queries", "Clicks", "CTR", "Orders"], gram1_rows)}</div>
+      {_table([("Word", "ngram"), "Spend", "Queries", ("Clicks", "clicks"), ("CTR", "ctr"),
+                ("Orders", "conversions")], gram1_rows)}</div>
     <div class="panel"><h3>Two-word phrases</h3>
       <p class="cap">Usually the most actionable level — specific enough to act on, broad enough
          to matter.</p>
-      {_table(["Phrase", "Spend", "Queries", "Clicks", "CTR", "Orders"], gram2_rows)}</div>
+      {_table([("Phrase", "ngram"), "Spend", "Queries", ("Clicks", "clicks"), ("CTR", "ctr"),
+                ("Orders", "conversions")], gram2_rows)}</div>
   </div>
   <div class="panel"><h3>Phrases that never convert</h3>
     <p class="cap">Spend across five or more queries, no orders anywhere. Check each against your
        catalogue: a phrase you do stock needs a listing fix, one you don't is a negative.</p>
-    {_table(["Phrase", "Words", "Spend", "Queries", "Clicks", "CTR"], dead_rows,
+    {_table([("Phrase", "ngram"), "Words", "Spend", "Queries", ("Clicks", "clicks"),
+             ("CTR", "ctr")], dead_rows,
             "Every phrase with meaningful spend has converted at least once.")}</div>
 </section>
 
 <section>
-  <div class="shead"><p class="eyebrow">Bidding</p><h2>Price, concentration and the tail</h2>
+  <div class="shead"><p class="eyebrow">Bidding</p><h2>Price, concentration and the tail{_INFO_CONC}</h2>
   <p>{p.get('queries_for_50pct', 0):,} queries carry half your spend, out of
      {p.get('paying_queries', 0):,} that charged you at all &mdash; a list small enough to govern by hand.</p></div>
   <div class="grid2">
     <div class="panel"><h3>Does paying more buy better traffic?</h3>
       <p class="cap">Rows bucketed by realised cost per click.</p>
-      {_table(["CPC band", "Spend", "Share", "CTR", "Orders", "ROAS"], cpc_rows)}</div>
+      {_table([("CPC band", "cpc"), "Spend", "Share", ("CTR", "ctr"),
+                ("Orders", "conversions"), ("ROAS", "roas")], cpc_rows)}</div>
     <div class="panel"><h3>Spend by query rank</h3>
       <p class="cap">Watch for a deep tail that is cheap and engaged but never converts.</p>
-      {_table(["Band", "Queries", "Spend", "Share", "CTR", "Orders"], tail_rows)}</div>
+      {_table([("Band", "spend_concentration"), "Queries", "Spend", "Share", ("CTR", "ctr"),
+                ("Orders", "conversions")], tail_rows)}</div>
   </div>
 </section>
 
@@ -533,21 +705,25 @@ def render(
   <div class="panel"><h3>Promote to their own keyword</h3>
     <p class="cap">Ranked by a score combining clicks, click-through rate, specification intent
        and any recorded order. Top 60 shown.</p>
-    {_table(["Query", "Match", "Impr.", "Clicks", "CTR", "Tile", "Why"], cand_rows)}</div>
+    {_table(["Query", ("Match", "match_type"), ("Impr.", "impressions"), ("Clicks", "clicks"),
+             ("CTR", "ctr"), ("Tile", "product_ctr"), "Why"], cand_rows)}</div>
   <div class="grid2">
     <div class="panel"><h3>Highest-spend queries with no order</h3>
       <p class="cap">Not all are negatives &mdash; core category terms here need a landing fix,
          not a block.</p>
-      {_table(["Query", "Impr.", "Clicks", "Spend", "CTR", ""], waste_rows)}</div>
+      {_table(["Query", ("Impr.", "impressions"), ("Clicks", "clicks"), "Spend",
+                ("CTR", "ctr"), ""], waste_rows)}</div>
     <div class="panel"><h3>Off-catalogue matches</h3>
       <p class="cap">Matched your off-catalogue patterns and returned nothing. Safe negatives.</p>
-      {_table(["Query", "Impr.", "Clicks", "Spend"], neg_rows, "No off-catalogue spend found.")}</div>
+      {_table([("Query", "negative_keyword"), ("Impr.", "impressions"), ("Clicks", "clicks"),
+                "Spend"], neg_rows, "No off-catalogue spend found.")}</div>
   </div>
   <div class="panel"><h3>Queries that have earned a block</h3>
     <p class="cap">Shown at least {int(config['thresholds'].get('block_after_impressions', 1000)):,}
        times each and never converted. A term with that much exposure and no order has answered
        the question — this is the safest negative list in the report.</p>
-    {_table(["Query", "Impr.", "Clicks", "Spend", "CTR"], block_rows,
+    {_table([("Query", "negative_keyword"), ("Impr.", "impressions"), ("Clicks", "clicks"),
+            "Spend", ("CTR", "ctr")], block_rows,
             "No query has passed the impression threshold without converting.")}</div>
   <div class="panel"><h3>Every order in the period</h3>
     <p class="cap">The keyword you bid on beside the query the shopper typed. A wide gap between
@@ -576,7 +752,9 @@ def render(
   </div>
 </div>
 
-</div></body></html>"""
+</div>
+{TOOLTIP_HTML}
+</body></html>"""
 
 
 def write_report(

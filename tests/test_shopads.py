@@ -16,6 +16,8 @@ from shopads.config import DEFAULT_CONFIG, load_config
 from shopads.ingest import IngestError, read_export
 from shopads.pipeline import pending_files
 from shopads import store
+from shopads import glossary
+from shopads.report import render, _info
 
 HEADER = [
     "Sequence", "Keywords", "Match Type", "Search Query", "SOV", "Impression",
@@ -338,6 +340,57 @@ def test_compare_reports_direction_correctly(tmp_path, export_file, config):
 def test_compare_with_no_history_is_empty(export_file, config):
     analysis = analyse(read_export(export_file), config)
     assert store.compare(analysis.totals, None) == []
+
+
+# ---------------------------------------------------- glossary and report ---
+
+def test_every_glossary_entry_is_complete():
+    for key, entry in glossary.ALL.items():
+        for field_name in ("title", "what", "how", "why", "good"):
+            assert entry.get(field_name), f"{key} is missing {field_name}"
+        # These are read by a beginner, so no jargon-only definitions.
+        assert len(entry["what"]) > 20, f"{key} 'what' is too terse to help"
+
+
+def test_info_button_is_empty_for_unknown_metric():
+    assert _info("not-a-real-metric") == ""
+    assert 'class="i"' in _info("roas")
+
+
+def test_report_renders_tooltips_for_its_metrics(export_file, config):
+    export = read_export(export_file)
+    html = render(export, analyse(export, config), config)
+
+    assert 'id="tip"' in html                      # the floating tooltip element
+    assert html.count('class="i"') > 30            # buttons across tiles and tables
+    assert "New to this report? Read this first." in html
+    # The four severity labels a beginner needs to decode the diagnosis.
+    for label in ("Fix now", "Watch", "Strength", "Note"):
+        assert label in html
+
+
+def test_tooltips_are_keyboard_reachable_and_escapable(export_file, config):
+    export = read_export(export_file)
+    html = render(export, analyse(export, config), config)
+    assert '<button type="button" class="i"' in html   # focusable, not a bare span
+    assert 'aria-expanded="false"' in html
+    assert 'role="tooltip"' in html
+    assert '"Escape"' in html
+
+
+def test_report_survives_missing_optional_columns(tmp_path, config):
+    """A leaner export must still render rather than raise."""
+    keep = [h for h in HEADER if h not in {"Product Impressions", "Product Clicks", "Product CTR"}]
+    drop_at = [HEADER.index(h) for h in ("Product Impressions", "Product Clicks", "Product CTR")]
+    rows = [[c for i, c in enumerate(r) if i not in drop_at] for r in ROWS]
+    path = tmp_path / "lean.csv"
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(keep)
+        writer.writerows(rows)
+    export = read_export(path)
+    html = render(export, analyse(export, config), config)
+    assert "<h1>" in html
 
 
 # -------------------------------------------------------------- pipeline ---
