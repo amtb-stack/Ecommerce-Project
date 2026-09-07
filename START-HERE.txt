@@ -1,0 +1,62 @@
+SHOP ADS ANALYSER  -  START HERE
+====================================================
+
+WHAT THIS IS
+    Analyses your Shopee Shop+ Ads keyword exports on this computer.
+    Nothing is uploaded anywhere. It works without internet after setup.
+
+WHAT TO DO  (about 15 minutes, once)
+
+    1. Put this ShopAds folder at C:\ShopAds
+       Do NOT leave it in Downloads, OneDrive, Desktop or Program Files.
+       Windows blocks programs from writing files in those places.
+
+    2. Double-click            Setup.bat
+       Wait for it to say "Setup complete."
+       If Windows shows a blue warning box, click
+       "More info" then "Run anyway".
+
+    3. Double-click            Start-Watcher.bat
+       Leave that black window open. It is waiting for you.
+
+    4. Drag your Shopee export into the  drop  folder.
+
+    5. Open the newest file in the  reports  folder.
+       It opens in your web browser.
+
+       Every number has a small (i) beside it. Hover it and it
+       explains, in plain English, what the number is, how it was
+       worked out, why it matters, and what a good value looks
+       like. On a phone, tap it. Press Escape to close.
+       You do not need to know anything about advertising.
+
+EVERY MONTH AFTER THAT
+    Just repeat steps 3, 4 and 5. The tool remembers every export,
+    so from your second one onward each report shows what changed.
+
+TO SEE PROFIT, NOT JUST REVENUE
+    Open  shopads.config.json  in Notepad. Find "business".
+    Fill in your contribution margin (what is left of a sale after
+    product cost, shipping, payment fees and returns - 0.32 means
+    32%) and your total shop revenue for the period.
+    The next report then shows profit on ad spend, your break-even
+    ROAS, and TACOS. Keep the punctuation exactly as it is.
+
+IF SOMETHING GOES WRONG
+    Double-click            Check-Setup.bat
+    It checks everything and tells you what to fix, in plain English.
+
+THE BUTTONS
+    Setup.bat           Run once, the first time only.
+    Start-Watcher.bat   Your everyday button. Leave it open.
+    Analyse-Now.bat     Analyse what is waiting, then close.
+                        You can also drag a file straight onto it.
+    History.bat         List every export analysed so far.
+    Check-Setup.bat     Diagnose problems.
+
+NEEDS
+    Python 3.10 or newer, from https://www.python.org/downloads/
+    When installing Python, TICK THE BOX that says
+    "Add python.exe to PATH" on the very first screen.
+
+More detail is in README.md, which opens in Notepad.
