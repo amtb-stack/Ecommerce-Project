@@ -17,7 +17,12 @@ from shopads.ingest import IngestError, read_export
 from shopads.pipeline import pending_files
 from shopads import store
 from shopads import glossary
-from shopads.report import render, _info
+from shopads.report import VIEWS as _VIEWS
+
+
+def report_views():
+    return _VIEWS
+from shopads.report import render, _payload
 
 HEADER = [
     "Sequence", "Keywords", "Match Type", "Search Query", "SOV", "Impression",
@@ -352,30 +357,47 @@ def test_every_glossary_entry_is_complete():
         assert len(entry["what"]) > 20, f"{key} 'what' is too terse to help"
 
 
-def test_info_button_is_empty_for_unknown_metric():
-    assert _info("not-a-real-metric") == ""
-    assert 'class="i"' in _info("roas")
+def test_payload_carries_every_glossary_entry(export_file, config):
+    export = read_export(export_file)
+    payload = _payload(export, analyse(export, config), config, None, None)
+    # The client builds tooltips from this, so a missing key means a silent
+    # "i" button that explains nothing.
+    assert set(payload["glossary"]) == set(glossary.ALL)
+    assert all(payload["glossary"].values())
 
 
-def test_report_renders_tooltips_for_its_metrics(export_file, config):
+def test_payload_is_json_serialisable(export_file, config):
+    import json
+    export = read_export(export_file)
+    payload = _payload(export, analyse(export, config), config, None, None)
+    # default=str would paper over a bad type, so serialise strictly here.
+    json.dumps(payload)
+
+
+def test_report_ships_the_app_shell(export_file, config):
     export = read_export(export_file)
     html = render(export, analyse(export, config), config)
 
-    assert 'id="tip"' in html                      # the floating tooltip element
-    assert html.count('class="i"') > 30            # buttons across tiles and tables
-    assert "New to this report? Read this first." in html
-    # The four severity labels a beginner needs to decode the diagnosis.
+    assert "window.__REPORT__" in html          # data island
+    assert 'id="tip"' in html                   # tooltip element
+    assert 'role="tooltip"' in html
+    assert '"Escape"' in html                   # dismissable
+    assert 'id="q"' in html                     # search box
+    # every sidebar view has a matching section
+    for view_id, _, _, _, _ in report_views():
+        assert f'data-view="{view_id}"' in html
+        assert f'id="view-{view_id}"' in html
     for label in ("Fix now", "Watch", "Strength", "Note"):
         assert label in html
 
 
-def test_tooltips_are_keyboard_reachable_and_escapable(export_file, config):
-    export = read_export(export_file)
+def test_closing_script_tags_cannot_break_out_of_the_data_island(tmp_path, config):
+    rows = [r[:] for r in ROWS]
+    rows[0][3] = "</script><script>alert(1)</script>"     # hostile search term
+    export = read_export(_write_export(tmp_path / "xss.csv", rows=rows))
     html = render(export, analyse(export, config), config)
-    assert '<button type="button" class="i"' in html   # focusable, not a bare span
-    assert 'aria-expanded="false"' in html
-    assert 'role="tooltip"' in html
-    assert '"Escape"' in html
+    assert "</script><script>alert(1)" not in html
+    assert "<\\/script>" in html or "<\\/" in html
 
 
 def test_report_survives_missing_optional_columns(tmp_path, config):

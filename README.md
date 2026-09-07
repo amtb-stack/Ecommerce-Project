@@ -63,6 +63,13 @@ PowerShell users can call `.\bin\shopads.ps1 <command>` instead.
 
 ---
 
+## The report
+
+Each report is a small offline application, not a document: a sidebar of
+sections, sortable tables, filter chips, a search box (`/` to focus) and a
+CSV export that hands you exactly what is on screen — filters and sort
+included. Light, dark and system themes; your choice is remembered.
+
 ## What the report tells you
 
 Every metric carries a small **i** button. Hover it (or tap, on a phone) and it
@@ -73,16 +80,15 @@ ad account can read the report unaided. Press Escape to dismiss.
 Findings are generated with the figure that triggered each one, so you can
 disagree with a rule and still see the number behind it.
 
-- **Read this first** — how to use the report, and what the severity colours mean.
-- **Diagnosis** — automatic findings graded *fix now / watch / strength / note*.
+- **Overview** — the headline metrics and every finding, graded *fix now /
+  watch / strength / note*, worst first.
 - **Trend** — every headline metric against your previous export.
 - **Keywords** — including **on-theme spend**: the share of a keyword's budget
   that reached queries in its own product category. Below 20% the keyword is
   not targeting its subject; it is a broad-match funnel wearing a product name.
-- **Intent** — brand, competitor, Malay, Chinese and generic demand, separated.
-- **Themes** — where demand actually is, regardless of what you bid on.
-- **Bidding** — whether higher CPCs are buying better traffic, and how much of
-  your spend sits in a long tail that never converts.
+- **Search terms** — what shoppers actually typed, with block-ready terms flagged.
+- **Segments** — brand, competitor, Malay, Chinese and generic demand, separated,
+  plus where demand sits by product theme.
 - **Phrases** — spend rolled up to every one-, two- and three-word phrase. A word
   can drain budget across hundreds of queries while looking harmless in each one.
 - **Profit** — profit on ad spend, break-even ROAS and TACOS, once you supply

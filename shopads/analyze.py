@@ -583,13 +583,13 @@ def _findings(result: Analysis, config: dict) -> list[dict]:
         add("critical", "Product tiles inside the ad are not being clicked",
             f"{totals['product_impressions']:,.0f} tile impressions produced "
             f"{totals['product_clicks']:,.0f} clicks ({totals['product_ctr']:.3%}). The ad wins "
-            "attention and the shopfront loses it -- a merchandising fix, not a bidding one.")
+            "attention and the shopfront loses it \u2014 a merchandising fix, not a bidding one.")
 
     if totals["sov"] and totals["sov"] < 0.10:
         add("warning", "Share of voice is very low",
             f"Impression-weighted SOV is {totals['sov']:.2%} at "
             f"{currency}{totals['spend_per_day']:.2f}/day. You are absent from most eligible "
-            "auctions -- but fix relevance before raising budget, or you scale the leak.")
+            "auctions \u2014 but fix relevance before raising budget, or you scale the leak.")
 
     match_types = {m.lower() for m in totals.get("match_types", [])}
     if match_types and match_types <= {"broad match", "broad"}:
