@@ -129,7 +129,7 @@ def _process_shop_stats(path, digest, config, archive, say) -> Outcome:
     say(f"        {stats.period_label} · {analysis.totals['products']} products · "
         f"{len(stats.sheets)} tabs combined")
     say(f"        {len(analysis.findings)} findings ({critical} to fix now)")
-    say(f"        report: {report}")
+    _say_report(say, report)
     if archive:
         _move(path, ARCHIVE_DIR)
     return Outcome(path, "ok", "analysed", report)
@@ -147,10 +147,20 @@ def _process_tabular(path, config, archive, say) -> Outcome:
     say(f"        not a Shopee report — profiled instead: {sheets} sheet(s), "
         f"{dataset.total_rows:,} rows, {columns} columns")
     say(f"        {flagged} thing(s) worth checking")
-    say(f"        report: {report}")
+    _say_report(say, report)
     if archive:
         _move(path, ARCHIVE_DIR)
     return Outcome(path, "ok", "profiled", report)
+
+
+def _say_report(say, report: Path) -> None:
+    """Name the file and its folder separately.
+
+    A single long path is easy to skim past; people then look for the report
+    in whatever folder they last used and conclude it was never written.
+    """
+    say(f"        report saved: {report.name}")
+    say(f"        in folder:    {report.parent}")
 
 
 def _move(path: Path, target_dir: Path) -> Path:

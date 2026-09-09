@@ -53,6 +53,7 @@ THE BUTTONS
                         You can also drag a file straight onto it.
     History.bat         List every export analysed so far.
     Check-Setup.bat     Diagnose problems.
+    Open-Reports.bat    Open the folder your reports are saved in.
 
 NEEDS
     Python 3.10 or newer, from https://www.python.org/downloads/

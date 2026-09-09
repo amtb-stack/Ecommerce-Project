@@ -213,6 +213,56 @@ def test_small_catalogues_are_flagged_as_unreliable(tmp_path, config):
     assert "Too few products" in " ".join(f["title"] for f in analysis.findings)
 
 
+# ------------------------------------------------------------- portability ---
+
+def test_day_labels_avoid_platform_specific_formats():
+    """Windows rejects strftime's "%-d", so the label is built by hand."""
+    from datetime import date
+    from shopads.shopstats import _day_label
+    assert _day_label(date(2026, 9, 1)) == "1 Sep"      # no leading zero
+    assert _day_label(date(2026, 12, 25)) == "25 Dec"
+
+
+def test_no_source_file_uses_a_glibc_only_format_string():
+    """A guard, because this class of bug only shows up on the user's machine.
+
+    "%-d" and "%-m" strip the leading zero on Linux and macOS and raise
+    ValueError: Invalid format string on Windows.
+    """
+    import ast
+    import re
+
+    package = Path(__file__).resolve().parent.parent / "shopads"
+    pattern = re.compile(r"%-[dmHIMSjyY]")
+    offenders = []
+    for source in package.glob("*.py"):
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        # Docstrings legitimately mention the bad format while explaining it,
+        # so collect them and exclude them by identity rather than by text.
+        docstrings = set()
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Module, ast.ClassDef,
+                                 ast.FunctionDef, ast.AsyncFunctionDef)):
+                body = getattr(node, "body", [])
+                if body and isinstance(body[0], ast.Expr) and isinstance(
+                        body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+                    docstrings.add(id(body[0].value))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) \
+                    and id(node) not in docstrings and pattern.search(node.value):
+                offenders.append(f"{source.name}:{node.lineno}")
+    assert not offenders, f"glibc-only strftime formats found at {offenders}"
+
+
+def test_workbook_reading_emits_no_warnings(workbook, config):
+    """Shopee workbooks trip an openpyxl style warning that alarms users."""
+    import warnings
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        analyse_products(read_shop_stats(workbook), config)
+    assert not [w for w in caught if "default style" in str(w.message)]
+
+
 # ------------------------------------------------------------------ report ---
 
 def test_payload_serialises_and_carries_the_glossary(workbook, config):

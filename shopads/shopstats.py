@@ -19,7 +19,14 @@ from pathlib import Path
 from typing import Any, Iterable
 
 try:  # openpyxl is optional elsewhere in the package, required here
-    import openpyxl
+    import warnings
+
+    with warnings.catch_warnings():
+        # Shopee's workbooks carry no default style, which openpyxl warns about
+        # on every single load. It is harmless and alarming, so it is silenced
+        # here rather than printed at someone who did nothing wrong.
+        warnings.simplefilter("ignore")
+        import openpyxl
 except ImportError:  # pragma: no cover - surfaced as a clear IngestError
     openpyxl = None
 
@@ -175,13 +182,15 @@ def looks_like_shop_stats(path: Path) -> bool:
             "from Shopee as CSV instead."
         )
     try:
-        book = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            book = openpyxl.load_workbook(path, read_only=True, data_only=True)
+            try:
+                names = [n.lower() for n in book.sheetnames]
+            finally:
+                book.close()
     except Exception:
         return False
-    try:
-        names = [n.lower() for n in book.sheetnames]
-    finally:
-        book.close()
     return any(n.startswith("product contribution") for n in names)
 
 
@@ -193,12 +202,14 @@ def read_shop_stats(path: Path) -> ShopStats:
             "or export this report as CSV instead."
         )
     try:
-        book = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            book = openpyxl.load_workbook(path, read_only=True, data_only=True)
+            sheets = {name: list(book[name].iter_rows(values_only=True))
+                      for name in book.sheetnames}
+            book.close()
     except Exception as exc:
         raise IngestError(f"{path.name}: could not open as a workbook ({exc}).") from exc
-
-    sheets = {name: list(book[name].iter_rows(values_only=True)) for name in book.sheetnames}
-    book.close()
 
     stats = ShopStats(
         source_path=path, file_hash=file_digest(path), shop="",
@@ -286,7 +297,7 @@ def _read_overview(sheets: dict[str, list], stats: ShopStats) -> None:
                     continue
                 stats.daily.append({
                     "date": day.isoformat(),
-                    "label": f"{day:%-d %b}" if hasattr(day, "strftime") else row["Date"],
+                    "label": _day_label(day),
                     "sales": _num(row.get("Sales (MYR)")),
                     "orders": _num(row.get("Orders")),
                     "visitors": _num(row.get("Visitors")),
@@ -296,6 +307,16 @@ def _read_overview(sheets: dict[str, list], stats: ShopStats) -> None:
                     "cancelled": _num(row.get("Cancelled Orders")),
                 })
     stats.daily.sort(key=lambda d: d["date"])
+
+
+def _day_label(day: date) -> str:
+    """A short "1 Sep" label.
+
+    Built by hand rather than with strftime("%-d %b"): the dash modifier that
+    strips the leading zero is a glibc extension, and Windows raises
+    ValueError: Invalid format string on it.
+    """
+    return f"{day.day} {day.strftime('%b')}"
 
 
 def _parse_day(text: str) -> date | None:

@@ -30,6 +30,7 @@ A report lands in `reports/` a second later. That's the whole loop.
 | `Analyse-Now.bat` | Processes whatever is waiting, then exits. You can also **drag files onto it**. |
 | `History.bat` | Lists every export analysed so far. |
 | `Check-Setup.bat` | Diagnoses your setup and explains anything wrong, in plain English. |
+| `Open-Reports.bat` | Opens the `reports` folder, so you never have to hunt for the file. |
 
 ### Python version
 
