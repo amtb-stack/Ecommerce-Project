@@ -127,7 +127,7 @@ drive the segment and drift analysis.
 
 ---
 
-## Two kinds of report
+## Three kinds of report
 
 The tool reads the export and picks the right analysis. Both land in `reports/`.
 
@@ -139,10 +139,19 @@ all twelve tabs joined into one row per product, with the four-group split of
 traffic against conversion, channel and paid-placement breakdowns, and the
 placed-to-paid gap.
 
+**Anything else tabular** → a data profile. Every column typed and charted, a
+distribution for numbers, a timeline for dates, top values for categories,
+plus duplicates, gaps, constant columns and strong correlations. It does not
+know what your columns mean, so it only reports what is structurally true.
+
 ## Supported input
 
-Shopee Shop+ Ads **keyword** exports as `.csv`, `.xlsx`, `.tsv` or `.txt`, and
-Shopee **shop statistics** workbooks as `.xlsx`.
+Any `.csv`, `.tsv`, `.txt`, `.xlsx` or `.json`. Shopee keyword exports and shop
+statistics workbooks get their dedicated analysis; everything else gets
+profiled. Every sheet of a workbook is profiled separately.
+
+Files with no table in them — PDFs, Word documents, images, slide decks — are
+recognised and rejected with a plain explanation rather than an error.
 
 The header row is located by content, not by a fixed line number, so exports
 with a different number of preamble lines still work. Currency symbols,

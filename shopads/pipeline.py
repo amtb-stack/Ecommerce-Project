@@ -16,8 +16,15 @@ from .product_report import write_product_report
 from .products import analyse_products
 from .report import write_report
 from .shopstats import looks_like_shop_stats, read_shop_stats
+from .tabular import describe_unreadable, read_tabular
+from .tabular_report import write_tabular_report
 
-SUPPORTED_SUFFIXES = {".csv", ".xlsx", ".xlsm", ".xltx", ".tsv", ".txt"}
+from .tabular import TABULAR_SUFFIXES, UNREADABLE
+
+#: Files the watcher will pick up. The unreadable types are included on
+#: purpose: a PDF dropped in the folder should be told why it cannot be
+#: analysed, rather than sit there being silently ignored.
+SUPPORTED_SUFFIXES = TABULAR_SUFFIXES | set(UNREADABLE)
 
 
 @dataclass
@@ -51,10 +58,22 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
                     _move(path, ARCHIVE_DIR)
                 return Outcome(path, "skipped", message)
 
+        unreadable = describe_unreadable(path)
+        if unreadable:
+            raise IngestError(
+                f"{path.name} is {unreadable}, which has no table in it to analyse. "
+                "Drop a spreadsheet or data file: .csv, .xlsx, .tsv or .json."
+            )
+
         if looks_like_shop_stats(path):
             return _process_shop_stats(path, digest, config, archive, say)
 
-        export = read_export(path)
+        try:
+            export = read_export(path)
+        except IngestError:
+            # Not a Shopee report the tool knows. Rather than refuse, profile
+            # whatever table is in there and produce a graphical report of it.
+            return _process_tabular(path, config, archive, say)
         analysis = analyse(export, config)
 
         with store.connect(DB_PATH) as conn:
@@ -114,6 +133,24 @@ def _process_shop_stats(path, digest, config, archive, say) -> Outcome:
     if archive:
         _move(path, ARCHIVE_DIR)
     return Outcome(path, "ok", "analysed", report)
+
+
+def _process_tabular(path, config, archive, say) -> Outcome:
+    """Anything tabular the tool does not recognise: profile it instead."""
+    dataset = read_tabular(path)
+    report = write_tabular_report(dataset, REPORT_DIR)
+    sheets = len(dataset.sheets)
+    columns = sum(len(s.columns) for s in dataset.sheets)
+    flagged = sum(1 for s in dataset.sheets for f in s.findings
+                  if f["level"] in {"critical", "warning"})
+    say(f"  ok    {path.name}  (data profile)")
+    say(f"        not a Shopee report — profiled instead: {sheets} sheet(s), "
+        f"{dataset.total_rows:,} rows, {columns} columns")
+    say(f"        {flagged} thing(s) worth checking")
+    say(f"        report: {report}")
+    if archive:
+        _move(path, ARCHIVE_DIR)
+    return Outcome(path, "ok", "profiled", report)
 
 
 def _move(path: Path, target_dir: Path) -> Path:

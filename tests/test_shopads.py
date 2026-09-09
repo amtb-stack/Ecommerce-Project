@@ -427,10 +427,14 @@ def test_pending_files_ignores_noise(tmp_path):
     (tmp_path / "sheet.xlsx").write_text("x", encoding="utf-8")
     (tmp_path / "~$sheet.xlsx").write_text("x", encoding="utf-8")  # Excel lock file
     (tmp_path / ".hidden.csv").write_text("x", encoding="utf-8")
-    (tmp_path / "notes.pdf").write_text("x", encoding="utf-8")
+    (tmp_path / "notes.exe").write_text("x", encoding="utf-8")
     (tmp_path / "sub").mkdir()
     names = {p.name for p in pending_files(tmp_path)}
+    # A PDF is picked up on purpose, so the user is told why it cannot be
+    # analysed rather than left wondering. Lock files and hidden files are not.
     assert names == {"good.csv", "sheet.xlsx"}
+    (tmp_path / "brochure.pdf").write_text("x", encoding="utf-8")
+    assert "brochure.pdf" in {p.name for p in pending_files(tmp_path)}
 
 
 def test_config_round_trips(tmp_path, monkeypatch):
