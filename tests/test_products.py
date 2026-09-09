@@ -215,6 +215,18 @@ def test_small_catalogues_are_flagged_as_unreliable(tmp_path, config):
 
 # ------------------------------------------------------------- portability ---
 
+@pytest.mark.parametrize("filename,expected", [
+    ("8a9bff73-thebaker.os.shopeeshopstats.2026090120260908.xlsx", "Thebaker Os"),
+    ("thebaker.os.shopee-shop-stats.20260901-20260908.xlsx", "Thebaker Os"),
+    ("my-kitchen-store.shop-stats.xlsx", "My Kitchen Store"),
+    ("ACME Trading.shopeeshopstats.xlsx", "ACME Trading"),
+])
+def test_shop_name_survives_renamed_exports(filename, expected):
+    """The workbook has no shop name, so the filename is all there is."""
+    from shopads.shopstats import _shop_from_filename
+    assert _shop_from_filename(Path(filename)) == expected
+
+
 def test_day_labels_avoid_platform_specific_formats():
     """Windows rejects strftime's "%-d", so the label is built by hand."""
     from datetime import date

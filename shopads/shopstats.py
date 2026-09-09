@@ -230,21 +230,28 @@ def read_shop_stats(path: Path) -> ShopStats:
 
 
 def _shop_from_filename(path: Path) -> str:
-    """Shopee names these files '<username>.shopeeshopstats.<dates>.xlsx'.
+    """Best guess at the shop name from the export's filename.
 
-    The workbook itself carries no shop name, so the filename is the only
-    place it appears.
+    The workbook carries no shop name anywhere, so the filename is all there
+    is. Shopee names these "<username>.shopeeshopstats.<dates>.xlsx", but
+    people rename them, so the marker is matched loosely and any trailing
+    date range is dropped.
     """
     stem = path.stem
-    for marker in (".shopeeshopstats", ".shopstats", "shopeeshopstats"):
-        if marker in stem:
-            stem = stem.split(marker)[0]
-            break
-    stem = re.sub(r"^[0-9a-f]{6,}[-_]", "", stem).strip("._- ")
+    # Strip a leading upload hash, e.g. "8a9bff73-thebaker.os...".
+    stem = re.sub(r"^[0-9a-f]{6,}[-_]", "", stem)
+    # Cut at the report marker however it has been punctuated.
+    marker = re.search(
+        r"[._\-\s]*shop(?:ee)?[._\-\s]*(?:shop[._\-\s]*)?stat", stem, re.I)
+    if marker:
+        stem = stem[:marker.start()]
+    # Drop trailing date-like runs: "20260901-20260908", "2026-09-01", "01092026".
+    stem = re.sub(r"[._\-\s]*\d[\d._\-]{5,}$", "", stem)
+    stem = stem.strip("._- ")
     if not stem:
         return "Your shop"
-    words = re.split(r"[._\-\s]+", stem)
-    return " ".join(w.capitalize() if w.islower() else w for w in words if w) or "Your shop"
+    words = [w for w in re.split(r"[._\-\s]+", stem) if w]
+    return " ".join(w if w.isupper() else w.capitalize() for w in words) or "Your shop"
 
 
 def _read_overview(sheets: dict[str, list], stats: ShopStats) -> None:
