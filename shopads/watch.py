@@ -46,7 +46,8 @@ def watch(folder: Path | None = None, interval: float = 3.0) -> None:
     """Poll `folder` until interrupted."""
     ensure_dirs()
     folder = folder or DROP_DIR
-    print("Shop Ads watcher running.")
+    from . import __version__
+    print(f"Shop Ads watcher running (version {__version__}).")
     print(f"  drop exports here : {folder}")
     print(f"  reports appear in : {REPORT_DIR}")
     print("  press Ctrl+C to stop\n")

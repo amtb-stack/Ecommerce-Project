@@ -176,9 +176,15 @@ def read_export(path: Path) -> Export:
     )
     if header_index is None:
         raise IngestError(
-            f"{path.name}: no header row found. Expected a row containing "
-            "'Keywords' alongside 'Impression'/'Clicks'. Is this a Shop Ads "
-            "keyword export?"
+            f"{path.name}: this does not look like either report the tool reads.\n"
+            "        It expects one of:\n"
+            "          · a Shop+ Ads KEYWORD export — a row with 'Keywords' "
+            "alongside 'Impression'/'Clicks'\n"
+            "          · a shop STATISTICS workbook — tabs named like "
+            "'Product Contribution (placed order)'\n"
+            "        If you dropped a statistics workbook and see this, your copy "
+            "of the tool is out of date: replace the ShopAds folder with the "
+            "latest one and try again."
         )
 
     suffix = path.suffix.lower()

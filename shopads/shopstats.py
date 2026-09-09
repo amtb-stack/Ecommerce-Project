@@ -159,9 +159,21 @@ class ShopStats:
 
 
 def looks_like_shop_stats(path: Path) -> bool:
-    """True when the workbook carries the shop-statistics sheet families."""
-    if path.suffix.lower() not in {".xlsx", ".xlsm"} or openpyxl is None:
+    """True when the workbook carries the shop-statistics sheet families.
+
+    Raises rather than returning False when the file is a workbook we simply
+    cannot open: answering "not a shop-stats file" there would send it down
+    the keyword-export path and surface a raw ImportError from pandas.
+    """
+    if path.suffix.lower() not in {".xlsx", ".xlsm"}:
         return False
+    if openpyxl is None:
+        raise IngestError(
+            f"{path.name} is an Excel file, but the component that reads Excel "
+            "(openpyxl) is not installed, so it cannot be opened. Run Setup.bat "
+            "again to install it — or, if that keeps failing, export this report "
+            "from Shopee as CSV instead."
+        )
     try:
         book = openpyxl.load_workbook(path, read_only=True, data_only=True)
     except Exception:

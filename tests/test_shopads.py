@@ -116,11 +116,16 @@ def test_total_rows_are_dropped(tmp_path):
     assert len(read_export(_write_export(tmp_path / "total.csv", rows=rows)).frame) == len(ROWS)
 
 
-def test_missing_header_is_a_clear_error(tmp_path):
+def test_missing_header_names_both_report_types(tmp_path):
+    """The error has to tell a non-technical reader what to do next."""
     path = tmp_path / "wrong.csv"
     path.write_text("a,b,c\n1,2,3\n", encoding="utf-8")
-    with pytest.raises(IngestError, match="no header row"):
+    with pytest.raises(IngestError) as caught:
         read_export(path)
+    message = str(caught.value)
+    assert "KEYWORD export" in message
+    assert "STATISTICS workbook" in message
+    assert "out of date" in message
 
 
 def test_missing_required_column_names_it(tmp_path):

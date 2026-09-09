@@ -11,6 +11,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
+from . import __version__
 from .config import (
     CONFIG_PATH, DATA_DIR, DB_PATH, DROP_DIR, REPORT_DIR, ensure_dirs,
 )
@@ -25,9 +26,20 @@ def _line(status: str, label: str, detail: str = "") -> None:
 
 def run() -> int:
     """Print a health report. Returns 0 if everything needed is present."""
-    print("\nShop Ads Analyser — setup check")
+    print(f"\nShop Ads Analyser {__version__} — setup check")
     print("=" * 62)
     problems: list[str] = []
+
+    try:
+        from .shopstats import read_shop_stats  # noqa: F401
+        _line(TICK, "Reads keyword exports", "Shop+ Ads keyword report")
+        _line(TICK, "Reads statistics workbooks", "product performance report")
+    except ImportError:
+        _line(CROSS, "Report types", "this copy only reads keyword exports")
+        problems.append(
+            "Your copy of the tool is out of date and cannot read shop-statistics "
+            "workbooks. Replace the ShopAds folder with the latest download."
+        )
 
     # -- Python ---------------------------------------------------------
     version = sys.version_info
