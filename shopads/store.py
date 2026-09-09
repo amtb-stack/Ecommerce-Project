@@ -78,7 +78,37 @@ CREATE TABLE IF NOT EXISTS run_payloads (
     payload TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS product_runs (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_hash     TEXT NOT NULL UNIQUE,
+    source_name   TEXT NOT NULL,
+    analysed_at   TEXT NOT NULL,
+    period_start  TEXT,
+    period_end    TEXT,
+    days          INTEGER,
+    products      INTEGER,
+    sales         REAL,
+    paid_sales    REAL,
+    orders        REAL,
+    visitors      REAL,
+    clicks        REAL,
+    cvr           REAL,
+    aov           REAL,
+    leak          REAL,
+    report_path   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS product_rows (
+    run_id      INTEGER NOT NULL REFERENCES product_runs(id) ON DELETE CASCADE,
+    item_id     TEXT NOT NULL,
+    name        TEXT,
+    quadrant    TEXT,
+    sales       REAL, paid_sales REAL, impressions REAL, clicks REAL,
+    orders      REAL, ctr REAL, cvr REAL, leak REAL
+);
+
 CREATE INDEX IF NOT EXISTS idx_runs_shop    ON runs(shop_id, period_start);
+CREATE INDEX IF NOT EXISTS idx_prod_run     ON product_rows(run_id);
 CREATE INDEX IF NOT EXISTS idx_kw_run       ON run_keywords(run_id);
 CREATE INDEX IF NOT EXISTS idx_q_run        ON run_queries(run_id);
 """
@@ -175,6 +205,52 @@ def save_run(
         }, default=str)),
     )
     return run_id
+
+
+def save_product_run(conn, stats, analysis, report_path) -> int:
+    """Store one product-performance run so it can be trended later."""
+    t = analysis.totals
+    cursor = conn.execute(
+        """INSERT OR REPLACE INTO product_runs (
+            file_hash, source_name, analysed_at, period_start, period_end, days,
+            products, sales, paid_sales, orders, visitors, clicks, cvr, aov, leak,
+            report_path
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (stats.file_hash, stats.source_path.name,
+         datetime.now().isoformat(timespec="seconds"),
+         _iso(stats.period_start), _iso(stats.period_end), t["days"], t["products"],
+         t["sales"], t["paid_sales"], t["orders"], t["visitors"], t["clicks"],
+         t["cvr"], t["aov"], t["leak"], str(report_path)),
+    )
+    run_id = int(cursor.lastrowid)
+    conn.executemany(
+        """INSERT INTO product_rows (run_id, item_id, name, quadrant, sales, paid_sales,
+           impressions, clicks, orders, ctr, cvr, leak) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+        [(run_id, p["id"], p["name"], p["quadrant"], p["sales"], p["paid_sales"],
+          p["impressions"], p["clicks"], p["orders"], p["ctr"], p["cvr"], p["leak"])
+         for p in analysis.products],
+    )
+    return run_id
+
+
+def known_shop_name(conn: sqlite3.Connection) -> str | None:
+    """The shop name from any earlier ads export.
+
+    The shop-statistics workbook does not carry one, but the ads export does,
+    so a shop that has run both gets its real name rather than a filename.
+    """
+    row = conn.execute(
+        "SELECT shop_name FROM runs WHERE shop_name IS NOT NULL AND shop_name != '' "
+        "ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    return row["shop_name"] if row else None
+
+
+def product_history(conn: sqlite3.Connection, limit: int = 50) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM product_runs ORDER BY COALESCE(period_end, analysed_at) DESC, id DESC "
+        "LIMIT ?", (limit,)
+    ).fetchall()
 
 
 def set_report_path(conn: sqlite3.Connection, run_id: int, report_path: Path) -> None:

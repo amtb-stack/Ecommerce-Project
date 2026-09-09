@@ -314,7 +314,95 @@ CONCEPTS: dict[str, dict[str, str]] = {
     },
 }
 
-ALL: dict[str, dict[str, str]] = {**METRICS, **CONCEPTS}
+#: Metrics that only appear in the product-performance report.
+PRODUCT_METRICS: dict[str, dict[str, str]] = {
+    "sales": {
+        "title": "Sales",
+        "what": "The value of orders placed for this product in the period.",
+        "how": "Summed across every traffic source the product appeared in.",
+        "why": "The plain scoreboard. Read it beside share, so you know whether the "
+               "shop rests on one item.",
+        "good": "Healthy is spread. If one product is most of the total, that is "
+                "concentration risk however good the number looks.",
+    },
+    "paid_gap": {
+        "title": "Placed vs paid",
+        "what": "The share of ordered value that never turned into a paid order.",
+        "how": "1 minus paid sales divided by placed sales.",
+        "why": "An order is not revenue until it is paid. Cancellations, stock-outs and "
+               "payment friction all show up here and nowhere else.",
+        "good": "Near zero. A few percent is normal; a persistent gap on one product "
+                "usually means stock or delivery expectations, not the listing.",
+    },
+    "quadrant": {
+        "title": "Quadrant",
+        "what": "Which of four groups a product falls into, by traffic and conversion.",
+        "how": "Split at this shop's own median impressions and median conversion rate, "
+               "so the cut adapts to your catalogue instead of an outside benchmark.",
+        "why": "A sales-ranked list hides the difference between a product nobody sees "
+               "and one everybody sees and rejects. Those need opposite work.",
+        "good": "Scale and Feed traffic are where you want products. Fix means the "
+                "listing is losing people who already arrived.",
+    },
+    "visitors": {
+        "title": "Visitors",
+        "what": "People who came to your shop in the period.",
+        "how": "Counted by Shopee, deduplicated per day.",
+        "why": "The top of your funnel. Sales divided by visitors tells you what a single "
+               "visit is worth, which is what you should be willing to pay for one.",
+        "good": "Rising visitors with flat sales means the traffic is getting worse, "
+                "not that the shop is growing.",
+    },
+    "potential_buyers": {
+        "title": "Potential buyers",
+        "what": "Shoppers who engaged with your shop but did not order.",
+        "how": "Shopee counts meaningful engagement short of a purchase.",
+        "why": "The cheapest demand you have — it already knows you exist. Far cheaper to "
+               "convert than a stranger.",
+        "good": "A large pool is an opportunity, not a failure, provided you do something "
+                "with it: follow-up vouchers, restock alerts, chat.",
+    },
+    "repeat_rate": {
+        "title": "Repeat purchase rate",
+        "what": "The share of buyers who had bought from you before.",
+        "how": "Returning buyers divided by all buyers in the period.",
+        "why": "Tells you whether you are building a customer base or renting one order "
+               "at a time.",
+        "good": "Low is normal for durable equipment — people buy one oven. It does mean "
+                "each month's revenue must be won from new people again.",
+    },
+    "units": {
+        "title": "Units",
+        "what": "How many individual items were ordered.",
+        "how": "Summed across orders. More than one unit per order means multi-buys.",
+        "why": "Units above orders is a sign a product sells in pairs or sets, which "
+               "changes how you price and bundle it.",
+        "good": "Compare against orders. A ratio near 1.0 means single-item purchases.",
+    },
+    "unique_impressions": {
+        "title": "Unique impressions",
+        "what": "How many separate people saw the product, rather than how many times "
+                "it was shown.",
+        "how": "Shopee deduplicates by shopper.",
+        "why": "Total impressions divided by unique impressions tells you how often the "
+               "same person keeps seeing the same item.",
+        "good": "A high ratio means heavy repetition to a small audience — reach is the "
+                "constraint, not creative.",
+    },
+    "channel": {
+        "title": "Traffic source",
+        "what": "Where a sale came from: product card, live, video, affiliate or ads.",
+        "how": "Shopee attributes each order to the surface the shopper came through.",
+        "why": "Two products with the same sales can depend on completely different "
+               "channels, and channels fail independently.",
+        "good": "Concentration in one channel is the same risk as concentration in one "
+                "product. Check what happens if it stops.",
+    },
+}
+
+ALL_PRODUCT = {**PRODUCT_METRICS}
+
+ALL: dict[str, dict[str, str]] = {**METRICS, **CONCEPTS, **PRODUCT_METRICS}
 
 
 def tip(key: str) -> str | None:

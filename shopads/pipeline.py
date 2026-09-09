@@ -12,7 +12,10 @@ from .config import (
     ARCHIVE_DIR, DB_PATH, FAILED_DIR, REPORT_DIR, ensure_dirs, load_config,
 )
 from .ingest import IngestError, file_digest, read_export
+from .product_report import write_product_report
+from .products import analyse_products
 from .report import write_report
+from .shopstats import looks_like_shop_stats, read_shop_stats
 
 SUPPORTED_SUFFIXES = {".csv", ".xlsx", ".xlsm", ".xltx", ".tsv", ".txt"}
 
@@ -47,6 +50,9 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
                 if archive:
                     _move(path, ARCHIVE_DIR)
                 return Outcome(path, "skipped", message)
+
+        if looks_like_shop_stats(path):
+            return _process_shop_stats(path, digest, config, archive, say)
 
         export = read_export(path)
         analysis = analyse(export, config)
@@ -86,6 +92,28 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
         if archive:
             _move(path, FAILED_DIR)
         return Outcome(path, "failed", f"{type(exc).__name__}: {exc}")
+
+
+def _process_shop_stats(path, digest, config, archive, say) -> Outcome:
+    """The shop-statistics workbook: product performance rather than keywords."""
+    stats = read_shop_stats(path)
+    analysis = analyse_products(stats, config)
+
+    with store.connect(DB_PATH) as conn:
+        stats.shop = (config.get("shop_name") or store.known_shop_name(conn)
+                      or stats.shop or "Your shop")
+        report = write_product_report(stats, analysis, config, REPORT_DIR)
+        store.save_product_run(conn, stats, analysis, report)
+
+    critical = sum(1 for f in analysis.findings if f["level"] == "critical")
+    say(f"  ok    {path.name}  (product performance)")
+    say(f"        {stats.period_label} · {analysis.totals['products']} products · "
+        f"{len(stats.sheets)} tabs combined")
+    say(f"        {len(analysis.findings)} findings ({critical} to fix now)")
+    say(f"        report: {report}")
+    if archive:
+        _move(path, ARCHIVE_DIR)
+    return Outcome(path, "ok", "analysed", report)
 
 
 def _move(path: Path, target_dir: Path) -> Path:

@@ -127,9 +127,22 @@ drive the segment and drift analysis.
 
 ---
 
+## Two kinds of report
+
+The tool reads the export and picks the right analysis. Both land in `reports/`.
+
+**Shop+ Ads keyword export** → the keyword report: what you bid on, what
+shoppers typed, phrase-level spend, and what to add or block.
+
+**Shop statistics workbook** (`…shopeeshopstats….xlsx`) → the product report:
+all twelve tabs joined into one row per product, with the four-group split of
+traffic against conversion, channel and paid-placement breakdowns, and the
+placed-to-paid gap.
+
 ## Supported input
 
-Shopee Shop+ Ads **keyword** exports as `.csv`, `.xlsx`, `.tsv` or `.txt`.
+Shopee Shop+ Ads **keyword** exports as `.csv`, `.xlsx`, `.tsv` or `.txt`, and
+Shopee **shop statistics** workbooks as `.xlsx`.
 
 The header row is located by content, not by a fixed line number, so exports
 with a different number of preamble lines still work. Currency symbols,
