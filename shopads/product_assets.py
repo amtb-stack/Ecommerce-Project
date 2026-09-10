@@ -242,6 +242,47 @@ svg{display:block; max-width:100%}
 footer.end{padding:44px 0 72px; color:var(--faint); font-size:13px; text-align:center}
 footer.end .mono{font-size:12px}
 
+/* ------------------------------------------------------------- tracker -- */
+.focus{background:var(--surface);border:1px solid var(--hair-2);border-radius:20px;
+  overflow:hidden;box-shadow:var(--shadow);margin-bottom:18px}
+.focus > header{padding:20px 26px 16px;border-bottom:1px solid var(--hair-2);
+  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.focus h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.focus .when{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+.fitem{display:grid;grid-template-columns:28px 1fr;gap:14px;padding:18px 26px;
+  border-top:1px solid var(--hair-2);align-items:start}
+.fitem:first-of-type{border-top:0}
+.fitem .rank{font-family:Archivo,sans-serif;font-size:13px;font-weight:800;color:var(--faint);
+  padding-top:2px}
+.fitem h4{margin:0;font-size:16px;font-weight:800;letter-spacing:-.018em;display:flex;
+  align-items:center;gap:9px;flex-wrap:wrap}
+.fitem p{margin:6px 0 0;font-size:14.5px;color:var(--ink-2);max-width:80ch}
+.fitem .todo{margin:9px 0 0;font-size:14px;color:var(--ink);background:var(--sunken);
+  padding:10px 14px;border-radius:11px;max-width:80ch}
+.arrow{font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.arrow.better{background:var(--good-wash);color:var(--good)}
+.arrow.worse{background:var(--crit-wash);color:var(--crit)}
+.arrow.flat,.arrow.neutral{background:var(--sunken);color:var(--ink-3)}
+.deltas{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair-2);
+  border:1px solid var(--hair-2);border-radius:18px;overflow:hidden;margin-bottom:18px}
+.deltas.c2{grid-template-columns:repeat(2,1fr)}
+.deltas.c3{grid-template-columns:repeat(3,1fr)}
+.dl.pad{background:var(--surface)}
+@media(max-width:820px){.deltas,.deltas.c2,.deltas.c3{grid-template-columns:repeat(2,1fr)}}
+.dl{background:var(--surface);padding:16px 18px}
+.dl .k{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink-3);display:flex;align-items:center;margin:0}
+.dl .v{margin:7px 0 0;font-size:23px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.dl .c{margin:4px 0 0;font-size:12.5px;font-weight:700}
+.dl .c.better{color:var(--good)}.dl .c.worse{color:var(--crit)}
+.dl .c.flat,.dl .c.neutral{color:var(--ink-3)}
+.dl .t{margin:2px 0 0;font-size:11.5px;color:var(--faint)}
+.unusual{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;
+  background:var(--warn-wash);color:var(--warn)}
+.thin{margin-top:14px;padding:14px 18px;border-radius:12px;background:var(--warn-wash);
+  color:var(--ink);font-size:14px;border-left:3px solid var(--warn)}
+.movers{margin-top:18px}
 .i{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
   border-radius:50%; border:1px solid var(--faint); background:transparent; color:var(--faint);
   font-size:10px; font-weight:800; font-style:italic; line-height:1; padding:0; margin-left:7px;
@@ -557,6 +598,117 @@ PRODUCT_JS = r"""
       subs.appendChild(r);
     });
   })();
+
+  /* ----------------------------------------------------------- tracker -- */
+  (function () {
+    var host = document.getElementById("tracker"), T = D.tracker || {};
+    if (!host) { return; }
+    if (!T.available) {
+      host.innerHTML = '<div class="chartcard"><h3>Nothing to compare yet</h3>' +
+        "<p>Drop another export tomorrow and this becomes a day-by-day tracker: what moved, " +
+        "whether it is outside its normal range, and what to look at first.</p></div>";
+      return;
+    }
+    document.getElementById("trackhead").textContent =
+      "How " + (T.day_label || T.day) + " compares";
+    document.getElementById("tracksub").textContent =
+      T.days_recorded + " days recorded so far. Every export is merged into one running " +
+      "daily record, so this builds itself — overlapping exports correct the days they " +
+      "cover rather than double-counting them.";
+
+    var html = "";
+    if (T.focus && T.focus.length) {
+      html += '<div class="focus"><header><h3>Look at these first</h3>' +
+        '<span class="when">' + esc(T.day_label || T.day) +
+        (T.previous_day ? " vs " + esc(T.previous_day_label || T.previous_day) : "") +
+        "</span></header>";
+      T.focus.forEach(function (f, i) {
+        html += '<div class="fitem"><span class="rank">' + (i + 1) + "</span><div>" +
+          "<h4>" + esc(f.title) + '<span class="arrow ' + f.verdict + '">' +
+          (f.verdict === "worse" ? "worse" : f.verdict === "better" ? "better"
+            : f.verdict === "neutral" ? "changed" : "flat") +
+          "</span></h4><p>" + esc(f.detail) + '</p><p class="todo">' +
+          esc(f.action) + "</p></div></div>";
+      });
+      html += "</div>";
+    }
+
+    var tiles = T.metrics || [];
+    // Pick a column count that divides the tiles evenly. The grid draws its
+    // hairlines with a 1px gap over a tinted background, so a half-empty last
+    // row shows as a grey slab rather than as nothing.
+    var cols = tiles.length % 4 === 0 ? 4 : tiles.length % 3 === 0 ? 3
+      : tiles.length % 2 === 0 ? 2 : Math.min(tiles.length, 4);
+    html += '<div class="deltas' + (cols === 4 ? "" : " c" + cols) + '">';
+    tiles.forEach(function (m) {
+      var c = m.vs_yesterday;
+      var change = c !== null ? (c >= 0 ? "+" : "") + (c * 100).toFixed(1) + "% vs yesterday"
+        : m.yesterday === 0 ? "none yesterday"
+        : m.yesterday !== null ? "no comparison"
+        : T.previous_day ? "not measured yesterday" : "no prior day";
+      html += '<div class="dl"><p class="k">' + esc(m.label) + info(m.metric) +
+        (m.unusual ? '<span class="unusual">unusual</span>' : "") + "</p>" +
+        '<p class="v">' + esc(fmtKind(m.value, m.kind)) + "</p>" +
+        '<p class="c ' + m.verdict + '">' + esc(change) + "</p>" +
+        '<p class="t">' + (m.typical !== null
+          ? "usually " + esc(fmtKind(m.typical, m.kind)) : "&nbsp;") + "</p></div>";
+    });
+    for (var pad = tiles.length % cols; pad && pad < cols; pad++) {
+      html += '<div class="dl pad"></div>';
+    }
+    html += "</div>";
+
+    if (!T.reliable) {
+      html += '<div class="thin"><b>Only ' + T.days_recorded +
+        " days recorded.</b> Day-to-day swings on a young history are mostly noise. " +
+        "The comparisons get trustworthy at about two weeks, and a same-weekday " +
+        "comparison needs three.</div>";
+    }
+
+    var mv = T.movers || {};
+    if (mv.rows && mv.rows.length) {
+      html += '<div class="chartcard movers"><h3>Where the change came from</h3>' +
+        "<p>Traffic sources by how much their sales moved, " +
+        esc(mv.day_label || mv.day) + " against " + esc(mv.previous_label || mv.previous) +
+        "." + (mv.lagging ? " The per-source sheets in this export stop before " +
+          esc(T.day_label || T.day) + ", so this is the newest day they cover." : "") +
+        "</p><div class=\"rows\">";
+      var peak = Math.max.apply(null, mv.rows.map(function (m) {
+        return Math.abs(m.delta); }).concat([1]));
+      mv.rows.forEach(function (m) {
+        var up = m.delta >= 0;
+        html += '<div class="rw"><div><div class="cn">' + esc(m.source) + "</div>" +
+          '<div class="cs">' + esc(m.channel) + " · " + fmt(m.was, "money0") + " → " +
+          fmt(m.sales, "money0") +
+          (m.is_ads && m.spend_delta ? " · spend " + (m.spend_delta >= 0 ? "+" : "−") +
+            fmt(Math.abs(m.spend_delta), "money0") : "") + "</div></div>" +
+          '<div class="track"><div class="fill" style="width:' +
+          Math.max(Math.abs(m.delta) / peak * 100, 2).toFixed(1) + "%;background:" +
+          (up ? "var(--good)" : "var(--crit)") + '"></div></div>' +
+          '<div class="vv" style="color:' + (up ? "var(--good)" : "var(--crit)") + '">' +
+          (up ? "+" : "−") + fmt(Math.abs(m.delta), "money0") + "</div></div>";
+      });
+      html += "</div></div>";
+    }
+    host.innerHTML = html;
+
+    if (T.series && T.series.length > 1) {
+      var card = el("div", "chartcard");
+      card.style.marginTop = "18px";
+      card.innerHTML = "<h3>Sales, every recorded day</h3><p>The whole history, not just " +
+        "this export's window.</p><div id=\"chart-history\"></div>";
+      host.appendChild(card);
+      lineChart("chart-history", T.series.map(function (d) {
+        return {label: d.day_label || d.day.slice(5), v: d.sales}; }), "money0", "var(--accent)");
+    }
+  })();
+
+  function fmtKind(v, kind) {
+    if (kind === "money") { return fmt(v, "money"); }
+    if (kind === "pct") { return fmt(v, "pct"); }
+    if (kind === "x") { return v.toFixed(1) + "×"; }
+    return fmt(v, "int");
+  }
 
   /* --------------------------------------------------------------- ads -- */
   (function () {

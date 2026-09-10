@@ -72,6 +72,8 @@ DEFAULT_CONFIG = {
     # Shown as the report title. Left blank, the tool uses the name from an
     # ads export if it has seen one, and otherwise reads it off the filename.
     "shop_name": "",
+    # Open each new report in your browser as soon as it is written.
+    "auto_open_report": True,
     "brand_patterns": [r"\bthe ?bakers?\b", r"\bthebaker\b"],
     "competitor_names": [
         "innofood", "ssodd", "tjean", "dessini", "eagle", "verly", "berjaya",

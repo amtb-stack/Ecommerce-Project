@@ -149,6 +149,7 @@ class ShopStats:
     daily: list[dict] = field(default_factory=list)            # one row per day
     channels: list[dict] = field(default_factory=list)         # traffic source totals
     subchannels: list[dict] = field(default_factory=list)      # named sources within a channel
+    daily_sources: list[dict] = field(default_factory=list)    # one row per day per source
     products: list[dict] = field(default_factory=list)         # the combined product table
     sheets: list[str] = field(default_factory=list)
 
@@ -219,6 +220,7 @@ def read_shop_stats(path: Path) -> ShopStats:
     stats.shop = _shop_from_filename(path)
     _read_overview(sheets, stats)
     _read_channels(sheets, stats)
+    stats.daily_sources = _read_daily_sources(sheets)
     stats.products = _read_products(sheets)
 
     if not stats.products and not stats.totals:
@@ -402,6 +404,44 @@ def _read_channels(sheets: dict[str, list], stats: ShopStats) -> None:
         totals.values(), key=lambda c: -(c.get("placed", {}).get("sales", 0.0))
     )
     stats.subchannels = sorted(subs, key=lambda s: -s["sales"])
+
+
+def _read_daily_sources(sheets: dict[str, list]) -> list[dict]:
+    """Per-day rows for each traffic source and ad placement.
+
+    The "Source Contribution" sheets nest a date series under every source,
+    which is the only place daily numbers exist below shop level. Product
+    figures are period totals only, so no product has a daily history.
+    """
+    rows: list[dict] = []
+    for name, sheet_rows in sheets.items():
+        if _family_of(name) != "source" or _state_of(name) != "placed":
+            continue
+        for block, entries in _iter_blocks(sheet_rows, "Traffic Source"):
+            label = block
+            for entry in entries:
+                first = entry.get("Traffic Source", "").strip()
+                day = _parse_day(first)
+                if day is None:
+                    # A named placement heading its own date series.
+                    label = first or block
+                    continue
+                views, has_views = _first(entry, _VIEW_COLUMNS)
+                rows.append({
+                    "day": day.isoformat(),
+                    "channel": block,
+                    "source": label if label != block else block,
+                    "sales": _num(entry.get("Sales (MYR)")),
+                    "impressions": views,
+                    "has_impressions": has_views,
+                    "clicks": _num(entry.get("Product Clicks")),
+                    "has_clicks": "Product Clicks" in entry,
+                    "orders": _num(entry.get("Orders")),
+                    "ad_spend": _num(entry.get("Ads Expense")),
+                    "ad_roas": _num(entry.get("Ads ROAS")),
+                    "is_ads": "Ads Expense" in entry,
+                })
+    return rows
 
 
 def _read_products(sheets: dict[str, list]) -> list[dict]:

@@ -20,7 +20,8 @@ def _e(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
-def _payload(stats: ShopStats, analysis: ProductAnalysis, config: dict) -> dict:
+def _payload(stats: ShopStats, analysis: ProductAnalysis, config: dict,
+             tracker: dict | None = None) -> dict:
     cur = config.get("currency", "RM")
     t = analysis.totals
 
@@ -75,11 +76,13 @@ def _payload(stats: ShopStats, analysis: ProductAnalysis, config: dict) -> dict:
         "channels_ads": [c for c in analysis.subchannels if c["is_ads"]],
         "daily": analysis.daily,
         "findings": analysis.findings,
+        "tracker": tracker or {"available": False},
     }
 
 
-def render(stats: ShopStats, analysis: ProductAnalysis, config: dict) -> str:
-    payload = _payload(stats, analysis, config)
+def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
+           tracker: dict | None = None) -> str:
+    payload = _payload(stats, analysis, config, tracker)
     m, t = payload["meta"], payload["totals"]
     cur = m["currency"]
     data = json.dumps(payload, ensure_ascii=False, default=str).replace("</", "<\\/")
@@ -98,7 +101,7 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict) -> str:
 <div class="bar"><div class="wrap">
   <span class="dot"></span><span class="name">Product performance</span>
   <nav>
-    <a href="#groups">Groups</a><a href="#table">All products</a>
+    <a href="#today">Today</a><a href="#groups">Groups</a><a href="#table">All products</a>
     <a href="#sources">Sources</a><a href="#trend">Trend</a><a href="#notes">Findings</a>
   </nav>
   <span class="spacer"></span>
@@ -121,6 +124,17 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict) -> str:
   </div>
   <div class="funnel" id="funnel"></div>
 </div></header>
+
+<section id="today"><div class="wrap">
+  <div class="head">
+    <p class="kicker">Day by day</p>
+    <h2 id="trackhead">How today compares</h2>
+    <p id="tracksub">Every export you drop is merged into one running daily record, so this
+       builds itself. Overlapping exports correct the days they cover rather than
+       double-counting them.</p>
+  </div>
+  <div id="tracker"></div>
+</div></section>
 
 <section id="groups"><div class="wrap">
   <div class="head">
@@ -207,7 +221,8 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict) -> str:
 
 
 def write_product_report(
-    stats: ShopStats, analysis: ProductAnalysis, config: dict, out_dir: Path
+    stats: ShopStats, analysis: ProductAnalysis, config: dict, out_dir: Path,
+    tracker: dict | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = (stats.period_end or datetime.now().date()).isoformat()
@@ -217,5 +232,5 @@ def write_product_report(
     while path.exists():
         path = out_dir / f"{stamp}_products_{slug}_{counter}.html"
         counter += 1
-    path.write_text(render(stats, analysis, config), encoding="utf-8")
+    path.write_text(render(stats, analysis, config, tracker), encoding="utf-8")
     return path

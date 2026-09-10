@@ -16,6 +16,7 @@ from .product_report import write_product_report
 from .products import analyse_products
 from .report import write_report
 from .shopstats import looks_like_shop_stats, read_shop_stats
+from . import timeline
 from .tabular import describe_unreadable, read_tabular
 from .tabular_report import write_tabular_report
 
@@ -96,7 +97,8 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
             f"{analysis.totals['rows']:,} rows")
         say(f"        {len(analysis.findings)} findings ({critical} to fix now)"
             + (f" · {len(trend)} metrics trended" if trend else " · first run, no trend yet"))
-        say(f"        report: {report}")
+        _say_report(say, report)
+        _open_report(report, config, say)
         if archive:
             _move(path, ARCHIVE_DIR)
         return Outcome(path, "ok", "analysed", report, run_id)
@@ -118,10 +120,14 @@ def _process_shop_stats(path, digest, config, archive, say) -> Outcome:
     stats = read_shop_stats(path)
     analysis = analyse_products(stats, config)
 
+    with timeline.connect(DB_PATH) as conn:
+        days = timeline.record(conn, stats, path.name)
+        tracker = timeline.track(conn, config)
+
     with store.connect(DB_PATH) as conn:
         stats.shop = (config.get("shop_name") or store.known_shop_name(conn)
                       or stats.shop or "Your shop")
-        report = write_product_report(stats, analysis, config, REPORT_DIR)
+        report = write_product_report(stats, analysis, config, REPORT_DIR, tracker)
         store.save_product_run(conn, stats, analysis, report)
 
     critical = sum(1 for f in analysis.findings if f["level"] == "critical")
@@ -129,7 +135,12 @@ def _process_shop_stats(path, digest, config, archive, say) -> Outcome:
     say(f"        {stats.period_label} · {analysis.totals['products']} products · "
         f"{len(stats.sheets)} tabs combined")
     say(f"        {len(analysis.findings)} findings ({critical} to fix now)")
+    if tracker.get("available"):
+        say(f"        tracker: {days} day(s) recorded, {tracker['days_recorded']} in history")
+        for item in tracker["focus"][:2]:
+            say(f"          → {item['title']}")
     _say_report(say, report)
+    _open_report(report, config, say)
     if archive:
         _move(path, ARCHIVE_DIR)
     return Outcome(path, "ok", "analysed", report)
@@ -148,9 +159,26 @@ def _process_tabular(path, config, archive, say) -> Outcome:
         f"{dataset.total_rows:,} rows, {columns} columns")
     say(f"        {flagged} thing(s) worth checking")
     _say_report(say, report)
+    _open_report(report, config, say)
     if archive:
         _move(path, ARCHIVE_DIR)
     return Outcome(path, "ok", "profiled", report)
+
+
+def _open_report(report: Path, config: dict, say) -> None:
+    """Show the finished report without being asked.
+
+    Failing to open a browser must never fail the run -- on a server or a
+    locked-down desktop there may be none, and the report is already written.
+    """
+    if not config.get("auto_open_report", True):
+        return
+    try:
+        import webbrowser
+
+        webbrowser.open(report.resolve().as_uri())
+    except Exception:
+        say("        (could not open a browser — open the file above yourself)")
 
 
 def _say_report(say, report: Path) -> None:

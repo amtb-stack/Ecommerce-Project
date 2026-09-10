@@ -31,6 +31,7 @@ A report lands in `reports/` a second later. That's the whole loop.
 | `History.bat` | Lists every export analysed so far. |
 | `Check-Setup.bat` | Diagnoses your setup and explains anything wrong, in plain English. |
 | `Open-Reports.bat` | Opens the `reports` folder, so you never have to hunt for the file. |
+| `Schedule-Daily.bat` | Registers a Windows task so the analyser runs itself every morning. |
 
 ### Python version
 
@@ -145,6 +146,38 @@ distribution for numbers, a timeline for dates, top values for categories,
 plus duplicates, gaps, constant columns and strong correlations. It does not
 know what your columns mean, so it only reports what is structurally true.
 
+## The daily tracker
+
+Drop a shop statistics workbook every morning and the product report grows a
+**Today** section at the top: what moved since yesterday, whether the move is
+outside its normal range, and what to look at first.
+
+It builds itself. Each workbook carries a date series rather than a single
+snapshot, and consecutive exports overlap, so every day is stored keyed by its
+date and updated in place. Re-dropping an overlapping export **corrects** the
+days it covers instead of duplicating them — there is nothing to reconcile by
+hand and no way to double-count a day.
+
+What it works out for you:
+
+- **Look at these first** — the moves ranked by size × how much the metric
+  matters, not by percentage alone, so a swing in a small number cannot
+  outrank a real move in revenue. Each one says what it means and what to do.
+- **Unusual** — a day is flagged when it sits more than two robust standard
+  deviations from its own recent typical value. The spread uses the median
+  absolute deviation, which a single spike cannot inflate.
+- **Where the change came from** — traffic sources ranked by how much money
+  they moved, so a drop in sales points at the channel that caused it.
+- **Sales, every recorded day** — the whole history, not just this export's
+  window.
+
+Run **`Schedule-Daily.bat`** and Windows does the dropping for you.
+
+It is honest about what it cannot say. Fewer than seven days recorded and it
+says so: day-to-day swings on a young history are mostly noise, and the
+comparisons only become trustworthy at about two weeks. A metric the export
+did not measure that day is left out rather than reported as zero.
+
 ## Supported input
 
 Any `.csv`, `.tsv`, `.txt`, `.xlsx` or `.json`. Shopee keyword exports and shop
@@ -180,6 +213,13 @@ database, then prints exactly what to do about anything it finds.
   suggestive, not proof — this export records searches, never your inventory.
 - Screenshot input is not supported. OCR on dense ad tables misreads numbers
   too often to trust for money decisions.
+- **The daily tracker runs at shop and traffic-source level only.** The
+  statistics workbook gives per-day figures for the shop and for each traffic
+  source and ad placement, but product figures are period totals — there is no
+  per-product daily history in the file to track.
+- The per-source sheets sometimes stop a day earlier than the shop-level one.
+  Where they do, "Where the change came from" uses the newest day they cover
+  and says so, rather than reporting every source as having dropped to zero.
 
 ## Layout
 

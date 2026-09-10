@@ -113,13 +113,28 @@ def run() -> int:
     # -- Database -------------------------------------------------------
     try:
         with sqlite3.connect(DB_PATH) as conn:
-            runs = 0
-            if conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
-            ).fetchone():
-                runs = conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+            def count(table: str) -> int:
+                if not conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                    (table,),
+                ).fetchone():
+                    return 0
+                return conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+
+            runs, products, days = count("runs"), count("product_runs"), count("daily_shop")
+        parts = []
+        if runs:
+            parts.append(f"{runs} keyword export(s)")
+        if products:
+            parts.append(f"{products} statistics workbook(s)")
         _line(TICK, "History database",
-              f"{runs} export(s) analysed so far" if runs else "empty — nothing analysed yet")
+              " · ".join(parts) if parts else "empty — nothing analysed yet")
+        # The tracker only becomes trustworthy with a couple of weeks behind it,
+        # so say where it stands rather than only that it exists.
+        if days:
+            _line(TICK if days >= 7 else WARN, "Daily tracker",
+                  f"{days} day(s) recorded" + ("" if days >= 7 else
+                                               " — comparisons firm up at about 14"))
     except sqlite3.Error as exc:
         _line(CROSS, "History database", str(exc))
         problems.append(

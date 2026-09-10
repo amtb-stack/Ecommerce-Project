@@ -30,9 +30,29 @@ WHAT TO DO  (about 15 minutes, once)
        like. On a phone, tap it. Press Escape to close.
        You do not need to know anything about advertising.
 
-EVERY MONTH AFTER THAT
+EVERY TIME AFTER THAT
     Just repeat steps 3, 4 and 5. The tool remembers every export,
     so from your second one onward each report shows what changed.
+
+TO GET A DAY-BY-DAY TRACKER
+    Drop your shop statistics workbook every morning, in the same
+    drop folder. From the second one onward the report opens with
+    a "Today" section: what went up, what went down, what is odd
+    for your shop, and what to look at first. It is ranked for
+    you, so the top item is the one worth your morning.
+
+    You do not have to line anything up or delete old files. Days
+    are stored by their date, so dropping an export that overlaps
+    an earlier one CORRECTS those days instead of counting them
+    twice. Drop whatever Shopee gives you.
+
+    To stop even having to remember, double-click
+                            Schedule-Daily.bat
+    Windows then runs it for you every morning.
+
+    Give it a week before you trust it. The report says so itself
+    while the history is still short - a single day bouncing
+    around is usually noise, not news.
 
 TO SEE PROFIT, NOT JUST REVENUE
     Open  shopads.config.json  in Notepad. Find "business".
@@ -54,6 +74,7 @@ THE BUTTONS
     History.bat         List every export analysed so far.
     Check-Setup.bat     Diagnose problems.
     Open-Reports.bat    Open the folder your reports are saved in.
+    Schedule-Daily.bat  Run the analyser automatically every morning.
 
 NEEDS
     Python 3.10 or newer, from https://www.python.org/downloads/
