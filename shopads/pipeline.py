@@ -67,7 +67,7 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
             )
 
         if looks_like_shop_stats(path):
-            return _process_shop_stats(path, digest, config, archive, say)
+            return _process_shop_stats(path, config, archive, say)
 
         try:
             export = read_export(path)
@@ -115,8 +115,14 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
         return Outcome(path, "failed", f"{type(exc).__name__}: {exc}")
 
 
-def _process_shop_stats(path, digest, config, archive, say) -> Outcome:
-    """The shop-statistics workbook: product performance rather than keywords."""
+def _process_shop_stats(path, config, archive, say) -> Outcome:
+    """The shop-statistics workbook: product performance rather than keywords.
+
+    Deliberately not skipped on a repeat digest the way keyword exports are.
+    Re-exporting the same window is how a corrected figure reaches the tool,
+    and the daily record is keyed by day and upserted, so a repeat overwrites
+    those days rather than counting them twice.
+    """
     stats = read_shop_stats(path)
     analysis = analyse_products(stats, config)
 
