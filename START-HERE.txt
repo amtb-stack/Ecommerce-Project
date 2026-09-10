@@ -21,8 +21,16 @@ WHAT TO DO  (about 15 minutes, once)
 
     4. Drag your Shopee export into the  drop  folder.
 
-    5. Open the newest file in the  reports  folder.
-       It opens in your web browser.
+    5. Open the report in the  reports  folder.
+       There are only ever two, and they never change name:
+
+           Shop Performance Report.html
+           Keywords Ads Report.html
+
+       Both are already there before you drop anything - open
+       one now and it tells you what to put in the drop folder.
+       Each export REFRESHES the report it belongs to. You can
+       leave the tab open and press F5 to see the new one.
 
        Every number has a small (i) beside it. Hover it and it
        explains, in plain English, what the number is, how it was
@@ -33,6 +41,10 @@ WHAT TO DO  (about 15 minutes, once)
 EVERY TIME AFTER THAT
     Just repeat steps 3, 4 and 5. The tool remembers every export,
     so from your second one onward each report shows what changed.
+
+    Your reports folder never fills up. Two files, always the same
+    two names. The Excel file you dropped moves itself into
+    drop\processed so you can see what has been done.
 
 TO GET A DAY-BY-DAY TRACKER
     Drop your shop statistics workbook every morning, in the same
@@ -73,7 +85,7 @@ THE BUTTONS
                         You can also drag a file straight onto it.
     History.bat         List every export analysed so far.
     Check-Setup.bat     Diagnose problems.
-    Open-Reports.bat    Open the folder your reports are saved in.
+    Open-Reports.bat    Open the folder holding your two reports.
     Schedule-Daily.bat  Run the analyser automatically every morning.
 
 NEEDS

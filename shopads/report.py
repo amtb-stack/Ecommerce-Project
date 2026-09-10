@@ -19,6 +19,7 @@ from .assets import APP_JS, CSS
 from .glossary import ALL as GLOSSARY
 from .glossary import tip as glossary_tip
 from .ingest import Export
+from .writer import write_atomic
 
 LEVEL_LABEL = {"critical": "Fix now", "warning": "Watch", "good": "Strength", "info": "Note"}
 
@@ -234,7 +235,7 @@ def render(
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{_e(m['shop'])} — Shop Ads</title>
+<title>Keywords Ads Report — {_e(m['shop'])}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -467,17 +468,11 @@ def write_report(
     export: Export,
     analysis: Analysis,
     config: dict,
-    out_dir: Path,
+    destination: Path,
     trend: list[dict] | None = None,
     previous_label: str | None = None,
 ) -> Path:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    stamp = (export.period_end or datetime.now().date()).isoformat()
-    slug = "".join(ch if ch.isalnum() else "-" for ch in export.source_path.stem)[:60].strip("-")
-    path = out_dir / f"{stamp}_{slug}.html"
-    counter = 2
-    while path.exists():
-        path = out_dir / f"{stamp}_{slug}_{counter}.html"
-        counter += 1
-    path.write_text(render(export, analysis, config, trend, previous_label), encoding="utf-8")
-    return path
+    """Refresh the keyword report in place, at its fixed name."""
+    return write_atomic(
+        destination, render(export, analysis, config, trend, previous_label)
+    )

@@ -49,7 +49,9 @@ def watch(folder: Path | None = None, interval: float = 3.0) -> None:
     from . import __version__
     print(f"Shop Ads watcher running (version {__version__}).")
     print(f"  drop exports here : {folder}")
-    print(f"  reports appear in : {REPORT_DIR}")
+    print(f"  reports refresh in: {REPORT_DIR}")
+    print("                      Shop Performance Report.html")
+    print("                      Keywords Ads Report.html")
     print("  press Ctrl+C to stop\n")
 
     run_once(folder)

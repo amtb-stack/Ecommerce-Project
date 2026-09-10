@@ -5,4 +5,4 @@ Every run is stored in a local SQLite database so that metrics can be
 trended across exports -- the one thing a single export cannot show.
 """
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"

@@ -9,7 +9,8 @@ from pathlib import Path
 from . import store
 from .analyze import analyse
 from .config import (
-    ARCHIVE_DIR, DB_PATH, FAILED_DIR, REPORT_DIR, ensure_dirs, load_config,
+    ADS_REPORT, ARCHIVE_DIR, DB_PATH, FAILED_DIR, OTHER_DIR, REPORT_DIR,
+    SHOP_REPORT, ensure_dirs, load_config,
 )
 from .ingest import IngestError, file_digest, read_export
 from .product_report import write_product_report
@@ -42,6 +43,10 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
     ensure_dirs()
     config = load_config()
     path = Path(path)
+    moved = tidy_old_reports()
+    if moved and not quiet:
+        print(f"  note  moved {moved} dated report(s) from an earlier version into "
+              f"{(REPORT_DIR / 'previous')}", flush=True)
 
     def say(message: str) -> None:
         if not quiet:
@@ -87,7 +92,7 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
                 previous_label = f"the {previous_label} export" if previous_label else None
 
             report = write_report(
-                export, analysis, config, REPORT_DIR, trend, previous_label
+                export, analysis, config, ADS_REPORT, trend, previous_label
             )
             store.set_report_path(conn, run_id, report)
 
@@ -133,7 +138,7 @@ def _process_shop_stats(path, config, archive, say) -> Outcome:
     with store.connect(DB_PATH) as conn:
         stats.shop = (config.get("shop_name") or store.known_shop_name(conn)
                       or stats.shop or "Your shop")
-        report = write_product_report(stats, analysis, config, REPORT_DIR, tracker)
+        report = write_product_report(stats, analysis, config, SHOP_REPORT, tracker)
         store.save_product_run(conn, stats, analysis, report)
 
     critical = sum(1 for f in analysis.findings if f["level"] == "critical")
@@ -155,7 +160,7 @@ def _process_shop_stats(path, config, archive, say) -> Outcome:
 def _process_tabular(path, config, archive, say) -> Outcome:
     """Anything tabular the tool does not recognise: profile it instead."""
     dataset = read_tabular(path)
-    report = write_tabular_report(dataset, REPORT_DIR)
+    report = write_tabular_report(dataset, OTHER_DIR)
     sheets = len(dataset.sheets)
     columns = sum(len(s.columns) for s in dataset.sheets)
     flagged = sum(1 for s in dataset.sheets for f in s.findings
@@ -193,8 +198,32 @@ def _say_report(say, report: Path) -> None:
     A single long path is easy to skim past; people then look for the report
     in whatever folder they last used and conclude it was never written.
     """
-    say(f"        report saved: {report.name}")
+    fixed = report in (SHOP_REPORT, ADS_REPORT)
+    say(f"        report {'refreshed' if fixed else 'saved'}: {report.name}")
     say(f"        in folder:    {report.parent}")
+
+
+def tidy_old_reports() -> int:
+    """Move dated reports from before the two-report layout out of the way.
+
+    Earlier versions wrote a new dated file per export, so upgrading leaves a
+    folder that still looks like the thing it was meant to stop being. They are
+    moved rather than deleted -- they are someone's history, and deleting a
+    person's files to tidy up is not the tool's call to make.
+    """
+    if not REPORT_DIR.exists():
+        return 0
+    stale = [
+        p for p in REPORT_DIR.iterdir()
+        if p.is_file() and p.suffix.lower() == ".html"
+        and p not in (SHOP_REPORT, ADS_REPORT)
+    ]
+    if not stale:
+        return 0
+    previous = REPORT_DIR / "previous"
+    for path in stale:
+        _move(path, previous)
+    return len(stale)
 
 
 def _move(path: Path, target_dir: Path) -> Path:

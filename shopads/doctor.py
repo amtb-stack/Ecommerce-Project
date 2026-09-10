@@ -13,7 +13,8 @@ from pathlib import Path
 
 from . import __version__
 from .config import (
-    CONFIG_PATH, DATA_DIR, DB_PATH, DROP_DIR, REPORT_DIR, ensure_dirs,
+    ADS_REPORT, CONFIG_PATH, DATA_DIR, DB_PATH, DROP_DIR, OTHER_DIR, REPORT_DIR,
+    SHOP_REPORT, ensure_dirs,
 )
 
 MIN_PYTHON = (3, 10)
@@ -150,11 +151,32 @@ def run() -> int:
         p for p in DROP_DIR.iterdir()
         if p.is_file() and not p.name.startswith((".", "~$"))
     ] if DROP_DIR.exists() else []
-    reports = list(REPORT_DIR.glob("*.html")) if REPORT_DIR.exists() else []
     _line(TICK, "Files waiting", f"{len(waiting)} in the drop folder")
-    _line(TICK, "Reports made", f"{len(reports)} in the reports folder")
+
+    # There are exactly two reports and they keep their names, so what matters
+    # is whether each has anything in it yet -- not how many files are there.
+    for label, path in (("Shop Performance Report", SHOP_REPORT),
+                        ("Keywords Ads Report", ADS_REPORT)):
+        if not path.exists():
+            _line(WARN, label, "missing — it will be recreated on the next run")
+        elif _is_waiting(path):
+            _line(TICK, label, "waiting for its first export")
+        else:
+            _line(TICK, label, f"filled in — {path}")
+
+    profiles = list(OTHER_DIR.glob("*.html")) if OTHER_DIR.exists() else []
+    if profiles:
+        _line(TICK, "Other data profiles", f"{len(profiles)} in {OTHER_DIR}")
 
     return _finish(problems)
+
+
+def _is_waiting(path: Path) -> bool:
+    """True while a report is still the page that says what to drop."""
+    try:
+        return "shopads-waiting" in path.read_text(encoding="utf-8")[:2000]
+    except OSError:
+        return False
 
 
 def _finish(problems: list[str]) -> int:

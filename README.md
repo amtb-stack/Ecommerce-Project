@@ -2,9 +2,11 @@
 
 Offline analysis and tracking for Shopee **Shop+ Ads** keyword exports.
 
-Drop an export into `drop/`. A dated HTML report appears in `reports/`, and the
-run is stored in a local SQLite database so the **next** export gets compared
-against it — the trend a single export can never show you.
+Drop an export into `drop/`. There are two reports in `reports/` and there
+always will be — **Shop Performance Report.html** and **Keywords Ads
+Report.html** — and each export refreshes the one it belongs to rather than
+adding a file. Every run is stored in a local SQLite database, so the **next**
+export gets compared against it: the trend a single export can never show you.
 
 Nothing leaves your machine. No API keys, no accounts, no network calls.
 
@@ -129,22 +131,32 @@ drive the segment and drift analysis.
 
 ---
 
-## Three kinds of report
+## Two reports, at fixed names
 
-The tool reads the export and picks the right analysis. Both land in `reports/`.
+The tool reads the export and works out which report it belongs to. Both files
+exist from install, before anything has been analysed, showing a page that says
+what to drop:
 
-**Shop+ Ads keyword export** → the keyword report: what you bid on, what
-shoppers typed, phrase-level spend, and what to add or block.
+| File | Filled in by | What it holds |
+|---|---|---|
+| `reports/Shop Performance Report.html` | Shop statistics workbook (`…shopeeshopstats….xlsx`) | All twelve tabs joined into one row per product, the four-group split of traffic against conversion, channel and paid-placement breakdowns, the placed-to-paid gap, and the daily tracker. |
+| `reports/Keywords Ads Report.html` | Shop+ Ads keyword export | What you bid on against what shoppers typed, phrase-level spend, and what to add or block. |
 
-**Shop statistics workbook** (`…shopeeshopstats….xlsx`) → the product report:
-all twelve tabs joined into one row per product, with the four-group split of
-traffic against conversion, channel and paid-placement breakdowns, and the
-placed-to-paid gap.
+Each export **replaces** the contents of its report. The folder never grows a
+file, and a browser tab left open on a report only needs reloading. Writes are
+atomic — a reload during a run sees the old report or the new one, never half
+of each.
 
-**Anything else tabular** → a data profile. Every column typed and charted, a
-distribution for numbers, a timeline for dates, top values for categories,
-plus duplicates, gaps, constant columns and strong correlations. It does not
-know what your columns mean, so it only reports what is structurally true.
+**Anything else tabular** → a data profile, written to `reports/other/` so the
+reports folder itself only ever holds the two. Every column typed and charted, a
+distribution for numbers, a timeline for dates, top values for categories, plus
+duplicates, gaps, constant columns and strong correlations. It does not know
+what your columns mean, so it only reports what is structurally true. These keep
+dated names: each is about one file, so there is nothing for a later one to
+refresh.
+
+Upgrading from a version that wrote dated reports? The first run moves the old
+files into `reports/previous/`. They are moved, not deleted.
 
 ## The daily tracker
 
@@ -228,7 +240,10 @@ database, then prints exactly what to do about anything it finds.
 
 ```
 drop/          put exports here      (processed/ and failed/ created as needed)
-reports/       generated HTML reports
+reports/       Shop Performance Report.html
+               Keywords Ads Report.html
+               other/     profiles of files that are neither
+               previous/  dated reports from an older version, if you had any
 data/          shopads.db — your run history
 shopads/       the package
 tests/         pytest suite

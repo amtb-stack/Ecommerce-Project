@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .tabular import Dataset, correlations_for, preview_rows
+from .writer import write_atomic
 
 LEVEL_LABEL = {"critical": "Problem", "warning": "Check this", "good": "Clean", "info": "Note"}
 
@@ -138,7 +139,12 @@ def render(dataset: Dataset) -> str:
 
 
 def write_tabular_report(dataset: Dataset, out_dir: Path) -> Path:
-    out_dir.mkdir(parents=True, exist_ok=True)
+    """Profiles keep dated names, in their own folder.
+
+    Unlike the two reports, these are one-offs about one file rather than a
+    running view of the shop, so there is nothing for a later one to refresh.
+    They are kept out of the reports folder so it only ever holds the two.
+    """
     stamp = datetime.now().strftime("%Y-%m-%d")
     slug = "".join(c if c.isalnum() else "-" for c in dataset.source_path.stem)[:50].strip("-")
     path = out_dir / f"{stamp}_profile_{slug}.html"
@@ -146,8 +152,7 @@ def write_tabular_report(dataset: Dataset, out_dir: Path) -> Path:
     while path.exists():
         path = out_dir / f"{stamp}_profile_{slug}_{counter}.html"
         counter += 1
-    path.write_text(render(dataset), encoding="utf-8")
-    return path
+    return write_atomic(path, render(dataset))
 
 
 CSS = """

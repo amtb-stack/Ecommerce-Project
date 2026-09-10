@@ -19,6 +19,15 @@ FAILED_DIR = DROP_DIR / "failed"
 DB_PATH = DATA_DIR / "shopads.db"
 CONFIG_PATH = ROOT / "shopads.config.json"
 
+#: The two reports, at fixed names. Each export refreshes the one it belongs to
+#: rather than adding a dated file, so the folder never fills up and a browser
+#: tab left open on a report only needs reloading.
+SHOP_REPORT = REPORT_DIR / "Shop Performance Report.html"
+ADS_REPORT = REPORT_DIR / "Keywords Ads Report.html"
+#: Profiles of files that are neither of the above are kept out of the way, so
+#: the reports folder itself only ever holds the two reports.
+OTHER_DIR = REPORT_DIR / "other"
+
 #: Columns an export must provide before we will analyse it.
 REQUIRED_COLUMNS = ["keyword", "search_query", "impression", "clicks", "expense"]
 
@@ -152,3 +161,18 @@ def load_config() -> dict:
 def ensure_dirs() -> None:
     for path in (DROP_DIR, REPORT_DIR, DATA_DIR, ARCHIVE_DIR, FAILED_DIR):
         path.mkdir(parents=True, exist_ok=True)
+    _place_holders()
+
+
+def _place_holders() -> None:
+    """Put both reports in place before anything has been analysed.
+
+    Someone opening the folder on day one should find the two files they were
+    told to expect, explaining what to drop, rather than an empty folder that
+    looks like the tool failed to install.
+    """
+    from .placeholder import waiting_page
+
+    for path, kind in ((SHOP_REPORT, "shop"), (ADS_REPORT, "ads")):
+        if not path.exists():
+            path.write_text(waiting_page(kind), encoding="utf-8")

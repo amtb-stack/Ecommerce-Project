@@ -12,6 +12,7 @@ from .glossary import tip as glossary_tip
 from .product_assets import PRODUCT_CSS, PRODUCT_JS
 from .products import QUADRANTS, ProductAnalysis
 from .shopstats import ShopStats
+from .writer import write_atomic
 
 LEVEL_LABEL = {"critical": "Fix now", "warning": "Watch", "good": "Strength", "info": "Note"}
 
@@ -91,7 +92,7 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{_e(m['shop'])} — Product performance</title>
+<title>Shop Performance Report — {_e(m['shop'])}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -221,16 +222,8 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
 
 
 def write_product_report(
-    stats: ShopStats, analysis: ProductAnalysis, config: dict, out_dir: Path,
+    stats: ShopStats, analysis: ProductAnalysis, config: dict, destination: Path,
     tracker: dict | None = None,
 ) -> Path:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    stamp = (stats.period_end or datetime.now().date()).isoformat()
-    slug = "".join(c if c.isalnum() else "-" for c in stats.source_path.stem)[:50].strip("-")
-    path = out_dir / f"{stamp}_products_{slug}.html"
-    counter = 2
-    while path.exists():
-        path = out_dir / f"{stamp}_products_{slug}_{counter}.html"
-        counter += 1
-    path.write_text(render(stats, analysis, config, tracker), encoding="utf-8")
-    return path
+    """Refresh the shop report in place, at its fixed name."""
+    return write_atomic(destination, render(stats, analysis, config, tracker))

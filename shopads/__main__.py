@@ -9,7 +9,9 @@ from pathlib import Path
 
 from . import __version__, store
 from .doctor import run as run_doctor
-from .config import DB_PATH, DROP_DIR, REPORT_DIR, CONFIG_PATH, ensure_dirs
+from .config import (
+    ADS_REPORT, CONFIG_PATH, DB_PATH, DROP_DIR, SHOP_REPORT, ensure_dirs,
+)
 from .pipeline import process_file
 from .watch import run_once, watch
 
@@ -62,7 +64,8 @@ def _cmd_doctor(_: argparse.Namespace) -> int:
 def _cmd_where(_: argparse.Namespace) -> int:
     ensure_dirs()
     print(f"drop folder : {DROP_DIR}")
-    print(f"reports     : {REPORT_DIR}")
+    print(f"reports     : {SHOP_REPORT}")
+    print(f"              {ADS_REPORT}")
     print(f"database    : {DB_PATH}")
     print(f"config      : {CONFIG_PATH}")
     return 0
