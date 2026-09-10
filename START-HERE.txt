@@ -46,6 +46,28 @@ EVERY TIME AFTER THAT
     two names. The Excel file you dropped moves itself into
     drop\processed so you can see what has been done.
 
+TO LOOK AT A DIFFERENT STRETCH OF TIME
+    At the top of each report there is a box marked PERIOD.
+    Change it and the whole page changes with it - the big
+    money figure, the traffic, the ads, everything.
+
+    In the shop report you can pick any dates you like.
+    In the keywords report you pick whole exports, because
+    Shopee does not put dates inside that file.
+
+TO COMPARE TWO PERIODS SIDE BY SIDE
+    Next to PERIOD there is a box marked COMPARE WITH.
+    Pick anything in it and you get both periods next to each
+    other, with the change worked out for every number.
+
+    "The period just before it" is the quick one: it picks a
+    stretch the same length ending the day before yours.
+
+    The report tells you when a comparison is not fair - two
+    periods of different lengths, or two that share days. Read
+    what it says. It is the difference between a real answer
+    and a number that looks like one.
+
 TO GET A DAY-BY-DAY TRACKER
     Drop your shop statistics workbook every morning, in the same
     drop folder. From the second one onward the report opens with

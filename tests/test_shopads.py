@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from shopads.analyze import analyse
-from shopads.config import DEFAULT_CONFIG, load_config
+from shopads.config import DEFAULT_CONFIG
 from shopads.ingest import IngestError, read_export
 from shopads.pipeline import pending_files
 from shopads import store

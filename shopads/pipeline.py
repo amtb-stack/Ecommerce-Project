@@ -17,7 +17,7 @@ from .product_report import write_product_report
 from .products import analyse_products
 from .report import write_report
 from .shopstats import looks_like_shop_stats, read_shop_stats
-from . import timeline
+from . import periods, timeline
 from .tabular import describe_unreadable, read_tabular
 from .tabular_report import write_tabular_report
 
@@ -91,10 +91,12 @@ def process_file(path: Path, *, archive: bool = True, quiet: bool = False) -> Ou
                 previous_label = (previous["period_end"] or previous["analysed_at"] or "")[:10]
                 previous_label = f"the {previous_label} export" if previous_label else None
 
+            # Saved above, so this export is itself in the picker's list.
+            store.set_report_path(conn, run_id, ADS_REPORT)
             report = write_report(
-                export, analysis, config, ADS_REPORT, trend, previous_label
+                export, analysis, config, ADS_REPORT, trend, previous_label,
+                periods.ads_ranges(conn),
             )
-            store.set_report_path(conn, run_id, report)
 
         critical = sum(1 for f in analysis.findings if f["level"] == "critical")
         say(f"  ok    {path.name}")
@@ -138,8 +140,14 @@ def _process_shop_stats(path, config, archive, say) -> Outcome:
     with store.connect(DB_PATH) as conn:
         stats.shop = (config.get("shop_name") or store.known_shop_name(conn)
                       or stats.shop or "Your shop")
-        report = write_product_report(stats, analysis, config, SHOP_REPORT, tracker)
-        store.save_product_run(conn, stats, analysis, report)
+        # Saved before the report is built: the period picker offers every
+        # export submitted so far, and this one has to be among them.
+        store.save_product_run(conn, stats, analysis, SHOP_REPORT)
+        exports = periods.product_periods(conn)
+        with timeline.connect(DB_PATH) as day_conn:
+            ranges = periods.shop_ranges(day_conn, exports)
+        report = write_product_report(stats, analysis, config, SHOP_REPORT,
+                                      tracker, ranges)
 
     critical = sum(1 for f in analysis.findings if f["level"] == "critical")
     say(f"  ok    {path.name}  (product performance)")

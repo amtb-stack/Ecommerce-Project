@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .analyze import Analysis
+from .ads_range_assets import ADS_RANGE_CSS, ADS_RANGE_JS
 from .assets import APP_JS, CSS
 from .glossary import ALL as GLOSSARY
 from .glossary import tip as glossary_tip
@@ -27,6 +28,8 @@ LEVEL_LABEL = {"critical": "Fix now", "warning": "Watch", "good": "Strength", "i
 VIEWS = [
     ("overview", "Overview", "M2 9.5 8 3l6 6.5M3.6 8.2V13h8.8V8.2",
      "Overview", "everything that matters, worst first"),
+    ("compare", "Compare", "M8 2v12M3.2 5.5 1 8.8h4.4L3.2 5.5Zm9.6 0L10.6 8.8H15l-2.2-3.3Z",
+     "Compare exports", "two periods, side by side"),
     ("keywords", "Keywords", "M2.5 4h11M2.5 8h11M2.5 12h7",
      "Keywords", "what you bid on, and where the money went"),
     ("queries", "Search terms", "M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10Zm3.6.6L14 16",
@@ -58,6 +61,7 @@ def _payload(
     config: dict,
     trend: list[dict] | None,
     previous_label: str | None,
+    ranges: dict | None = None,
 ) -> dict:
     """Everything the client app needs, as plain JSON."""
     t, conf, econ = analysis.totals, analysis.confidence, analysis.economics
@@ -176,6 +180,7 @@ def _payload(
         "pareto": {k: v for k, v in analysis.pareto.items() if k != "points"},
         "confidence": {k: _round(v) for k, v in conf.items()},
         "economics": {"tiles": econ_tiles},
+        "ranges": ranges or {"available": False, "periods": []},
     }
 
 
@@ -183,6 +188,7 @@ def _nav(payload: dict) -> str:
     counts = {
         "overview": sum(1 for f in payload["findings"] if f["level"] == "critical"),
         "keywords": len(payload["keywords"]),
+        "compare": max(len(payload["ranges"].get("periods", [])) - 1, 0),
         "queries": len(payload["queries"]),
         "phrases": len(payload["ngrams"]),
         "audience": len(payload["segments"]) + len(payload["themes"]),
@@ -214,8 +220,9 @@ def render(
     config: dict,
     trend: list[dict] | None = None,
     previous_label: str | None = None,
+    ranges: dict | None = None,
 ) -> str:
-    payload = _payload(export, analysis, config, trend, previous_label)
+    payload = _payload(export, analysis, config, trend, previous_label, ranges)
     m = payload["meta"]
     data = json.dumps(payload, ensure_ascii=False, default=str).replace("</", "<\\/")
 
@@ -239,7 +246,7 @@ def render(
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-<style>{CSS}</style></head>
+<style>{CSS}{ADS_RANGE_CSS}</style></head>
 <body>
 <div class="app">
 
@@ -282,6 +289,12 @@ def render(
           stroke-linecap="round"/></svg>
       </button>
     </header>
+
+    <!-- ------------------------------------------------------- compare -->
+    <section class="view" id="view-compare">
+      <div id="ads-rangebar"></div>
+      <div id="ads-compare"></div>
+    </section>
 
     <!-- ------------------------------------------------------ overview -->
     <section class="view on" id="view-overview">
@@ -461,6 +474,7 @@ def render(
 <div id="tip" role="tooltip"></div>
 <script>window.__REPORT__ = {data};</script>
 <script>{APP_JS}</script>
+<script>{ADS_RANGE_JS}</script>
 </body></html>"""
 
 
@@ -471,8 +485,9 @@ def write_report(
     destination: Path,
     trend: list[dict] | None = None,
     previous_label: str | None = None,
+    ranges: dict | None = None,
 ) -> Path:
     """Refresh the keyword report in place, at its fixed name."""
     return write_atomic(
-        destination, render(export, analysis, config, trend, previous_label)
+        destination, render(export, analysis, config, trend, previous_label, ranges)
     )

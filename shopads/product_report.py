@@ -10,6 +10,7 @@ from pathlib import Path
 from .glossary import ALL as GLOSSARY
 from .glossary import tip as glossary_tip
 from .product_assets import PRODUCT_CSS, PRODUCT_JS
+from .range_assets import RANGE_CSS, RANGE_JS
 from .products import QUADRANTS, ProductAnalysis
 from .shopstats import ShopStats
 from .writer import write_atomic
@@ -22,7 +23,7 @@ def _e(value: object) -> str:
 
 
 def _payload(stats: ShopStats, analysis: ProductAnalysis, config: dict,
-             tracker: dict | None = None) -> dict:
+             tracker: dict | None = None, ranges: dict | None = None) -> dict:
     cur = config.get("currency", "RM")
     t = analysis.totals
 
@@ -78,12 +79,13 @@ def _payload(stats: ShopStats, analysis: ProductAnalysis, config: dict,
         "daily": analysis.daily,
         "findings": analysis.findings,
         "tracker": tracker or {"available": False},
+        "ranges": ranges or {"available": False},
     }
 
 
 def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
-           tracker: dict | None = None) -> str:
-    payload = _payload(stats, analysis, config, tracker)
+           tracker: dict | None = None, ranges: dict | None = None) -> str:
+    payload = _payload(stats, analysis, config, tracker, ranges)
     m, t = payload["meta"], payload["totals"]
     cur = m["currency"]
     data = json.dumps(payload, ensure_ascii=False, default=str).replace("</", "<\\/")
@@ -96,13 +98,13 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap">
-<style>{PRODUCT_CSS}</style></head>
+<style>{PRODUCT_CSS}{RANGE_CSS}</style></head>
 <body>
 
 <div class="bar"><div class="wrap">
   <span class="dot"></span><span class="name">Product performance</span>
   <nav>
-    <a href="#today">Today</a><a href="#groups">Groups</a><a href="#table">All products</a>
+    <a href="#today">Today</a><a href="#compare">Compare</a><a href="#groups">Groups</a><a href="#table">All products</a>
     <a href="#sources">Sources</a><a href="#trend">Trend</a><a href="#notes">Findings</a>
   </nav>
   <span class="spacer"></span>
@@ -114,16 +116,18 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
 </div></div>
 
 <header class="hero"><div class="wrap">
-  <p class="eyebrow">{_e(m['period'])} &middot; {m['days']} days</p>
+  <p class="eyebrow" id="heroperiod">{_e(m['period'])} &middot; {m['days']} days</p>
   <h1>{_e(m['shop'])}</h1>
   <p class="sub">Twelve tabs of shop statistics, joined into one view of
      {t['products']} products &mdash; every order state and every traffic source on a single row.</p>
-  <div class="figure">
+  <div id="rangebar"></div>
+  <div class="figure" id="herofig">
     <div class="big">{cur}{t['sales']:,.0f}</div>
     <p class="cap">placed across {t['orders']:,.0f} orders &middot;
        {cur}{t['sales_per_day']:,.0f} a day</p>
   </div>
   <div class="funnel" id="funnel"></div>
+  <div id="rangechart"></div>
 </div></header>
 
 <section id="today"><div class="wrap">
@@ -137,6 +141,17 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
   <div id="tracker"></div>
 </div></section>
 
+<section id="compare"><div class="wrap">
+  <div class="head">
+    <p class="kicker">Side by side</p>
+    <h2>Two periods, the same measures</h2>
+    <p>Pick a period above and something to compare it against. Everything on this page
+       follows the period you choose; this section puts the two next to each other and
+       does the arithmetic.</p>
+  </div>
+  <div id="compare-panel"></div>
+</div></section>
+
 <section id="groups"><div class="wrap">
   <div class="head">
     <p class="kicker">The four groups</p>
@@ -144,6 +159,7 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
     <p>A product nobody sees and a product everybody sees and rejects can sit side by side on
        a sales list. They need opposite work. Each product is placed by its traffic against its
        conversion, split at this shop&rsquo;s own medians.</p>
+    <p class="psrc" id="psrc-groups"></p>
   </div>
   <div class="quads" id="quads"></div>
 </div></section>
@@ -155,6 +171,7 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
     <p>This is the join you asked for. Placed, confirmed and paid order states plus every
        traffic source, merged onto one row per product. Sort any column, filter by group,
        or export what you see.</p>
+    <p class="psrc" id="psrc-table"></p>
   </div>
   <div class="panel">
     <div class="tools" id="tabletools"></div>
@@ -218,12 +235,13 @@ def render(stats: ShopStats, analysis: ProductAnalysis, config: dict,
 <div id="tip" role="tooltip"></div>
 <script>window.__PRODUCTS__ = {data};</script>
 <script>{PRODUCT_JS}</script>
+<script>{RANGE_JS}</script>
 </body></html>"""
 
 
 def write_product_report(
     stats: ShopStats, analysis: ProductAnalysis, config: dict, destination: Path,
-    tracker: dict | None = None,
+    tracker: dict | None = None, ranges: dict | None = None,
 ) -> Path:
     """Refresh the shop report in place, at its fixed name."""
-    return write_atomic(destination, render(stats, analysis, config, tracker))
+    return write_atomic(destination, render(stats, analysis, config, tracker, ranges))

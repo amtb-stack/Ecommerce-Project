@@ -158,6 +158,49 @@ refresh.
 Upgrading from a version that wrote dated reports? The first run moves the old
 files into `reports/previous/`. They are moved, not deleted.
 
+## Choosing a period, and comparing two
+
+Both reports open with a period picker, and everything on the page follows it.
+
+**Shop Performance Report.** The statistics workbook carries a date series, so
+any range at all can be cut from it: a submitted export, the last 7, 14, 30 or
+90 days, everything recorded, or two dates you pick yourself. Set *Compare
+with* and the headline splits into two figures with the change between them,
+and a table puts every measure side by side — sales, orders, AOV, sales a day,
+visitors, clicks, impressions, conversion rate, ad spend, ROAS, TACOS,
+cancellations — followed by which traffic sources moved the money.
+
+**Keywords Ads Report.** The keyword export has no date column at all, only a
+period in its header, so an export is the smallest slice there is. The Compare
+view lists every export submitted and puts two of them side by side: reach,
+cost, return and coverage, then the keywords and search terms whose spend and
+revenue moved most, with new and dropped keywords marked as such.
+
+### What it refuses to do
+
+The picker is built to be arithmetically honest rather than maximally
+flexible, so four things are handled explicitly rather than quietly:
+
+- **Visitors are a unique count, not an additive one.** Summing daily visitors
+  counts a shopper who came back on Tuesday twice. Where a range matches a
+  submitted export exactly, the report uses Shopee's true period-unique figure
+  and says so; where it does not, the tile reads *Visits · summed* instead, and
+  conversion rate follows the same figure. Comparing one of each is called out
+  as not the same basis.
+- **Rates are recomputed from the totals**, never averaged across days. An
+  average of daily conversion rates weights a 10-visitor day the same as a
+  10,000-visitor one.
+- **Product figures have no dates.** Shopee reports them as a period total, so
+  they follow whole submitted exports. Pick a range that cuts one in half and
+  the page says so and offers to widen the range rather than inventing a slice.
+- **Overlapping periods are not silently added.** Shopee's periods include both
+  end dates, so an export ending 1 June and one starting 1 June share a day.
+  Combining those would double-count it, and the report warns instead.
+
+Different-length periods are compared without complaint, but the page says
+which rows are safe to read: totals are not comparable across 31 days and 8,
+while sales a day, AOV, conversion rate and ROAS are.
+
 ## The daily tracker
 
 Drop a shop statistics workbook every morning and the product report grows a
@@ -228,6 +271,9 @@ database, then prints exactly what to do about anything it finds.
   suggestive, not proof — this export records searches, never your inventory.
 - Screenshot input is not supported. OCR on dense ad tables misreads numbers
   too often to trust for money decisions.
+- **The period picker cannot slice products or keywords.** Both are period
+  totals in the source files, so they follow whole exports. Only the shop and
+  traffic-source figures have a date series behind them.
 - **The daily tracker runs at shop and traffic-source level only.** The
   statistics workbook gives per-day figures for the shop and for each traffic
   source and ad placement, but product figures are period totals — there is no

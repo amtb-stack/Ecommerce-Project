@@ -99,6 +99,17 @@ METRICS: dict[str, dict[str, str]] = {
     },
 
     # -------------------------------------------------------- efficiency --
+    "spend": {
+        "title": "Ad spend",
+        "what": "What the advertising cost you over the period on screen.",
+        "how": "Every placement's cost added up. It is money that has left, whether or "
+               "not anything was sold.",
+        "why": "The denominator under ROAS, ACOS, cost per click and cost per "
+               "conversion — every efficiency figure on this page is built on it.",
+        "good": "There is no good or bad level on its own. Spend going up is only a "
+                "problem if orders and ROAS did not follow it, and spend going down is "
+                "only good if sales held. Always read it beside one of those.",
+    },
     "roas": {
         "title": "ROAS — return on ad spend",
         "what": "How much revenue each unit of ad spend was credited with.",
