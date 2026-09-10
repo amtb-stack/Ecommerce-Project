@@ -366,7 +366,26 @@ def _metric_detail(m: dict, cur: str) -> str:
     text = ", ".join(parts) + "."
     if m["unusual"]:
         text += " That is well outside its normal range rather than ordinary movement."
+    # Beating a bad yesterday is not the same as doing well. Without this, a
+    # day at a third of its usual sales reads as good news because the day
+    # before it was worse still.
+    gap = _gap_to_typical(m)
+    if gap:
+        text += f" {gap}"
     return text
+
+
+def _gap_to_typical(m: dict) -> str:
+    """Say so when the day-over-day verdict points away from the usual level."""
+    typical, value, better = m["typical"], m["value"], m["better"]
+    if typical is None or not typical or better is None or m["verdict"] == "flat":
+        return ""
+    off = (value - typical) / abs(typical)
+    if m["verdict"] == "better" and (off < -0.2 if better == "up" else off > 0.2):
+        return "Still short of its usual level, though."
+    if m["verdict"] == "worse" and (off > 0.2 if better == "up" else off < -0.2):
+        return "Still ahead of its usual level, though."
+    return ""
 
 
 def _metric_action(m: dict, cur: str) -> str:
@@ -384,6 +403,11 @@ def _metric_action(m: dict, cur: str) -> str:
     if key == "cancelled" and worse:
         return "Check stock and delivery estimates on whatever was ordered."
     if not worse:
+        # A rise that has not got back to normal is a rebound, not a recovery,
+        # and telling someone to repeat it invites a change on one day of noise.
+        if _gap_to_typical(m):
+            return ("One better day off a low base. Wait for it to reach its usual "
+                    "level before treating anything as fixed.")
         return "Worth knowing what caused it, so you can repeat it."
     return "Compare against the same weekday before treating it as a real change."
 

@@ -221,3 +221,29 @@ def test_channel_rollup_rows_are_not_counted_twice(db, config):
     names = [m["source"] for m in result["movers"]["rows"]]
     assert "Search" in names and "Shop" in names
     assert "Product Card" not in names          # the roll-up, already in its parts
+
+
+def test_a_rise_off_a_bad_day_is_not_sold_as_good(db, config):
+    """Up on yesterday, still a third of normal, is not a win.
+
+    Ranking on day-over-day change alone would headline that as good news,
+    which is exactly the reading that gets a bad week mistaken for a recovery.
+    """
+    with timeline.connect(db) as conn:
+        for d in range(1, 8):                       # a week at RM3,000
+            timeline.record(conn, FakeStats(
+                [day(f"2026-09-{d:02d}", 3000.0, 10)],
+                [source(f"2026-09-{d:02d}", "Search", 3000.0, 100.0)]), "h.xlsx")
+        timeline.record(conn, FakeStats(            # collapse
+            [day("2026-09-08", 300.0, 1)],
+            [source("2026-09-08", "Search", 300.0, 100.0)]), "a.xlsx")
+        timeline.record(conn, FakeStats(            # doubles, still far below usual
+            [day("2026-09-09", 600.0, 2)],
+            [source("2026-09-09", "Search", 600.0, 100.0)]), "b.xlsx")
+        result = timeline.track(conn, config)
+
+    sales = next(m for m in result["metrics"] if m["metric"] == "sales")
+    assert sales["verdict"] == "better"             # it did rise on yesterday
+    detail = timeline._metric_detail(sales, "RM")
+    assert "Still short of its usual level" in detail
+    assert "off a low base" in timeline._metric_action(sales, "RM")

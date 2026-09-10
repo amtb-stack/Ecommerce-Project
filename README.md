@@ -166,6 +166,9 @@ What it works out for you:
 - **Unusual** — a day is flagged when it sits more than two robust standard
   deviations from its own recent typical value. The spread uses the median
   absolute deviation, which a single spike cannot inflate.
+- **Level, not just direction** — a day can beat yesterday and still sit far
+  below where the shop normally runs. It says so, rather than letting a rebound
+  off a bad day read as a recovery.
 - **Where the change came from** — traffic sources ranked by how much money
   they moved, so a drop in sales points at the channel that caused it.
 - **Sales, every recorded day** — the whole history, not just this export's
