@@ -4,3 +4,4 @@ out/still_*.png
 out/video_noaudio.mp4
 out/*.wav
 out/render.log
+!out/voiceover_40s_en.wav
