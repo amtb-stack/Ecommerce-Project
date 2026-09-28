@@ -1,0 +1,5 @@
+out/seg*.mp4
+out/segs.txt
+out/still_*.png
+out/video_noaudio.mp4
+out/*.wav
