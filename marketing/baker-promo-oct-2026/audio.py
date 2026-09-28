@@ -207,7 +207,7 @@ open_env[(t_all >= 12.5)] = 0.8
 pad_mix = pad_dark * (1 - open_env) + pad_open * open_env
 
 # sidechain from kicks
-kicks = [2.0 + 0.5 * i for i in range(int((12.25 - 2.0) / 0.5) + 1)] + [12.5 + 0.5 * i for i in range(4)]
+kicks = [2.0 + 0.5 * i for i in range(int((12.0 - 2.0) / 0.5) + 1)] + [12.45 + 0.5 * i for i in range(4)]
 duck = np.ones(N)
 for k in kicks:
     i = int(k * SR)
@@ -273,68 +273,107 @@ for i in range(2):
     add(13.0 + i * 1.0, clap(), 0.35, 0, 0.3)
 
 # ---------------- FX synced to picture ----------------
+def tap():  # UI touch: soft click + blip
+    n = int(SR * 0.09)
+    tt = np.arange(n) / SR
+    return np.sin(2 * np.pi * 1700 * tt) * np.exp(-tt * 70) * .6 + hp(rng.standard_normal(n), 3000) * np.exp(-tt * 400) * .5
+
+
+def ratchet(start, dur, count, pan=0.3):
+    for i in range(count):
+        add(start + dur * (i / count) ** 0.8, tick(2600 + 200 * (i % 2), 0.015), 0.16, pan)
+
+
+def shimmer(length=0.5):
+    n = int(SR * length)
+    tt = np.arange(n) / SR
+    out = np.zeros(n)
+    for k, f in enumerate([2093, 2637, 3136, 4186]):
+        out += np.sin(2 * np.pi * f * tt) * np.exp(-np.maximum(0, tt - k * 0.03) * 8) * (tt >= k * 0.03)
+    return out * 0.25 + whoosh(length, True, 3000, 12000) * 0.3
+
+
+# intro: logo build + slam
 add(0.0, riser(1.0), 0.25, 0, 0.3)
-for i in range(5):                          # letters rising
-    add(0.18 + i * 0.07, whoosh(0.25, True, 800, 7000), 0.10, -0.6 + i * 0.3)
-add(0.78, whoosh(0.24, True, 400, 8000), 0.35)
-add(1.0, boom(), 0.8, 0, 0.4)                 # PROMO slam
+add(0.02, whoosh(0.9, True, 300, 6000), 0.3, -0.5)           # red light streak
+add(0.12, pop(420), 0.35, -0.3, 0.4)                         # chef-hat icon
+add(0.4, whoosh(0.45, True, 1500, 10000), 0.25, 0.3)          # wordmark wipe
+add(0.95, shimmer(0.6), 0.35, 0.2, 0.5)                       # logo shine
+add(0.8, whoosh(0.22, True, 400, 8000), 0.35)
+add(1.0, boom(), 0.8, 0, 0.4)                                 # BUNDLE PROMO slam
 add(1.0, crash(1.4), 0.35, 0.2, 0.3)
-add(1.05, whoosh(0.5, False, 2000, 9000), 0.12, 0.4)
-add(1.62, whoosh(0.5, True, 300, 7000), 0.45, -0.5)   # wipe
-add(2.0, crash(2.4), 0.45, -0.2, 0.3)
-add(2.0, boom(1.0), 0.5)
-add(2.05, whoosh(0.6, False, 200, 3000), 0.25, 0.6)   # oven slides in
-add(2.55, lp(rng.standard_normal(int(SR * 1.2)), 400) * np.sin(np.linspace(0, np.pi, int(SR * 1.2))) * 0.8, 0.35, 0.3)  # ignite
-add(2.8, tick(3200, 0.02), 0.25, 0.4)          # lamp click
-for i in range(20):                            # 100L counter ticks
-    tt = 2.3 + (i / 20) ** 1.6 * 0.95
-    add(tt, tick(1800 + i * 60), 0.12, -0.4)
-add(3.25, pop(640), 0.4, -0.4, 0.2)            # "L"
-add(3.35, pop(520), 0.22, -0.6)
-add(3.47, pop(560), 0.22, -0.3)
-for i in range(4):                             # callouts
-    add(3.95 + i * 0.22, blip(midi(79 + [0, 3, 7, 10][i])), 0.16, 0.2 + i * 0.15, 0.4)
-add(4.95, bell(midi(88)), 0.5, -0.2, 0.6)      # timer bell ring
-add(5.12, bell(midi(88)), 0.3, -0.2, 0.6)
-add(5.62, whoosh(0.7, True, 250, 9000), 0.5, 0.3)      # iris
-add(6.05, whoosh(0.45, True, 150, 2000), 0.25)         # mixer falling
-add(6.5, thud(), 0.75, -0.3, 0.2)
-add(6.5, boom(0.8), 0.35)
-for i in range(22):                            # 1500W counter ticks
-    tt = 6.45 + (i / 22) ** 1.6 * 1.0
-    add(tt, tick(2000 + i * 50), 0.10, 0.4)
-add(6.98, clack(), 0.5, -0.3, 0.2)             # head locks down
-# motor whir 7.0 -> 9.7
-n = int(SR * 2.7)
+add(1.6, riser(0.4), 0.5)                                     # fly through the logo
+add(1.62, whoosh(0.45, True, 300, 9000), 0.55, 0)
+add(1.95, crash(2.4), 0.45, -0.2, 0.3)
+add(1.95, boom(1.0), 0.55)
+# oven
+for i in range(18):                                           # 100L counter
+    add(1.95 + (i / 18) ** 1.5 * 0.5, tick(1800 + i * 70), 0.11, -0.5)
+add(2.52, pop(640), 0.4, -0.5, 0.2)                           # "L"
+add(2.72, tap(), 0.5, 0.1)
+add(2.74, lp(rng.standard_normal(int(SR * 1.2)), 450) * np.sin(np.linspace(0, np.pi, int(SR * 1.2))) * 0.9, 0.4, 0)   # heat ignites
+add(2.85, tick(3400, 0.02), 0.25, -0.3)                       # interior light click
+add(2.8, pop(560), 0.2, 0.4, 0.3)                             # card
+add(3.55, tap(), 0.5, 0.3)
+ratchet(3.57, 0.55, 12, 0.35)                                 # temp knob
+add(3.62, pop(600), 0.2, 0.4, 0.3)
+add(4.28, tap(), 0.5, 0.3)
+ratchet(4.3, 0.4, 9, 0.35)                                    # timer knob
+add(4.34, pop(600), 0.2, 0.4, 0.3)
+add(4.7, bell(midi(88)), 0.5, 0.3, 0.6)                       # bell ring
+add(4.88, bell(midi(88)), 0.28, 0.3, 0.6)
+add(4.9, tap(), 0.5, -0.2)
+add(4.9, whoosh(0.7, True, 200, 3000), 0.3, -0.3)             # convection air
+add(5.05, pop(520), 0.2, 0.3, 0.3)
+# "WHY STOP AT ONE?" + whip pan
+add(5.38, boom(0.6), 0.45, -0.4, 0.3)
+add(5.48, boom(0.6), 0.45, 0.4, 0.3)
+add(5.35, whoosh(0.65, True, 250, 9000), 0.6, 0.6)
+# mixer
+add(5.72, whoosh(0.4, True, 150, 2000), 0.3)                  # falling
+add(6.1, thud(), 0.8, -0.2, 0.2)
+add(6.1, boom(0.8), 0.4)
+add(6.38, tap(), 0.5, 0.3)
+add(6.4, riser(0.5), 0.3, 0.3)                                # power-up
+for i in range(18):                                           # 1500W counter
+    add(6.4 + (i / 18) ** 1.5 * 0.5, tick(2000 + i * 60), 0.1, 0.5)
+n = int(SR * 1.1)
 tt = np.arange(n) / SR
-f = 70 + 60 * np.clip(tt / 0.5, 0, 1)
-ph = np.cumsum(f) / SR
-motor = np.sign(np.sin(2 * np.pi * ph)) * 0.4 + np.sin(4 * np.pi * ph) * 0.4
-motor = lp(motor, 900) * np.clip(tt / 0.3, 0, 1) * np.clip((2.7 - tt) / 0.3, 0, 1)
-add(7.0, motor, 0.10, -0.4)
-add(7.4, pop(700), 0.4, 0.4, 0.2)              # "W"
-for i in range(3):
-    add(7.55 + i * 0.14, pop(480 + i * 80), 0.28, 0.3 + i * 0.2)
-add(9.45, whoosh(0.7, True, 250, 8000), 0.5, 0.5)       # wipe
+ph = np.cumsum(70 + 70 * np.clip(tt / 0.3, 0, 1)) / SR
+motor = lp(np.sign(np.sin(2 * np.pi * ph)) * 0.4 + np.sin(4 * np.pi * ph) * 0.4, 900) * np.clip(tt / 0.1, 0, 1) * np.clip((1.1 - tt) / 0.3, 0, 1)
+add(6.42, motor, 0.16, 0.2)                                   # motor whir
+add(6.9, pop(700), 0.4, 0.5, 0.2)                             # "W"
+add(7.22, tap(), 0.5, -0.3)
+add(7.32, pop(480), 0.25, -0.4, 0.3)
+for i in range(3):                                            # attachments orbit out of the bowl
+    add(7.85 + i * 0.12, whoosh(0.5, True, 600, 9000), 0.22, -0.6 + i * 0.6, 0.3)
+add(8.05, pop(560), 0.2, 0.4, 0.3)
+add(8.9, pop(600), 0.2, 0.5, 0.3)
+add(9.02, tap(), 0.5, 0.5)
+add(9.04, shimmer(0.5), 0.45, 0.3, 0.4)                       # colour swap -> gray
+add(9.36, tap(), 0.5, 0.5)
+add(9.38, shimmer(0.5), 0.4, -0.3, 0.4)                       # back to red
+# bundle
+add(9.5, whoosh(0.7, False, 200, 6000), 0.45, 0)              # pull back
 add(10.0, crash(1.8), 0.35, 0.3, 0.3)
-add(10.0, whoosh(0.5, False, 200, 3000), 0.3, -0.7)     # oven in
-add(10.06, whoosh(0.5, False, 200, 3000), 0.3, 0.7)     # mixer in
-add(10.3, pop(600), 0.35, 0, 0.3)               # plus
+add(10.25, pop(600), 0.35, 0, 0.3)                            # plus
 add(10.55, riser(0.45), 0.3)
-add(11.0, boom(1.8), 0.9, 0, 0.4)               # INCREDIBLE VALUE
+add(11.0, boom(1.8), 0.9, 0, 0.4)                             # BUY 2 stamp
 add(11.0, crash(2.2), 0.45, 0, 0.3)
 spark = hp(rng.standard_normal(int(SR * 1.3)), 6000) * np.exp(-np.arange(int(SR * 1.3)) / SR * 3) * (rng.random(int(SR * 1.3)) > 0.97)
 add(11.02, spark, 0.9, 0.2, 0.3)
-add(11.4, riser(1.1), 0.45, 0, 0.2)             # build to end card
-add(12.5, boom(2.0), 1.0, 0, 0.5)               # end-card hit
-add(12.5, kick(big=True), 0.8)
-add(12.5, crash(2.5), 0.5, 0, 0.4)
-add(12.95, thud(), 0.45, 0.3, 0.3)              # PROMO stamp
-add(13.3, pop(540), 0.3, 0.4, 0.3)              # CTA
-add(13.75, whoosh(0.5, True, 3000, 12000), 0.12, 0.5)   # CTA shine
-add(14.04, tick(4200, 0.02), 0.5, 0.5)          # click
-for i, nt in enumerate([84, 88, 91, 96]):       # chime
-    add(14.06 + i * 0.07, bell(midi(nt), 1.2), 0.22, 0.2 + i * 0.1, 0.6)
+add(11.4, riser(1.05), 0.45, 0, 0.2)
+# end card
+add(12.45, boom(2.0), 1.0, 0, 0.5)
+add(12.45, kick(big=True), 0.8)
+add(12.45, crash(2.5), 0.5, 0, 0.4)
+add(12.5, whoosh(0.6, True, 1000, 9000), 0.2, 0.5)            # logo
+add(12.85, thud(), 0.4, 0.3, 0.3)                             # headline
+add(13.25, pop(540), 0.3, 0.4, 0.3)                           # CTA
+add(13.7, whoosh(0.5, True, 3000, 12000), 0.12, 0.5)          # CTA shine
+add(14.0, tap(), 0.7, 0.5)
+for i, nt in enumerate([84, 88, 91, 96]):                     # purchase chime
+    add(14.05 + i * 0.07, bell(midi(nt), 1.2), 0.22, 0.2 + i * 0.1, 0.6)
 
 # ---------------- reverb + master ----------------
 ir_n = int(SR * 2.0)

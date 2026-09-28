@@ -2,883 +2,628 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>The Baker Promo</title>
+<title>The Baker Bundle Promo</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
   :root{
-    --ink:#0c0806; --cream:#fff4e3; --gold:#ffb547; --gold2:#ffd98a; --orange:#ff5a1f;
-    --red:#d8142b; --brown:#1d1410; --shopee:#ee4d2d;
+    --black:#070606; --white:#ffffff;
+    --dred:#7d0a12; --red:#a50f1b; --hot:#e3222c;   /* brand: dark red / black / white */
   }
   html,body{margin:0;padding:0;background:#000;overflow:hidden}
-  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:#0b0807;
-    font-family:Montserrat,sans-serif;color:var(--cream);-webkit-font-smoothing:antialiased}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--black);
+    font-family:Montserrat,sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
   .full{position:absolute;left:0;top:0;width:1920px;height:1080px}
   .abs{position:absolute}
-  .scene{position:absolute;left:0;top:0;width:1920px;height:1080px;display:none}
-  svg{overflow:visible}
   .anton{font-family:Anton,Impact,sans-serif;font-weight:400;line-height:1}
-  .play{font-family:'Playfair Display',serif;font-style:italic;font-weight:800}
-  .tag{font-weight:800;letter-spacing:.32em;text-transform:uppercase;font-size:24px;white-space:nowrap}
-  .gradText{background:linear-gradient(180deg,#fffaf0 0%,#ffe2ad 45%,#ffb547 75%,#e8872c 100%);
-    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .nowrap{white-space:nowrap}
 
-  /* backgrounds */
-  #bgDark{background:radial-gradient(ellipse 80% 70% at 50% 45%,#2a1a10 0%,#150d09 45%,#070504 100%)}
-  #bgHeat{background:radial-gradient(circle at 70% 52%,rgba(255,120,30,.38) 0%,rgba(255,90,20,.10) 35%,transparent 60%);opacity:0}
+  /* ---------- backdrop ---------- */
+  #bg{background:radial-gradient(ellipse 70% 60% at 50% 42%,#2a0508 0%,#120304 45%,#050404 100%)}
+  #bgGlow{left:-400px;top:-300px;width:2720px;height:1680px;background:radial-gradient(ellipse 40% 35% at 50% 50%,rgba(165,15,27,.45),transparent 70%)}
 
-  /* intro */
-  #s1 .the{left:0;width:1920px;top:238px;text-align:center;font-size:74px;color:var(--gold)}
-  #baker{left:0;width:1920px;top:318px;text-align:center;font-size:300px;letter-spacing:18px;white-space:nowrap}
-  #baker .m{display:inline-block;overflow:hidden;vertical-align:top;height:1.12em;padding:0 2px}
-  #baker .c{display:inline-block}
-  #bakerShine{left:0;width:1920px;top:318px;text-align:center;font-size:300px;letter-spacing:18px;white-space:nowrap;color:#fff;
-    -webkit-mask-image:linear-gradient(100deg,transparent 42%,#000 50%,transparent 58%);-webkit-mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mix-blend-mode:overlay}
-  .rule{height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
-  .stamp{background:var(--orange);color:#fff;padding:6px 34px 10px;border-radius:10px;box-shadow:0 18px 50px rgba(255,90,31,.45), inset 0 -6px 0 rgba(0,0,0,.18)}
-  #s1 .tagline{left:0;width:1920px;top:846px;text-align:center;font-size:34px;font-weight:700;letter-spacing:.42em;color:#f3dcc0}
+  /* ---------- camera / world ---------- */
+  #cam{overflow:hidden}
+  #world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
+  .w{position:absolute}
+  #floor{left:-4000px;top:900px;width:12000px;height:2200px;background:linear-gradient(180deg,rgba(60,6,10,.55) 0%,rgba(14,3,4,.9) 18%,#050404 55%)}
+  #horizon{left:-4000px;top:896px;width:12000px;height:8px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.10) 30%,rgba(255,255,255,.18) 50%,rgba(255,255,255,.10) 70%,transparent);filter:blur(2px)}
+  .rim{position:absolute;border-radius:50%;background:radial-gradient(ellipse at center,rgba(165,15,27,.55) 0%,rgba(125,10,18,.25) 40%,transparent 70%)}
+  .cshadow{position:absolute;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 40%,transparent 70%)}
+  .prod{position:absolute;-webkit-box-reflect:below -2px linear-gradient(transparent 62%,rgba(255,255,255,.22))}
+  .prod img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+  .sheen{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;mix-blend-mode:screen;-webkit-mask-size:100% 100%;-webkit-mask-repeat:no-repeat}
+  .sheen i{position:absolute;top:-20%;width:18%;height:140%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg)}
+  .knob{position:absolute;border-radius:50%;background-repeat:no-repeat}
+  #heat{mix-blend-mode:screen;background:radial-gradient(ellipse 60% 55% at 45% 50%,rgba(255,150,70,.95) 0%,rgba(255,70,30,.7) 35%,rgba(160,20,10,.35) 70%,rgba(80,0,0,.15) 100%);opacity:0}
+  #lamp{mix-blend-mode:screen;border-radius:50%;background:radial-gradient(circle,rgba(255,240,210,.95) 0%,rgba(255,170,90,.45) 30%,transparent 70%);opacity:0}
+  #fanFx{border-radius:50%;mix-blend-mode:screen;background:repeating-conic-gradient(rgba(255,120,60,.35) 0deg 14deg,transparent 14deg 45deg);-webkit-mask-image:radial-gradient(circle,#000 30%,transparent 70%);opacity:0}
+  #heatSpill{left:-200px;top:820px;width:1500px;height:300px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,80,30,.35),transparent 65%);mix-blend-mode:screen;opacity:0}
+  .wtext{position:absolute;white-space:nowrap}
+  .kick{font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:var(--hot)}
+  .acc{position:absolute;transform-origin:50% 50%}
+  .acc img{width:100%;height:100%;display:block;filter:drop-shadow(0 30px 30px rgba(0,0,0,.6))}
+  .acc .al{position:absolute;left:-100px;right:-100px;top:104%;text-align:center;font-size:26px;font-weight:800;letter-spacing:.22em;color:#fff}
+  #ring1,#ring2,#ring3{border-radius:50%;border:6px solid rgba(227,34,44,.8);opacity:0}
 
-  /* wipes */
-  .wipe{position:absolute;top:-60px;height:1200px;width:2500px;transform-origin:0 0}
+  /* ---------- UI (screen space) ---------- */
+  .card{position:absolute;left:0;top:0;background:rgba(10,8,8,.80);border:1px solid rgba(255,255,255,.16);border-radius:20px;
+    padding:22px 28px 22px 34px;box-shadow:0 30px 70px rgba(0,0,0,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);opacity:0;white-space:nowrap}
+  .card:before{content:'';position:absolute;left:0;top:18px;bottom:18px;width:6px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,var(--hot),var(--dred))}
+  .card .k{font-size:15px;font-weight:800;letter-spacing:.28em;color:var(--hot)}
+  .card .t{font-size:30px;font-weight:900;letter-spacing:.06em;margin-top:6px}
+  .card .s{font-size:18px;font-weight:600;color:rgba(255,255,255,.72);margin-top:6px}
+  .card .big{font-size:96px;margin-top:4px}
+  .card .big em{font-style:normal;color:var(--hot);font-size:.55em;margin-left:6px}
+  .row{display:flex;align-items:center;gap:22px}
+  .sw{width:62px;height:62px;border-radius:50%;border:4px solid rgba(255,255,255,.25);box-sizing:border-box;margin:0 auto}
+  .swl{font-size:14px;font-weight:800;letter-spacing:.2em;margin-top:8px;text-align:center;color:rgba(255,255,255,.8)}
+  #finger{left:0;top:0;width:74px;height:74px;margin:-37px 0 0 -37px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.95) 0 22%,rgba(255,255,255,.35) 24% 60%,rgba(255,255,255,0) 62%);
+    border:3px solid rgba(255,255,255,.9);box-sizing:border-box;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0}
+  #fring{left:0;top:0;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;border:4px solid #fff;box-sizing:border-box;opacity:0}
+  .flashTxt{left:0;width:1920px;text-align:center;white-space:nowrap}
+  .slab{display:inline-block;background:linear-gradient(180deg,var(--red),var(--dred));color:#fff;border:3px solid #fff;border-radius:14px;box-shadow:0 24px 60px rgba(125,10,18,.6)}
+  #cta{left:1272px;top:668px;width:590px;height:104px;border-radius:60px;background:linear-gradient(180deg,#c5121f,var(--dred));border:3px solid #fff;box-sizing:border-box;
+    color:#fff;text-align:center;font-size:28px;font-weight:900;letter-spacing:.1em;line-height:98px;box-shadow:0 24px 60px rgba(165,15,27,.55);overflow:hidden;white-space:nowrap}
+  #ctaShine{position:absolute;top:-20px;width:90px;height:150px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg)}
 
-  /* oven scene */
-  .ovenWrap{position:absolute;transform-style:preserve-3d}
-  #ovenA{-webkit-box-reflect:below -18px linear-gradient(transparent 72%,rgba(255,255,255,.14))}
-  .shadow{position:absolute;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.75) 0%,rgba(0,0,0,.35) 40%,transparent 70%)}
-  .bigNum{font-size:300px;letter-spacing:4px;white-space:nowrap}
-  .gauge{position:absolute;width:300px;height:300px}
-  .gauge .val{position:absolute;left:0;width:300px;top:98px;text-align:center;font-size:76px;color:#fff}
-  .gauge .val small{font-size:34px;color:var(--gold);margin-left:4px}
-  .gauge .lbl{position:absolute;left:0;width:300px;top:190px;text-align:center;font-size:15px;font-weight:800;letter-spacing:.22em;color:#e9cfae}
-  .gauge .cap{position:absolute;left:-20px;width:340px;top:312px;text-align:center;font-size:17px;font-weight:700;letter-spacing:.16em;color:var(--gold)}
+  /* ---------- intro ---------- */
+  #intro{pointer-events:none}
+  #streak{left:-600px;top:380px;width:3200px;height:160px;background:linear-gradient(90deg,transparent,rgba(165,15,27,0) 20%,rgba(227,34,44,.75) 50%,rgba(165,15,27,0) 80%,transparent);filter:blur(30px)}
+  .logoPart{position:absolute;background:url(assets/logo_white.png) no-repeat;background-size:100% 100%}
+  #logoShine{position:absolute;-webkit-mask-image:url(assets/logo_white.png);-webkit-mask-size:100% 100%;background:linear-gradient(100deg,transparent 40%,rgba(255,200,200,1) 50%,transparent 60%);background-size:300% 100%;opacity:0}
 
-  /* mixer scene */
-  #s3bg{background:radial-gradient(ellipse 70% 80% at 32% 55%,#fffaf1 0%,#f6ead6 45%,#e9d6ba 100%)}
-  #s3grid{background-image:linear-gradient(rgba(60,40,25,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(60,40,25,.07) 1px,transparent 1px);background-size:60px 60px;
-    -webkit-mask-image:radial-gradient(ellipse 60% 70% at 30% 55%,#000 20%,transparent 80%)}
-  .seg{position:absolute;top:0;width:48px;height:26px;border-radius:5px;background:rgba(40,20,10,.10)}
-  .card{position:absolute;width:218px;height:176px;border-radius:20px;background:#fff;box-shadow:0 20px 40px rgba(80,40,10,.14),0 2px 0 rgba(0,0,0,.04);text-align:center;color:var(--brown)}
-  .card .v{font-size:86px;margin-top:22px}
-  .card .v em{font-style:normal;color:var(--red)}
-  .card .l{font-size:15px;font-weight:800;letter-spacing:.2em;margin-top:8px;color:#6b5140}
-  #ticker{left:0;top:1004px;width:1920px;height:76px;background:var(--brown);overflow:hidden}
-  #tickerText{position:absolute;top:20px;left:0;white-space:nowrap;font-size:28px;font-weight:800;letter-spacing:.2em;color:var(--gold)}
-  #tickerText b{color:#fff;font-weight:800}
-
-  /* bundle */
-  #rays{left:-240px;top:-900px;width:2400px;height:2400px;
-    background:repeating-conic-gradient(from 0deg,rgba(255,181,71,.13) 0deg 5deg,transparent 5deg 15deg);
-    -webkit-mask-image:radial-gradient(circle,#000 0%,rgba(0,0,0,.6) 25%,transparent 55%)}
-  .plab{text-align:center;white-space:nowrap}
-  .plab .a{font-size:30px;font-weight:900;letter-spacing:.14em;color:#fff}
-  .plab .b{font-size:18px;font-weight:700;letter-spacing:.24em;color:var(--gold);margin-top:6px}
-  #slab{left:460px;width:1000px;top:888px;height:150px;text-align:center}
-  #slabIn{display:inline-block;background:var(--orange);color:#fff;padding:10px 46px 16px;border-radius:14px;font-size:96px;letter-spacing:4px;
-    box-shadow:0 24px 60px rgba(255,90,31,.5),inset 0 -8px 0 rgba(0,0,0,.18);white-space:nowrap}
-
-  /* end */
-  #cta{left:1148px;top:772px;width:600px;height:100px;border-radius:60px;background:var(--shopee);color:#fff;text-align:center;
-    font-size:32px;font-weight:900;letter-spacing:.14em;line-height:100px;box-shadow:0 20px 50px rgba(238,77,45,.5)}
-  #ctaShine{left:0;top:0;width:600px;height:100px;border-radius:60px;overflow:hidden}
-  #ctaShine i{position:absolute;top:-20px;width:80px;height:140px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg)}
-
-  /* hud + overlays */
-  #hud{pointer-events:none}
-  .hudTxt{font-size:16px;font-weight:800;letter-spacing:.3em;white-space:nowrap}
-  #vig{background:radial-gradient(ellipse 75% 75% at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%)}
-  #grain{width:1920px;height:1080px;mix-blend-mode:overlay;opacity:.10}
-  #flash{background:radial-gradient(circle at 50% 50%,#fff 0%,#ffe2a8 40%,#ffb547 100%);opacity:0;mix-blend-mode:screen}
+  #vig{background:radial-gradient(ellipse 78% 78% at 50% 50%,transparent 55%,rgba(0,0,0,.6) 100%)}
+  #grain{width:1920px;height:1080px;mix-blend-mode:overlay;opacity:.09}
+  #flash{background:radial-gradient(circle at 50% 50%,#fff 0%,rgba(255,220,220,.9) 40%,rgba(227,34,44,.6) 100%);opacity:0}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <linearGradient id="ovBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2e34"/><stop offset=".5" stop-color="#17171b"/><stop offset="1" stop-color="#0a0a0c"/></linearGradient>
-    <linearGradient id="ovDoor" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#202026"/><stop offset="1" stop-color="#0d0d10"/></linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbfbfc"/><stop offset=".45" stop-color="#c3c7cd"/><stop offset=".55" stop-color="#80858d"/><stop offset="1" stop-color="#dfe2e6"/></linearGradient>
-    <linearGradient id="metalH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8c9199"/><stop offset=".3" stop-color="#f4f5f7"/><stop offset=".6" stop-color="#a9aeb6"/><stop offset="1" stop-color="#e7e9ec"/></linearGradient>
-    <radialGradient id="knob" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#b9bdc5"/><stop offset="1" stop-color="#4f525a"/></radialGradient>
-    <linearGradient id="cavity" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1c15"/><stop offset="1" stop-color="#100a08"/></linearGradient>
-    <radialGradient id="warm" cx=".5" cy=".45" r=".7"><stop offset="0" stop-color="#ffc070" stop-opacity=".95"/><stop offset=".5" stop-color="#ff6e1e" stop-opacity=".55"/><stop offset="1" stop-color="#6a1e08" stop-opacity="0"/></radialGradient>
-    <radialGradient id="lampGlow"><stop offset="0" stop-color="#fff6d8" stop-opacity="1"/><stop offset=".35" stop-color="#ffd27a" stop-opacity=".6"/><stop offset="1" stop-color="#ff9a3a" stop-opacity="0"/></radialGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <radialGradient id="roast" cx=".42" cy=".35" r=".75"><stop offset="0" stop-color="#f3b862"/><stop offset=".55" stop-color="#c06a22"/><stop offset="1" stop-color="#5e2a0c"/></radialGradient>
-    <linearGradient id="mxBody" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#ff5361"/><stop offset=".45" stop-color="#d6132b"/><stop offset="1" stop-color="#7e0514"/></linearGradient>
-    <linearGradient id="mxBase" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8283d"/><stop offset="1" stop-color="#860815"/></linearGradient>
-    <linearGradient id="bowl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b7078"/><stop offset=".22" stop-color="#eef0f3"/><stop offset=".45" stop-color="#a3a9b1"/><stop offset=".68" stop-color="#fbfcfd"/><stop offset="1" stop-color="#737880"/></linearGradient>
-    <linearGradient id="tempArc" gradientUnits="userSpaceOnUse" x1="30" y1="0" x2="270" y2="0"><stop offset="0" stop-color="#ffd166"/><stop offset=".55" stop-color="#ff6a1a"/><stop offset="1" stop-color="#e0112b"/></linearGradient>
-    <linearGradient id="goldArc" gradientUnits="userSpaceOnUse" x1="30" y1="0" x2="270" y2="0"><stop offset="0" stop-color="#ffe7b0"/><stop offset="1" stop-color="#ffb547"/></linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
-    <filter id="glowS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
-    <clipPath id="ovClip"><rect x="76" y="110" width="462" height="316" rx="8"/></clipPath>
+    <filter id="elGlow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation=".5"/></filter>
+    <filter id="mb" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feGaussianBlur id="mbBlur" stdDeviation="0 0"/></filter>
+    <linearGradient id="gArc" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="240" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#e3222c"/><stop offset="1" stop-color="#a50f1b"/></linearGradient>
   </defs>
 </svg>
 
 <div id="stage">
- <div id="world" class="full">
-  <div id="bgDark" class="full"></div>
-  <div id="bgHeat" class="full"></div>
+  <div id="bg" class="full"></div>
+  <div id="bgGlow" class="abs"></div>
   <canvas id="fxBack" class="full" width="1920" height="1080"></canvas>
 
-  <!-- ============ SCENE 1 : INTRO ============ -->
-  <div id="s1" class="scene">
-    <div id="s1glow" class="abs" style="left:360px;top:40px;width:1200px;height:1000px;border-radius:50%;background:radial-gradient(circle,rgba(255,170,70,.30),transparent 62%)"></div>
-    <div class="abs play the" id="the">The</div>
-    <div class="abs rule" id="ruleL" style="left:560px;top:292px;width:260px"></div>
-    <div class="abs rule" id="ruleR" style="left:1100px;top:292px;width:260px"></div>
-    <div class="abs anton" id="baker"></div>
-    <div class="abs anton" id="bakerShine">BAKER</div>
-    <div class="abs" id="promo1" style="left:0;width:1920px;top:668px;text-align:center"><span class="anton stamp" style="display:inline-block;font-size:112px;letter-spacing:10px">PROMO</span></div>
-    <div class="abs tagline" id="tagline"></div>
-  </div>
+  <!-- ================= CAMERA / WORLD (one continuous take) ================= -->
+  <div id="cam" class="full">
+   <div id="world">
+    <div id="floor" class="w"></div>
+    <div id="horizon" class="w"></div>
 
-  <!-- ============ SCENE 2 : OVEN ============ -->
-  <div id="s2" class="scene">
-    <div class="abs tag" id="s2tag" style="left:112px;top:150px;color:var(--gold)"><span style="display:inline-block;width:46px;height:4px;background:var(--orange);vertical-align:middle;margin-right:18px"></span>ESMX-100P · ELECTRIC OVEN</div>
-    <div class="abs anton bigNum" id="s2num" style="left:104px;top:196px"><span class="gradText" id="s2n">0</span><span id="s2L" style="display:inline-block;color:var(--orange)">L</span></div>
-    <div class="abs" id="s2sub" style="left:112px;top:520px;font-size:30px;font-weight:800;letter-spacing:.18em;color:#fff;white-space:nowrap">FAMILY-SIZE CAPACITY</div>
-    <div class="abs" id="s2sub2" style="left:112px;top:562px;font-size:22px;font-weight:600;letter-spacing:.06em;color:#caa982;white-space:nowrap">Big bakes, whole roasts, multiple trays.</div>
-
-    <div class="gauge" id="gTemp" style="left:96px;top:634px">
-      <svg width="300" height="300" viewBox="0 0 300 300">
-        <path id="gTempBg" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="16" stroke-linecap="round"/>
-        <g id="gTempTicks"></g>
-        <path id="gTempArc" fill="none" stroke="url(#tempArc)" stroke-width="16" stroke-linecap="round"/>
-        <circle id="gTempDot" r="11" fill="#fff" filter="url(#glowS)"/>
-      </svg>
-      <div class="anton val"><span id="gTempV">70</span><small>°C</small></div>
-      <div class="lbl">TEMPERATURE</div>
-      <div class="cap">70°C – 250°C ADJUSTABLE</div>
+    <div class="wtext" id="t100" style="left:-730px;top:60px">
+      <div class="kick" style="font-size:30px">ESMX-100P · ELECTRIC OVEN</div>
+      <div class="anton" style="font-size:380px;margin-top:10px"><span id="n100">0</span><span id="l100" style="display:inline-block;color:var(--hot)">L</span></div>
+      <div style="font-size:40px;font-weight:900;letter-spacing:.16em;margin-top:6px">FAMILY-SIZE</div>
+      <div style="font-size:26px;font-weight:600;letter-spacing:.05em;color:rgba(255,255,255,.7);margin-top:8px">Whole roasts. Multiple trays. One go.</div>
     </div>
-    <div class="gauge" id="gTime" style="left:430px;top:634px">
-      <svg width="300" height="300" viewBox="0 0 300 300">
-        <circle cx="150" cy="150" r="118" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="16"/>
-        <g id="gTimeTicks"></g>
-        <path id="gTimeArc" fill="none" stroke="url(#goldArc)" stroke-width="16" stroke-linecap="round"/>
-        <line id="gTimeHand" x1="150" y1="150" x2="150" y2="62" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".0"/>
-        <g id="bell" transform="translate(262 38)">
-          <g id="bellInner">
-            <circle r="30" fill="var(--orange)"/>
-            <path d="M-12 8 C-12 -2,-10 -12,0 -13 C10 -12,12 -2,12 8 L15 11 L-15 11 Z" fill="#fff"/>
-            <circle cy="15" r="4" fill="#fff"/>
-          </g>
-          <circle id="bellRing1" r="30" fill="none" stroke="var(--orange)" stroke-width="3" opacity="0"/>
-          <circle id="bellRing2" r="30" fill="none" stroke="var(--orange)" stroke-width="3" opacity="0"/>
-        </g>
-      </svg>
-      <div class="anton val"><span id="gTimeV">0</span><small>MIN</small></div>
-      <div class="lbl">TIMER</div>
-      <div class="cap">BELL RING + STAY-ON</div>
-      <div class="abs anton" id="ding" style="left:268px;top:-36px;font-size:40px;color:#fff;letter-spacing:2px;opacity:0">DING!</div>
+    <div class="wtext" id="t1500" style="left:3040px;top:70px">
+      <div class="kick" style="font-size:30px">ARTISAN SE · STAND MIXER</div>
+      <div class="anton" style="font-size:330px;margin-top:10px"><span id="n1500">0</span><span id="w1500" style="display:inline-block;color:var(--hot)">W</span></div>
+      <div style="font-size:36px;font-weight:900;letter-spacing:.16em;margin-top:6px">OF PURE MIXING MUSCLE</div>
+      <div id="meter" style="position:relative;height:30px;margin-top:26px;width:700px"></div>
+    </div>
+    <div class="wtext" id="tBundle" style="left:-525px;width:4000px;top:-640px;text-align:center">
+      <div class="kick" style="font-size:40px;letter-spacing:.5em">BUY 2 · SAVE MORE</div>
+      <div class="anton" style="font-size:300px;letter-spacing:10px;margin-top:10px">THE BAKER BUNDLE</div>
     </div>
 
-    <div class="shadow" id="ovenAShadow" style="left:860px;top:808px;width:1000px;height:110px"></div>
-    <div class="ovenWrap" id="ovenAWrap" style="left:900px;top:258px;width:900px;height:608px;perspective:2200px">
-      <div id="ovenA" style="width:900px;height:608px;transform-origin:50% 60%"></div>
+    <div class="rim w" id="rimO" style="left:-500px;top:-500px;width:2500px;height:1700px"></div>
+    <div class="rim w" id="rimM" style="left:1600px;top:-300px;width:1700px;height:1400px;opacity:0"></div>
+    <div id="heatSpill" class="w"></div>
+
+    <div class="cshadow w" style="left:-80px;top:862px;width:1660px;height:90px"></div>
+    <div class="prod" id="oven" style="left:0;top:-94px;width:1500px;height:994px">
+      <img src="assets/oven_r.webp">
+      <div id="heat" class="abs" style="left:0;top:0;width:1500px;height:994px;clip-path:polygon(6.8% 13.2%,55.8% 16.6%,55.8% 77.6%,6.8% 80.6%)"></div>
+      <svg id="els" class="abs" style="left:0;top:0;width:1500px;height:994px;mix-blend-mode:screen;opacity:0" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 21.5 L13 18.8 L31 21 L49 19.5 L53 22" stroke="#ff5a1e" stroke-width="1.6" filter="url(#elGlow)"/>
+          <path d="M9.5 72.5 L13 75.5 L31 73.5 L49 75 L53 72" stroke="#ff5a1e" stroke-width="1.6" filter="url(#elGlow)"/>
+          <path d="M9.5 21.5 L13 18.8 L31 21 L49 19.5 L53 22" stroke="#ffd2a0" stroke-width=".35"/>
+          <path d="M9.5 72.5 L13 75.5 L31 73.5 L49 75 L53 72" stroke="#ffd2a0" stroke-width=".35"/>
+        </g></svg>
+      <div id="fanFx" class="abs"></div>
+      <div id="lamp" class="abs"></div>
+      <div class="knob" id="kTemp"></div>
+      <div class="knob" id="kTime"></div>
+      <div class="sheen" id="ovSheen" style="-webkit-mask-image:url(assets/oven_r.webp)"><i></i></div>
     </div>
-    <div class="abs" id="callWrap" style="left:900px;top:258px;width:900px;height:608px">
-      <svg id="callSvg" width="900" height="608" viewBox="0 0 800 540"></svg>
+
+    <div class="cshadow w" id="mxShadow" style="left:1900px;top:870px;width:1100px;height:70px;opacity:0"></div>
+    <div id="ringHolder" class="w" style="left:2450px;top:890px">
+      <div id="ring1" class="abs"></div><div id="ring2" class="abs"></div><div id="ring3" class="abs"></div>
     </div>
-  </div>
-
-  <!-- ============ SCENE 3 : MIXER ============ -->
-  <div id="s3" class="scene">
-    <div id="s3bg" class="full"></div>
-    <div id="s3grid" class="full"></div>
-    <canvas id="fxMid" class="full" width="1920" height="1080"></canvas>
-    <div class="shadow" id="mxAShadow" style="left:190px;top:872px;width:760px;height:80px;opacity:.5"></div>
-    <div class="abs" id="mixerA" style="left:170px;top:196px;width:810px;height:756px"></div>
-
-    <div class="abs tag" id="s3tag" style="left:1062px;top:158px;color:var(--red)"><span style="display:inline-block;width:46px;height:4px;background:var(--red);vertical-align:middle;margin-right:18px"></span>ARTISAN SE · STAND MIXER</div>
-    <div class="abs anton bigNum" id="s3num" style="left:1054px;top:196px;font-size:280px;color:var(--brown)"><span id="s3n">0</span><span id="s3W" style="display:inline-block;color:var(--red)">W</span></div>
-    <div class="abs" id="s3sub" style="left:1062px;top:490px;font-size:28px;font-weight:800;letter-spacing:.2em;color:#5a4130;white-space:nowrap">OF PURE MIXING POWER</div>
-    <div class="abs" id="meter" style="left:1062px;top:548px;width:700px;height:26px"></div>
-    <div class="card" id="card1" style="left:1062px;top:612px"><div class="anton v">10<em>L</em></div><div class="l">BOWL CAPACITY</div></div>
-    <div class="card" id="card2" style="left:1302px;top:612px"><div class="anton v">1.5<em>KG</em></div><div class="l">MAX CAPACITY</div></div>
-    <div class="card" id="card3" style="left:1542px;top:612px"><div class="anton v">7.9<em>KG</em></div><div class="l">SOLID BUILD</div></div>
-    <div class="abs" id="volt" style="left:1062px;top:822px;font-size:20px;font-weight:700;letter-spacing:.16em;color:#6b5140;white-space:nowrap">220–240V · 50/60Hz · 472 × 272 × 380 mm</div>
-    <div class="abs" id="ticker"><div id="tickerText"></div></div>
-    <div id="iris" class="abs" style="border-radius:50%;border:10px solid var(--gold);box-sizing:border-box;opacity:0"></div>
-  </div>
-
-  <!-- ============ SCENE 4 : BUNDLE ============ -->
-  <div id="s4" class="scene">
-    <div class="abs" id="rays"></div>
-    <div class="abs" id="s4glow" style="left:260px;top:160px;width:1400px;height:900px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,150,50,.28),transparent 65%)"></div>
-    <div class="abs anton" id="s4head" style="left:0;top:62px;width:1920px;text-align:center;font-size:128px;letter-spacing:8px;white-space:nowrap"><span class="gradText">THE BAKER BUNDLE</span></div>
-    <div class="abs" id="s4sub" style="left:0;top:214px;width:1920px;text-align:center;font-size:38px;font-weight:900;letter-spacing:.16em;color:#fff;white-space:nowrap"></div>
-    <div class="shadow" id="s4ovSh" style="left:240px;top:720px;width:740px;height:80px"></div>
-    <div class="shadow" id="s4mxSh" style="left:1180px;top:720px;width:500px;height:80px"></div>
-    <div class="abs" id="ovenB" style="left:271px;top:318px;width:660px;height:446px"></div>
-    <div class="abs" id="mixerB" style="left:1199px;top:345px;width:480px;height:448px"></div>
-    <div class="abs" id="plus" style="left:1021px;top:470px;width:120px;height:120px">
-      <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="var(--gold)"/><path d="M60 30 V90 M30 60 H90" stroke="#1a0f08" stroke-width="14" stroke-linecap="round"/></svg>
+    <div class="prod" id="mixer" style="left:1950px;top:57px;width:1000px;height:843px">
+      <img src="assets/mixer_red.webp">
+      <img id="mixGray" src="assets/mixer_gray.webp" style="clip-path:inset(0 100% 0 0)">
+      <div class="knob" id="kDial"></div>
+      <div class="sheen" id="mxSheen" style="-webkit-mask-image:url(assets/mixer_red.webp)"><i></i></div>
+      <div id="swapBar" class="abs" style="top:-40px;width:60px;height:920px;background:linear-gradient(90deg,transparent,#fff,transparent);filter:blur(8px);opacity:0;mix-blend-mode:screen"></div>
     </div>
-    <div class="abs plab" id="lab1" style="left:271px;top:768px;width:660px"><div class="a">100L ELECTRIC OVEN</div><div class="b">ESMX-100P · 70–250°C · ROTISSERIE</div></div>
-    <div class="abs plab" id="lab2" style="left:1139px;top:768px;width:600px"><div class="a">10L STAND MIXER</div><div class="b">ARTISAN SE · 1500W</div></div>
-    <div class="abs" id="slab"><span class="anton" id="slabIn">INCREDIBLE VALUE</span></div>
-    <canvas id="fxS4" class="full" width="1920" height="1080"></canvas>
-  </div>
 
-  <!-- ============ SCENE 5 : END CARD ============ -->
-  <div id="s5" class="scene">
-    <div class="abs" id="s5glow" style="left:0;top:80px;width:1100px;height:1000px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,50,.30),transparent 62%)"></div>
-    <div class="shadow" style="left:60px;top:760px;width:1000px;height:110px"></div>
-    <div class="abs" id="ovenC" style="left:80px;top:300px;width:700px;height:473px"></div>
-    <div class="abs" id="mixerC" style="left:556px;top:396px;width:460px;height:429px"></div>
-    <div class="abs play" id="e_the" style="left:1148px;top:150px;font-size:96px;color:var(--gold);white-space:nowrap">The</div>
-    <div class="abs anton" id="e_baker" style="left:1140px;top:250px;font-size:250px;letter-spacing:12px;white-space:nowrap"><span class="gradText">BAKER</span></div>
-    <div class="abs" id="e_promo" style="left:1148px;top:540px"><span class="anton stamp" style="display:inline-block;font-size:84px;letter-spacing:8px">PROMO</span></div>
-    <div class="abs" id="e_line" style="left:1148px;top:672px;font-size:28px;font-weight:700;letter-spacing:.06em;color:#fff;white-space:nowrap">100L Electric Oven <span style="color:var(--gold)">+</span> 10L Stand Mixer</div>
-    <div class="abs" id="e_price" style="left:1148px;top:716px;font-size:30px;font-weight:900;letter-spacing:.06em;color:var(--gold);white-space:nowrap"></div>
-    <div class="abs" id="cta"><span id="ctaTxt"></span><div class="abs" id="ctaShine"><i id="ctaShineBar"></i></div></div>
-    <svg class="abs" id="cursor" style="left:0;top:0" width="60" height="70" viewBox="0 0 30 36"><path d="M2 2 L2 28 L9 21 L14 33 L19 31 L14 19 L24 19 Z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/></svg>
-    <div class="abs" id="ripple" style="width:40px;height:40px;border-radius:50%;border:4px solid #fff;opacity:0"></div>
-    <div class="abs" id="e_date" style="left:1148px;top:912px;font-size:20px;font-weight:800;letter-spacing:.34em;color:var(--gold);white-space:nowrap"></div>
+    <div class="acc" id="acc0" style="width:280px;height:400px"><img src="assets/acc_whisk.webp"><div class="al">WHISK</div></div>
+    <div class="acc" id="acc1" style="width:316px;height:400px"><img src="assets/acc_beater.webp"><div class="al">BEATER</div></div>
+    <div class="acc" id="acc2" style="width:193px;height:400px"><img src="assets/acc_hook.webp"><div class="al">DOUGH HOOK</div></div>
+
+    <div class="w" id="plus" style="left:1655px;top:400px;width:140px;height:140px;opacity:0">
+      <svg width="140" height="140" viewBox="0 0 140 140"><circle cx="70" cy="70" r="66" fill="#fff"/><path d="M70 36 V104 M36 70 H104" stroke="#7d0a12" stroke-width="16" stroke-linecap="round"/></svg>
+    </div>
+    <div class="wtext" id="lab1" style="left:0;width:1500px;top:990px;text-align:center;opacity:0"><div style="font-size:46px;font-weight:900;letter-spacing:.14em">100L ELECTRIC OVEN</div></div>
+    <div class="wtext" id="lab2" style="left:1950px;width:1000px;top:990px;text-align:center;opacity:0"><div style="font-size:46px;font-weight:900;letter-spacing:.14em">10L STAND MIXER</div></div>
+   </div>
   </div>
 
   <canvas id="fxFront" class="full" width="1920" height="1080"></canvas>
 
-  <!-- transitions -->
-  <div id="wipes" class="full" style="pointer-events:none">
-    <div class="wipe" id="w1" style="background:var(--orange)"></div>
-    <div class="wipe" id="w2" style="background:var(--gold)"></div>
-    <div class="wipe" id="w3" style="background:#120b08"></div>
-  </div>
- </div>
+  <!-- ================= UI OVERLAY ================= -->
+  <svg id="lines" class="full" viewBox="0 0 1920 1080"></svg>
+  <div id="ui" class="full">
+    <div class="card" id="cHeat"><div class="k">TAP · HEAT UP</div><div class="t">2× "M" HEATING ELEMENTS</div><div class="s">Stainless steel, top &amp; bottom · interior light on</div></div>
+    <div class="card" id="cTemp"><div class="k">TEMPERATURE</div>
+      <div class="row"><svg width="170" height="150" viewBox="0 0 260 230"><path id="tBg" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="20" stroke-linecap="round"/><path id="tArc" fill="none" stroke="url(#gArc)" stroke-width="20" stroke-linecap="round"/></svg>
+      <div><div class="anton big" style="margin:0"><span id="tV">70</span><em>°C</em></div><div class="s">70°C – 250°C adjustable</div></div></div></div>
+    <div class="card" id="cTime"><div class="k">TIMER</div>
+      <div class="row"><svg width="150" height="150" viewBox="0 0 240 240"><circle cx="120" cy="120" r="96" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="18"/><path id="mArc" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round"/>
+        <g id="bell" transform="translate(120 120)"><path d="M-22 16 C-22 -4,-18 -24,0 -26 C18 -24,22 -4,22 16 L28 22 L-28 22 Z" fill="#e3222c"/><circle cy="30" r="7" fill="#e3222c"/></g></svg>
+      <div><div class="anton big" style="margin:0"><span id="mV">0</span><em>MIN</em></div><div class="s">Bell ring + stay-on function</div></div></div></div>
+    <div class="card" id="cFan"><div class="k">ROTISSERIE + CONVECTION</div><div class="t">CRISP, EVEN, ALL-ROUND</div><div class="s">Hot air circulates while the roast turns</div></div>
+    <div class="card" id="cGlass"><div class="k">DOUBLE-LAYER GLASS DOOR</div><div class="t">HEAT STAYS IN</div><div class="s">Watch every bake through the glass</div></div>
+    <div class="card" id="cBowl"><div class="k">STAINLESS BOWL</div>
+      <div class="row"><div class="anton big" style="margin:0">10<em>L</em></div>
+        <div><div class="t" style="margin:0">1.5 KG MAX</div><div class="s">Big-batch dough in one go</div>
+          <div style="position:relative;width:260px;height:12px;border-radius:6px;background:rgba(255,255,255,.14);margin-top:14px;overflow:hidden"><div id="bowlFill" style="position:absolute;left:0;top:0;height:12px;width:0;background:linear-gradient(90deg,#fff,#e3222c)"></div></div></div></div></div>
+    <div class="card" id="cAcc"><div class="k">READY FOR ANY RECIPE</div><div class="t">WHISK · BEATER · DOUGH HOOK</div><div class="s">Cream, knead, whip, all in one machine</div></div>
+    <div class="card" id="cSwatch"><div class="k">PICK YOUR COLOUR</div>
+      <div class="row" style="margin-top:12px;gap:34px"><div><div class="sw" id="swR" style="background:linear-gradient(135deg,#ff4a55,#a50f1b)"></div><div class="swl">RED</div></div>
+      <div><div class="sw" id="swG" style="background:linear-gradient(135deg,#f0f1f3,#8b9097)"></div><div class="swl">METAL GRAY</div></div></div></div>
+    <div class="card" id="cSpec"><div class="k">BUILT SOLID</div><div class="t">472 × 272 × 380 MM · 7.9 KG</div><div class="s">220–240V · 50/60Hz · 8.5 kg gross</div></div>
 
- <!-- HUD -->
- <div id="hud" class="full">
-   <div class="abs hudTxt" id="hudL" style="left:56px;top:44px"><span id="hudSq" style="display:inline-block;width:14px;height:14px;background:var(--orange);margin-right:14px;vertical-align:-1px"></span>THE BAKER PROMO</div>
-   <div class="abs hudTxt" id="hudR" style="right:56px;top:44px;text-align:right"><span id="hudNum" class="anton" style="font-size:22px;letter-spacing:.1em;margin-right:14px"></span><span id="hudSec"></span></div>
-   <div class="abs" id="prog" style="left:0;top:0;height:5px;width:0;background:linear-gradient(90deg,var(--orange),var(--gold))"></div>
- </div>
- <div id="flash" class="full"></div>
- <div id="vig" class="full"></div>
- <canvas id="grain" class="abs" width="960" height="540" style="left:0;top:0"></canvas>
+    <!-- kinetic copy -->
+    <div class="abs flashTxt anton" id="why" style="top:390px;font-size:170px;letter-spacing:6px;display:none"><span id="why1" style="display:inline-block">WHY STOP</span> <span id="why2" style="display:inline-block;color:var(--hot)">AT ONE?</span></div>
+    <div class="abs flashTxt" id="better" style="top:150px;font-size:44px;font-weight:900;letter-spacing:.4em;opacity:0">BETTER <span style="color:var(--hot)">TOGETHER</span></div>
+    <div class="abs flashTxt" id="bSub" style="top:262px;font-size:30px;font-weight:900;letter-spacing:.16em"></div>
+    <div class="abs flashTxt" id="stamp" style="top:846px;opacity:0"><span class="slab anton" style="font-size:112px;letter-spacing:5px;padding:6px 48px 12px">BUY 2 · GET MORE VALUE</span></div>
+
+    <!-- end card -->
+    <div class="abs" id="eLogo" style="left:1272px;top:210px;width:580px;height:108px;background:url(assets/logo_white.png) no-repeat;background-size:100% 100%"></div>
+    <div class="abs nowrap" id="eKick" style="left:1276px;top:352px;font-size:22px;font-weight:800;letter-spacing:.42em;color:var(--hot)">OCTOBER BUNDLE PROMO</div>
+    <div class="abs anton nowrap" id="eHead" style="left:1270px;top:400px;font-size:112px;letter-spacing:2px;line-height:1.04">ONE KITCHEN.<br><span style="color:var(--hot)">TWO</span> LEGENDS.</div>
+    <div class="abs" id="cta"><span id="ctaTxt"></span><i id="ctaShine"></i></div>
+    <div class="abs nowrap" id="eDate" style="left:1276px;top:800px;font-size:20px;font-weight:800;letter-spacing:.3em;color:rgba(255,255,255,.75)"></div>
+    <div class="abs" id="bug" style="left:56px;top:40px;width:230px;height:43px;background:url(assets/logo_white.png) no-repeat;background-size:100% 100%;opacity:0"></div>
+  </div>
+  <div id="finger" class="abs"></div>
+  <div id="fring" class="abs"></div>
+
+  <!-- ================= INTRO ================= -->
+  <div id="intro" class="full">
+    <div id="streak" class="abs"></div>
+    <div id="logoWrap" class="abs" style="left:385px;top:330px;width:1150px;height:213px">
+      <div class="logoPart" id="logoIcon" style="left:0;top:0;width:1150px;height:213px;clip-path:inset(0 76% 0 0)"></div>
+      <div class="logoPart" id="logoWord" style="left:0;top:0;width:1150px;height:213px"></div>
+      <div id="logoShine" style="left:0;top:0;width:1150px;height:213px"></div>
+    </div>
+    <div class="abs flashTxt" id="iPromo" style="top:596px"><span class="slab anton" style="font-size:92px;letter-spacing:8px;padding:4px 40px 10px">BUNDLE PROMO</span></div>
+    <div class="abs flashTxt" id="iTag" style="top:780px;font-size:32px;font-weight:800;letter-spacing:.42em"></div>
+  </div>
+
+  <div id="flash" class="full"></div>
+  <div id="vig" class="full"></div>
+  <canvas id="grain" class="abs" width="960" height="540" style="left:0;top:0"></canvas>
 </div>
 
 <script>
 /* ================= CONFIG (edit me) ================= */
 const CONFIG = {
   bundlePrice: '',            // e.g. 'RM 1,499'  (leave '' to hide pricing)
-  normalPrice: '',            // e.g. 'RM 2,199'  (shown struck-through next to bundlePrice)
-  cta: 'SHOP NOW ON SHOPEE',
+  normalPrice: '',            // e.g. 'RM 2,199'  (struck through beside bundlePrice)
+  cta: 'GRAB THE BUNDLE ON SHOPEE',
   campaign: 'OCTOBER 2026 · LIMITED TIME ONLY',
 };
 /* ==================================================== */
-
 const DUR = 15;
 const $ = s => document.querySelector(s);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, t) => a + (b - a) * t;
 const P = (t, s, d) => clamp((t - s) / d);
 const E = {
-  lin: x => x,
   outExpo: x => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x),
   inExpo: x => x <= 0 ? 0 : Math.pow(2, 10 * x - 10),
-  inOutExpo: x => x <= 0 ? 0 : x >= 1 ? 1 : x < .5 ? Math.pow(2, 20 * x - 10) / 2 : (2 - Math.pow(2, -20 * x + 10)) / 2,
   outCubic: x => 1 - Math.pow(1 - x, 3),
   inCubic: x => x * x * x,
   inOutCubic: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
-  outQuart: x => 1 - Math.pow(1 - x, 4),
   outBack: x => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
   outElastic: x => x <= 0 ? 0 : x >= 1 ? 1 : Math.pow(2, -10 * x) * Math.sin((x * 10 - .75) * (2 * Math.PI / 3)) + 1,
 };
 function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function T(el, o) {
-  const x = o.x || 0, y = o.y || 0, s = o.s === undefined ? 1 : o.s;
-  let tr = `translate(${x}px,${y}px)`;
-  if (o.ry) tr += ` rotateY(${o.ry}deg)`;
-  if (o.rx) tr += ` rotateX(${o.rx}deg)`;
+  let tr = `translate(${o.x || 0}px,${o.y || 0}px)`;
   if (o.r) tr += ` rotate(${o.r}deg)`;
-  if (o.sx !== undefined || o.sy !== undefined) tr += ` scale(${(o.sx ?? 1) * s},${(o.sy ?? 1) * s})`;
-  else if (s !== 1) tr += ` scale(${s})`;
+  const s = o.s === undefined ? 1 : o.s;
+  if (o.sx !== undefined || o.sy !== undefined) tr += ` scale(${(o.sx ?? 1) * s},${(o.sy ?? 1) * s})`; else if (s !== 1) tr += ` scale(${s})`;
   el.style.transform = tr;
   if (o.o !== undefined) el.style.opacity = clamp(o.o);
   if (o.blur !== undefined) el.style.filter = o.blur > .05 ? `blur(${o.blur}px)` : 'none';
 }
-const show = (el, on) => { el.style.display = on ? 'block' : 'none'; };
-function hexLerp(a, b, t) {
-  const pa = [1, 3, 5].map(i => parseInt(a.substr(i, 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.substr(i, 2), 16));
-  return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], t))).join(',')})`;
-}
+const inOut = (t, a, b, fi = .3, fo = .3) => Math.min(P(t, a, fi), 1 - P(t, b - fo, fo));
 function arcPath(cx, cy, r, a0, a1) {
-  const rad = a => a * Math.PI / 180;
-  if (a1 - a0 < .01) a1 = a0 + .01;
-  const x0 = cx + r * Math.cos(rad(a0)), y0 = cy + r * Math.sin(rad(a0));
-  const x1 = cx + r * Math.cos(rad(a1)), y1 = cy + r * Math.sin(rad(a1));
+  const rad = a => a * Math.PI / 180; if (a1 - a0 < .01) a1 = a0 + .01;
+  const x0 = cx + r * Math.cos(rad(a0)), y0 = cy + r * Math.sin(rad(a0)), x1 = cx + r * Math.cos(rad(a1)), y1 = cy + r * Math.sin(rad(a1));
   return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${(a1 - a0) > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 
-/* ================= PRODUCT ILLUSTRATIONS ================= */
-function ovenSVG() {
-  const el = (y1, y2) => `M104 ${y1} L130 ${y2} L307 ${y1 - 2} L484 ${y2} L510 ${y1}`;
-  const knob = (cy, cls, label) => {
-    let ticks = '';
-    for (let i = 0; i <= 10; i++) { const a = (-225 + i * 27) * Math.PI / 180; ticks += `<line x1="${(44 * Math.cos(a)).toFixed(1)}" y1="${(44 * Math.sin(a)).toFixed(1)}" x2="${(50 * Math.cos(a)).toFixed(1)}" y2="${(50 * Math.sin(a)).toFixed(1)}" stroke="#7a7d85" stroke-width="2"/>`; }
-    return `<g transform="translate(690 ${cy})">${ticks}<circle r="38" fill="#08080a"/><g class="${cls}"><circle r="31" fill="url(#knob)"/><rect x="-3.5" y="-29" width="7" height="17" rx="3.5" fill="#1b1b1f"/></g>
-      <text y="68" text-anchor="middle" font-family="Montserrat" font-weight="700" font-size="13" letter-spacing="3" fill="#8d9098">${label}</text></g>`;
-  };
-  let spots = '';
-  for (let i = 0; i < 9; i++) spots += `<ellipse class="spot" cx="${255 + (i % 5) * 26}" cy="262" rx="${9 + (i % 3) * 3}" ry="4" fill="#6a2c0c"/>`;
-  return `<svg viewBox="0 0 800 540" width="100%" height="100%">
-  <rect x="0" y="0" width="800" height="500" rx="26" fill="url(#ovBody)"/>
-  <rect x="8" y="5" width="784" height="12" rx="6" fill="#fff" opacity=".08"/>
-  <rect x="50" y="496" width="72" height="26" rx="6" fill="#0a0a0b"/><rect x="678" y="496" width="72" height="26" rx="6" fill="#0a0a0b"/>
-  <rect x="24" y="30" width="566" height="444" rx="16" fill="url(#ovDoor)" stroke="#303038" stroke-width="2"/>
-  <rect x="96" y="50" width="16" height="30" rx="4" fill="#8f949c"/><rect x="502" y="50" width="16" height="30" rx="4" fill="#8f949c"/>
-  <rect x="72" y="42" width="470" height="20" rx="10" fill="url(#metal)"/>
-  <rect x="60" y="96" width="494" height="344" rx="14" fill="#040405" stroke="#2b2b31" stroke-width="3"/>
-  <g clip-path="url(#ovClip)">
-    <rect x="76" y="110" width="462" height="316" fill="url(#cavity)"/>
-    <rect x="140" y="160" width="334" height="216" fill="#1a110d" stroke="#3a2a22" stroke-width="2"/>
-    <path d="M76 110 L140 160 M538 110 L474 160 M76 426 L140 376 M538 426 L474 376" stroke="#3a2a22" stroke-width="2"/>
-    <path d="M86 236 L140 228 M86 322 L140 310 M528 236 L474 228 M528 322 L474 310" stroke="#4d3a2f" stroke-width="3"/>
-    <g transform="translate(307 268)">
-      <circle r="60" fill="#120b08" stroke="#3d2c22" stroke-width="3"/>
-      <g class="fan">${[0, 60, 120, 180, 240, 300].map(a => `<path transform="rotate(${a})" d="M0 0 C 12 -12, 40 -20, 52 -8 C 36 -2, 16 5, 0 0Z" fill="#3b2b22"/>`).join('')}</g>
-      <circle r="10" fill="#5a463a"/>
-      <circle r="60" fill="none" stroke="#4a372c" stroke-width="2"/><circle r="40" fill="none" stroke="#4a372c" stroke-width="1.5" opacity=".7"/>
-      ${Array.from({ length: 12 }, (_, i) => `<line transform="rotate(${i * 30})" x1="12" y1="0" x2="60" y2="0" stroke="#4a372c" stroke-width="1.2" opacity=".55"/>`).join('')}
-    </g>
-    <rect class="hot" x="76" y="110" width="462" height="316" fill="#ff7a2a" opacity="0"/>
-    <line x1="84" y1="262" x2="530" y2="262" stroke="url(#metal)" stroke-width="6"/>
-    <path d="M214 244 L226 262 L214 280 M400 244 L388 262 L400 280" stroke="#c9ccd2" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <ellipse cx="307" cy="262" rx="72" ry="44" fill="url(#roast)"/>
-    <g class="spots">${spots}</g>
-    <path d="M262 222 L262 302 M292 219 L292 305 M322 219 L322 305 M352 222 L352 302" stroke="#f6e6c8" stroke-width="2.5" opacity=".6"/>
-    <ellipse cx="290" cy="242" rx="30" ry="9" fill="#fff" opacity=".22"/>
-    <line x1="84" y1="352" x2="530" y2="352" stroke="#6b5a4f" stroke-width="4"/>
-    ${Array.from({ length: 15 }, (_, i) => `<line x1="${100 + i * 30}" y1="346" x2="${100 + i * 30}" y2="358" stroke="#5b4a3f" stroke-width="2"/>`).join('')}
-    <rect class="warm" x="76" y="110" width="462" height="316" fill="url(#warm)" opacity="0" style="mix-blend-mode:screen"/>
-    <path d="${el(152, 124)}" fill="none" stroke="#4b3b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" class="elBase"/>
-    <path d="${el(386, 412)}" fill="none" stroke="#4b3b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" class="elBase"/>
-    <path d="${el(152, 124)}" fill="none" stroke="#ff5a14" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" class="elGlow" filter="url(#glow)" opacity="0"/>
-    <path d="${el(386, 412)}" fill="none" stroke="#ff5a14" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" class="elGlow" filter="url(#glow)" opacity="0"/>
-    <path d="${el(152, 124)}" fill="none" stroke="#ffe0a0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="elCore" opacity="0"/>
-    <path d="${el(386, 412)}" fill="none" stroke="#ffe0a0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="elCore" opacity="0"/>
-    <circle class="lampG" cx="156" cy="178" r="70" fill="url(#lampGlow)" opacity="0"/>
-    <circle cx="156" cy="178" r="8" fill="#5a4a40" class="lampB"/>
-    <polygon points="76,110 196,110 116,426 76,426" fill="#fff" opacity=".035"/>
-    <g class="sheenG"><rect class="sheen" x="0" y="60" width="130" height="420" fill="url(#sheen)" transform="skewX(-18)"/></g>
-  </g>
-  <rect x="68" y="103" width="478" height="330" rx="11" fill="none" stroke="#fff" stroke-opacity=".10" stroke-width="2"/>
-  <rect x="604" y="30" width="172" height="444" rx="14" fill="#131317" stroke="#26262c"/>
-  <text x="690" y="70" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="17" letter-spacing="2" fill="#cfd2d8">ESMX-100P</text>
-  <circle class="led" cx="690" cy="96" r="6" fill="#3a1a10"/><circle class="ledG" cx="690" cy="96" r="16" fill="#ff6a1a" filter="url(#glowS)" opacity="0"/>
-  ${knob(166, 'k1', 'TEMP')}${knob(272, 'k2', 'FUNCTION')}${knob(378, 'k3', 'TIMER')}
-</svg>`;
-}
-
-function mixerSVG() {
-  return `<svg viewBox="0 0 600 560" width="100%" height="100%">
-  <g class="mxAll">
-  <path d="M40 488 Q40 462 70 460 L520 460 Q556 462 560 488 L562 506 Q562 520 546 520 L56 520 Q40 520 40 506 Z" fill="url(#mxBase)"/>
-  <path d="M70 466 L530 466" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>
-  <path d="M72 462 C 66 380, 78 300, 96 250 C 108 214, 136 196, 176 196 L214 196 C 236 196, 248 214, 246 240 L 238 462 Z" fill="url(#mxBody)"/>
-  <path d="M92 440 C 88 360, 98 290, 116 250" stroke="#fff" stroke-opacity=".25" stroke-width="8" fill="none" stroke-linecap="round"/>
-  <rect x="300" y="444" width="192" height="18" rx="5" fill="url(#metal)"/>
-  <ellipse cx="395" cy="300" rx="118" ry="20" fill="#3c4046"/>
-  <ellipse cx="395" cy="318" rx="104" ry="14" fill="#f2dcb2"/>
-  <g class="swirl"><path d="M320 318 A75 9 0 0 1 470 318" stroke="#d9b98a" stroke-width="3" fill="none" stroke-dasharray="40 30"/><path d="M345 322 A50 6 0 0 1 445 322" stroke="#caa576" stroke-width="3" fill="none" stroke-dasharray="26 20"/></g>
-  <g class="head">
-    <g class="whisk">
-      <line x1="400" y1="206" x2="400" y2="262" stroke="url(#metalH)" stroke-width="9" stroke-linecap="round"/>
-      <ellipse class="wBlur" cx="400" cy="326" rx="46" ry="64" fill="#dfe3e8" opacity="0"/>
-      ${[0, 1, 2, 3, 4].map(() => `<path class="loop" fill="none" stroke="#d6dae0" stroke-width="3.2" stroke-linecap="round"/>`).join('')}
-      <circle cx="400" cy="262" r="7" fill="#9aa0a8"/>
-    </g>
-    <path d="M96 150 C 96 88, 150 62, 220 60 L 430 64 C 500 66, 556 96, 560 140 C 564 176, 540 200, 500 204 L 200 210 C 140 210, 96 196, 96 150 Z" fill="url(#mxBody)"/>
-    <path d="M136 94 C 180 72, 280 70, 440 76" stroke="#fff" stroke-opacity=".45" stroke-width="10" fill="none" stroke-linecap="round"/>
-    <path d="M466 66 C 482 108, 484 162, 470 204 L 488 203 C 502 162, 500 108, 484 67 Z" fill="url(#metalH)"/>
-    <ellipse cx="400" cy="208" rx="26" ry="8" fill="url(#metal)"/>
-    <text x="335" y="150" text-anchor="middle" font-family="Montserrat" font-weight="800" font-size="17" letter-spacing="5" fill="#fff" fill-opacity=".85">ARTISAN SE</text>
-    <g class="lever"><line x1="150" y1="176" x2="184" y2="166" stroke="url(#metal)" stroke-width="7" stroke-linecap="round"/><circle cx="186" cy="165" r="7" fill="#e9ecef"/></g>
-  </g>
-  <g class="spin" opacity="0" fill="none" stroke-linecap="round"><path d="M340 290 A62 16 0 0 0 460 290" stroke="#fff" stroke-width="3.5" stroke-dasharray="46 34"/><path d="M352 272 A50 13 0 0 0 448 272" stroke="#fff" stroke-opacity=".7" stroke-width="3" stroke-dasharray="30 26"/><path d="M364 254 A38 10 0 0 0 436 254" stroke="#fff" stroke-opacity=".5" stroke-width="2.5" stroke-dasharray="20 22"/></g>
-  <path d="M277 300 C 280 382, 318 440, 360 450 L 430 450 C 472 440, 510 382, 513 300 A 118 20 0 0 1 277 300 Z" fill="url(#bowl)"/>
-  <path d="M277 300 A 118 20 0 0 0 513 300" stroke="#fff" stroke-width="3.5" fill="none"/>
-  <path d="M300 330 C 310 390, 330 420, 352 432" stroke="#fff" stroke-opacity=".6" stroke-width="6" fill="none" stroke-linecap="round"/>
-  <path d="M508 322 C 552 322, 556 384, 500 392" stroke="url(#metalH)" stroke-width="10" fill="none" stroke-linecap="round"/>
-  </g>
-  <g class="dims" font-family="Montserrat" font-weight="800">
-    <path class="dl" d="M40 552 L562 552" stroke="#3a2a20" stroke-width="2.5"/>
-    <path class="dl" d="M40 540 L40 564 M562 540 L562 564" stroke="#3a2a20" stroke-width="2.5"/>
-    <g class="dt"><rect x="246" y="538" width="110" height="30" rx="15" fill="#d8142b"/><text x="301" y="559" text-anchor="middle" font-size="17" fill="#fff" letter-spacing="1">472 mm</text></g>
-    <path class="dl" d="M0 60 L0 520" stroke="#3a2a20" stroke-width="2.5"/>
-    <path class="dl" d="M-12 60 L12 60 M-12 520 L12 520" stroke="#3a2a20" stroke-width="2.5"/>
-    <g class="dt"><rect x="-55" y="275" width="110" height="30" rx="15" fill="#d8142b" transform="rotate(-90 0 290)"/><text x="0" y="296" text-anchor="middle" font-size="17" fill="#fff" letter-spacing="1" transform="rotate(-90 0 290)">380 mm</text></g>
-    <g class="dt"><text x="572" y="498" font-size="15" fill="#3a2a20" letter-spacing="2">W 272 mm</text></g>
-  </g>
-</svg>`;
-}
-
-function mkOven(host) {
-  host.innerHTML = ovenSVG();
-  const q = s => host.querySelectorAll(s);
-  const o = { host, fan: q('.fan')[0], hot: q('.hot')[0], warm: q('.warm')[0], elBase: q('.elBase'), elGlow: q('.elGlow'), elCore: q('.elCore'),
-    lampG: q('.lampG')[0], lampB: q('.lampB')[0], spots: q('.spot'), sheen: q('.sheen')[0], led: q('.led')[0], ledG: q('.ledG')[0],
-    k1: q('.k1')[0], k2: q('.k2')[0], k3: q('.k3')[0] };
-  o.spotPh = Array.from(o.spots, (_, i) => i * 2.3);
-  return o;
-}
-function updOven(o, st) {
-  const h = st.heat;
-  o.fan.setAttribute('transform', `rotate(${st.fan})`);
-  o.hot.setAttribute('opacity', (h * .10).toFixed(3));
-  o.warm.setAttribute('opacity', (h * .9).toFixed(3));
-  const col = hexLerp('#4b3b34', '#ff7a2a', h);
-  o.elBase.forEach(e => e.setAttribute('stroke', col));
-  o.elGlow.forEach(e => e.setAttribute('opacity', (h * .95).toFixed(3)));
-  o.elCore.forEach(e => e.setAttribute('opacity', (h * h).toFixed(3)));
-  o.lampG.setAttribute('opacity', st.lamp.toFixed(3));
-  o.lampB.setAttribute('fill', st.lamp > .5 ? '#fff8e0' : '#5a4a40');
-  o.spots.forEach((s, i) => {
-    const a = st.spit + o.spotPh[i], c = Math.cos(a);
-    s.setAttribute('cy', (262 + 38 * Math.sin(a)).toFixed(2));
-    s.setAttribute('ry', Math.max(.1, 4.5 * c).toFixed(2));
-    s.setAttribute('opacity', (Math.max(0, c) * .75).toFixed(3));
-  });
-  o.sheen.setAttribute('x', (lerp(-120, 700, st.sheen)).toFixed(1));
-  o.led.setAttribute('fill', h > .05 ? '#ffb070' : '#3a1a10');
-  o.ledG.setAttribute('opacity', (h > .05 ? .9 : 0));
-  o.k1.setAttribute('transform', `rotate(${st.k1 || -135})`);
-  o.k2.setAttribute('transform', `rotate(${st.k2 || -135})`);
-  o.k3.setAttribute('transform', `rotate(${st.k3 || -135})`);
-}
-function mkMixer(host) {
-  host.innerHTML = mixerSVG();
-  const q = s => host.querySelectorAll(s);
-  const m = { host, all: q('.mxAll')[0], head: q('.head')[0], loops: q('.loop'), blur: q('.wBlur')[0], swirl: q('.swirl')[0], lever: q('.lever')[0], spin: q('.spin')[0],
-    dims: q('.dims')[0], dl: q('.dl'), dt: q('.dt') };
-  m.dlLen = Array.from(m.dl, p => p.getTotalLength());
-  return m;
-}
-function updMixer(m, st) {
-  m.head.setAttribute('transform', `rotate(${-st.tilt} 190 205)`);
-  const W = 44;
-  m.loops.forEach((p, i) => {
-    const ph = st.whisk + i * Math.PI / 5, w = W * Math.cos(ph);
-    p.setAttribute('d', `M400 262 C ${400 + .55 * w} 276, ${400 + w} 344, 400 392 C ${400 - w} 344, ${400 - .55 * w} 276, 400 262`);
-    p.setAttribute('stroke-opacity', (.55 + .45 * Math.abs(Math.sin(ph))).toFixed(3));
-  });
-  m.blur.setAttribute('opacity', (st.speed * .28).toFixed(3));
-  m.swirl.setAttribute('transform', `translate(${(Math.sin(st.whisk * .5) * 4 * st.speed).toFixed(2)} 0)`);
-  m.swirl.querySelectorAll('path').forEach((p, i) => p.setAttribute('stroke-dashoffset', (-st.whisk * (i ? 14 : 20)).toFixed(1)));
-  m.lever.setAttribute('transform', `rotate(${-st.lever * 22} 150 176)`);
-  m.spin.setAttribute('opacity', (st.speed * .85).toFixed(3));
-  m.spin.querySelectorAll('path').forEach((p, i) => p.setAttribute('stroke-dashoffset', (-st.whisk * (22 + i * 8)).toFixed(1)));
-  const vib = st.speed * 1.1;
-  m.all.setAttribute('transform', `translate(${(Math.sin(st.t * 97) * vib).toFixed(2)} ${(Math.cos(st.t * 131) * vib * .6).toFixed(2)})`);
-  const d = st.dims || 0;
-  m.dims.style.display = d > 0 ? 'inline' : 'none';
-  m.dl.forEach((p, i) => { const L = m.dlLen[i]; p.setAttribute('stroke-dasharray', L); p.setAttribute('stroke-dashoffset', (L * (1 - E.outCubic(P(d, i * .1, .6)))).toFixed(1)); });
-  m.dt.forEach((g, i) => g.setAttribute('opacity', E.outCubic(P(d, .45 + i * .12, .35)).toFixed(3)));
-}
-
-/* ================= BUILD ================= */
-document.querySelectorAll('.scene').forEach(s => s.style.display = 'block'); // measurable while building
-const ovA = mkOven($('#ovenA')), ovB = mkOven($('#ovenB')), ovC = mkOven($('#ovenC'));
-const mxA = mkMixer($('#mixerA')), mxB = mkMixer($('#mixerB')), mxC = mkMixer($('#mixerC'));
-
-// intro letters
-const bakerLetters = [];
-'BAKER'.split('').forEach(ch => {
-  const m = document.createElement('span'); m.className = 'm';
-  const c = document.createElement('span'); c.className = 'c gradText'; c.textContent = ch;
-  m.appendChild(c); $('#baker').appendChild(m); bakerLetters.push(c);
-});
-const taglineWords = [];
-'BAKE BIGGER · MIX STRONGER'.split(' ').forEach((w, i) => {
-  const s = document.createElement('span'); s.textContent = w; s.style.display = 'inline-block'; s.style.margin = '0 .28em';
-  if (w === '·') s.style.color = 'var(--orange)';
-  $('#tagline').appendChild(s); taglineWords.push(s);
-});
-const s4words = [];
-'2 POWERHOUSES. 1 INCREDIBLE DEAL.'.split(' ').forEach(w => {
-  const s = document.createElement('span'); s.textContent = w; s.style.display = 'inline-block'; s.style.margin = '0 .22em';
-  if (/^\d$/.test(w)) s.style.color = 'var(--gold)';
-  $('#s4sub').appendChild(s); s4words.push(s);
-});
-
-// gauges
-(function () {
-  $('#gTempBg').setAttribute('d', arcPath(150, 150, 118, 135, 405));
-  let tk = '';
-  for (let i = 0; i <= 9; i++) { const a = (135 + i * 30) * Math.PI / 180; tk += `<line x1="${150 + 92 * Math.cos(a)}" y1="${150 + 92 * Math.sin(a)}" x2="${150 + 100 * Math.cos(a)}" y2="${150 + 100 * Math.sin(a)}" stroke="rgba(255,255,255,.35)" stroke-width="3"/>`; }
-  $('#gTempTicks').innerHTML = tk; tk = '';
-  for (let i = 0; i < 12; i++) { const a = (i * 30) * Math.PI / 180; tk += `<line x1="${150 + 92 * Math.cos(a)}" y1="${150 + 92 * Math.sin(a)}" x2="${150 + 100 * Math.cos(a)}" y2="${150 + 100 * Math.sin(a)}" stroke="rgba(255,255,255,.35)" stroke-width="3"/>`; }
-  $('#gTimeTicks').innerHTML = tk;
-})();
-
-// callouts (in oven SVG units)
-const CALLS = [
-  { a: [156, 178], b: [156, -54], c: [186, -54], t1: 'INTERIOR LIGHT', t2: 'Watch every bake rise', dir: 1 },
-  { a: [484, 124], b: [484, -54], c: [514, -54], t1: 'HEATING ELEMENTS', t2: '2× "M" shape stainless steel', dir: 1 },
-  { a: [100, 420], b: [100, 664], c: [130, 664], t1: 'DOUBLE-LAYER GLASS DOOR', t2: 'Locks heat in, stays safer', dir: 1 },
-  { a: [470, 300], b: [470, 590], c: [500, 590], t1: 'ROTISSERIE + CONVECTION', t2: 'Crisp, even, all-round', dir: 1 },
+/* ================= CAMERA ================= */
+// [time, worldX, worldY, zoom, roll°] — one continuous take, Catmull-Rom smoothed
+const KEYS = [
+  [0.0, 1500, 350, .26, -3],
+  [1.7, 900, 380, .5, -1.2],
+  [2.3, 200, 400, .78, 0],
+  [2.85, 470, 370, 1.0, .5],
+  [3.2, 560, 380, 1.1, .8],
+  [3.6, 960, 200, 1.8, 1.2],
+  [3.95, 975, 225, 1.86, 1.0],
+  [4.3, 980, 600, 1.8, 0],
+  [4.65, 990, 620, 1.86, -.3],
+  [5.0, 620, 420, 1.06, -.8],
+  [5.35, 760, 420, 1.0, 0],
+  [5.95, 2560, 440, .9, 1.6],
+  [6.8, 2850, 430, .86, 0],
+  [7.3, 2400, 470, 1.22, -.6],
+  [8.2, 2480, 440, .8, .4],
+  [9.2, 2500, 450, .9, 0],
+  [10.1, 1480, 330, .5, -.5],
+  [11.2, 1460, 350, .54, 0],
+  [12.4, 1600, 360, .5, 0],
+  [13.3, 2350, 420, .39, 0],
+  [15.0, 2320, 425, .41, 0],
 ];
-(function () {
-  const ns = 'http://www.w3.org/2000/svg', svg = $('#callSvg');
-  CALLS.forEach(c => {
-    const g = document.createElementNS(ns, 'g');
-    g.innerHTML = `<circle class="ring" cx="${c.a[0]}" cy="${c.a[1]}" r="10" fill="none" stroke="#ffb547" stroke-width="2.5"/>
-      <circle class="dot" cx="${c.a[0]}" cy="${c.a[1]}" r="7" fill="#ffb547"/>
-      <polyline class="ln" points="${c.a.join(',')} ${c.b.join(',')} ${c.c.join(',')}" fill="none" stroke="#ffb547" stroke-width="2.5"/>
-      <g class="lbl"><g class="lblIn">
-        <rect x="${c.c[0]}" y="${c.c[1] - 30}" height="60" rx="8" fill="rgba(18,11,8,.82)" stroke="rgba(255,181,71,.55)" stroke-width="1.5"/>
-        <rect x="${c.c[0]}" y="${c.c[1] - 30}" width="5" height="60" rx="2" fill="#ff5a1f"/>
-        <text x="${c.c[0] + 20}" y="${c.c[1] - 5}" font-family="Montserrat" font-weight="800" font-size="19" letter-spacing="2.5" fill="#fff">${c.t1}</text>
-        <text x="${c.c[0] + 20}" y="${c.c[1] + 18}" font-family="Montserrat" font-weight="600" font-size="15" letter-spacing=".5" fill="#ffcf8a">${c.t2}</text>
-      </g></g>`;
-    svg.appendChild(g);
-    const texts = g.querySelectorAll('text');
-    const w = Math.max(texts[0].getComputedTextLength(), texts[1].getComputedTextLength()) + 40;
-    g.querySelector('rect').setAttribute('width', w);
-    const clip = document.createElementNS(ns, 'clipPath'); const id = 'cc' + Math.random().toString(36).slice(2);
-    clip.id = id; clip.innerHTML = `<rect x="${c.c[0]}" y="${c.c[1] - 40}" width="${w + 10}" height="80"/>`;
-    svg.appendChild(clip);
-    g.querySelector('.lbl').setAttribute('clip-path', `url(#${id})`);
-    c.g = g; c.w = w; c.ln = g.querySelector('.ln'); c.len = c.ln.getTotalLength(); c.dot = g.querySelector('.dot'); c.ring = g.querySelector('.ring'); c.lblIn = g.querySelector('.lblIn');
-  });
-})();
-
-// meter
-const segs = [];
-for (let i = 0; i < 12; i++) { const d = document.createElement('div'); d.className = 'seg'; d.style.left = (i * 58) + 'px'; $('#meter').appendChild(d); segs.push(d); }
-// ticker
-$('#tickerText').innerHTML = Array(4).fill('<b>1500W</b> MOTOR &nbsp;✦&nbsp; <b>10L</b> BOWL &nbsp;✦&nbsp; <b>1.5KG</b> MAX CAPACITY &nbsp;✦&nbsp; <b>220–240V</b> · 50/60Hz &nbsp;✦&nbsp; <b>472×272×380</b> MM &nbsp;✦&nbsp; <b>7.9KG</b> NET · 8.5KG GROSS &nbsp;✦&nbsp; ').join('');
-// end card text
-$('#ctaTxt').textContent = CONFIG.cta + '  ›';
-$('#e_date').textContent = CONFIG.campaign;
-if (CONFIG.bundlePrice) {
-  $('#e_price').innerHTML = (CONFIG.normalPrice ? `<s style="color:#a88d72;font-weight:700;margin-right:18px">${CONFIG.normalPrice}</s>` : '') + `BUNDLE ${CONFIG.bundlePrice}`;
-  $('#slabIn').textContent = 'BUNDLE ' + CONFIG.bundlePrice;
+function cam(t) {
+  t = clamp(t, 0, DUR);
+  let i = 0; while (i < KEYS.length - 2 && t > KEYS[i + 1][0]) i++;
+  const k0 = KEYS[Math.max(0, i - 1)], k1 = KEYS[i], k2 = KEYS[i + 1], k3 = KEYS[Math.min(KEYS.length - 1, i + 2)];
+  const h = k2[0] - k1[0], s = clamp((t - k1[0]) / h);
+  const s2 = s * s, s3 = s2 * s, h00 = 2 * s3 - 3 * s2 + 1, h10 = s3 - 2 * s2 + s, h01 = -2 * s3 + 3 * s2, h11 = s3 - s2;
+  const out = [];
+  for (let c = 1; c <= 4; c++) {
+    const m1 = i === 0 ? 0 : (k2[c] - k0[c]) / (k2[0] - k0[0]);
+    const m2 = i + 2 >= KEYS.length ? 0 : (k3[c] - k1[c]) / (k3[0] - k1[0]);
+    out.push(h00 * k1[c] + h10 * h * m1 + h01 * k2[c] + h11 * h * m2);
+  }
+  // handheld micro-motion for a "real camera" feel
+  out[0] += Math.sin(t * 1.7) * 3 + Math.sin(t * 3.1) * 1.5;
+  out[1] += Math.cos(t * 1.3) * 2.5 + Math.sin(t * 2.7) * 1.2;
+  out[3] += Math.sin(t * .9) * .15;
+  return out; // cx, cy, z, rollDeg
 }
-
-/* ================= FX: particles, grain ================= */
-const fxBack = $('#fxBack').getContext('2d'), fxFront = $('#fxFront').getContext('2d'), fxMid = $('#fxMid').getContext('2d'), fxS4 = $('#fxS4').getContext('2d');
-const rnd = mulberry32(7);
-const dust = Array.from({ length: 170 }, () => ({ x: rnd() * 1920, y: rnd() * 1080, vx: (rnd() - .5) * 26, vy: -8 - rnd() * 22, r: .6 + rnd() * 2.6, ph: rnd() * 6.28, a: .25 + rnd() * .6 }));
-const embers = Array.from({ length: 140 }, () => ({ x: 700 + rnd() * 1300, y: rnd() * 1080, vy: 40 + rnd() * 110, sw: 10 + rnd() * 30, f: .6 + rnd() * 1.8, r: .8 + rnd() * 2.8, ph: rnd() * 6.28, a: .3 + rnd() * .7 }));
-const bokeh = Array.from({ length: 34 }, () => ({ x: rnd() * 1920, y: rnd() * 1080, r: 14 + rnd() * 60, vx: (rnd() - .5) * 18, vy: -6 - rnd() * 14, a: .05 + rnd() * .16, ph: rnd() * 6.28 }));
-function burst(seed, n, cx, cy, spd, grav, life, cols, spread = Math.PI * 2, dir = -Math.PI / 2, rect = false) {
-  const r = mulberry32(seed);
-  return Array.from({ length: n }, () => {
-    const a = dir + (r() - .5) * spread, v = spd * (.35 + r() * .9);
-    return { cx, cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: grav, life: life * (.6 + r() * .6), c: cols[Math.floor(r() * cols.length)], s: 2 + r() * 5, rot: r() * 6.28, vr: (r() - .5) * 18, rect };
-  });
-}
-const BURSTS = [
-  { t: 1.0, ctx: 'front', parts: burst(11, 90, 960, 740, 900, 900, 1.1, ['#ffb547', '#ff5a1f', '#fff1d6']) },
-  { t: 6.5, ctx: 'mid', parts: burst(12, 110, 575, 900, 520, 380, 1.0, ['#fffaf0', '#f3e2c4', '#e8d2ae'], Math.PI * .9, -Math.PI / 2) },
-  { t: 11.0, ctx: 's4', parts: burst(13, 170, 960, 950, 1300, 1400, 1.4, ['#ffb547', '#ff5a1f', '#fff', '#d8142b', '#ffe08a'], Math.PI * 1.2, -Math.PI / 2, true) },
-  { t: 12.62, ctx: 'front', parts: burst(14, 120, 1470, 380, 800, 500, 1.6, ['#ffd98a', '#fff4dc', '#ffb547'], Math.PI * 2, 0) },
-];
-function drawBursts(t) {
-  const map = { front: fxFront, mid: fxMid, s4: fxS4 };
-  for (const b of BURSTS) {
-    const dt = t - b.t; if (dt < 0 || dt > 2) continue;
-    const ctx = map[b.ctx];
-    for (const p of b.parts) {
-      if (dt > p.life) continue;
-      const k = dt / p.life, x = p.cx + p.vx * dt * (1 - .35 * k), y = p.cy + p.vy * dt + .5 * p.g * dt * dt;
-      ctx.globalAlpha = (1 - k) * (b.ctx === 'mid' ? .7 : 1);
-      ctx.fillStyle = p.c;
-      if (p.rect) { ctx.save(); ctx.translate(x, y); ctx.rotate(p.rot + p.vr * dt); ctx.fillRect(-p.s, -p.s * .45, p.s * 2, p.s * .9); ctx.restore(); }
-      else { ctx.beginPath(); ctx.arc(x, y, p.s * (b.ctx === 'mid' ? 2.2 : 1) * (1 - k * .5), 0, 6.283); ctx.fill(); }
-    }
-  }
-  fxFront.globalAlpha = fxMid.globalAlpha = fxS4.globalAlpha = 1;
-}
-const wrap = (v, m) => ((v % m) + m) % m;
-function drawAmbient(t, wDust, wEmber, wBokeh, wDustMid) {
-  if (wBokeh > 0) for (const b of bokeh) {
-    const x = wrap(b.x + b.vx * t, 2040) - 60, y = wrap(b.y + b.vy * t, 1200) - 60;
-    const g = fxBack.createRadialGradient(x, y, 0, x, y, b.r);
-    const a = b.a * wBokeh * (.7 + .3 * Math.sin(t * 2 + b.ph));
-    g.addColorStop(0, `rgba(255,190,100,${a})`); g.addColorStop(.7, `rgba(255,150,60,${a * .5})`); g.addColorStop(1, 'rgba(255,150,60,0)');
-    fxBack.fillStyle = g; fxBack.beginPath(); fxBack.arc(x, y, b.r, 0, 6.283); fxBack.fill();
-  }
-  if (wDust > 0) for (const d of dust) {
-    const x = wrap(d.x + d.vx * t + Math.sin(t * 1.3 + d.ph) * 14, 1920), y = wrap(d.y + d.vy * t, 1080);
-    fxFront.globalAlpha = d.a * wDust * .8; fxFront.fillStyle = '#fff2dd';
-    fxFront.beginPath(); fxFront.arc(x, y, d.r, 0, 6.283); fxFront.fill();
-  }
-  if (wDustMid > 0) for (const d of dust) {
-    const x = wrap(d.x + d.vx * t + Math.sin(t * 1.3 + d.ph) * 14, 1920), y = wrap(d.y + d.vy * t, 1080);
-    fxMid.globalAlpha = d.a * wDustMid * .55; fxMid.fillStyle = '#c9a77c';
-    fxMid.beginPath(); fxMid.arc(x, y, d.r * 1.3, 0, 6.283); fxMid.fill();
-  }
-  if (wEmber > 0) for (const e of embers) {
-    const y = wrap(e.y - e.vy * t, 1080), x = e.x + Math.sin(t * e.f + e.ph) * e.sw;
-    const fl = .6 + .4 * Math.sin(t * 9 + e.ph * 3);
-    fxBack.globalAlpha = e.a * wEmber * fl;
-    const g = fxBack.createRadialGradient(x, y, 0, x, y, e.r * 4);
-    g.addColorStop(0, '#fff0c0'); g.addColorStop(.3, '#ff9a3a'); g.addColorStop(1, 'rgba(255,90,20,0)');
-    fxBack.fillStyle = g; fxBack.beginPath(); fxBack.arc(x, y, e.r * 4, 0, 6.283); fxBack.fill();
-  }
-  fxFront.globalAlpha = fxBack.globalAlpha = fxMid.globalAlpha = 1;
-}
-const grainCtx = $('#grain').getContext('2d');
-const grainFrames = [];
-(function () {
-  const r = mulberry32(99);
-  for (let f = 0; f < 8; f++) {
-    const img = grainCtx.createImageData(960, 540);
-    for (let i = 0; i < img.data.length; i += 4) { const v = Math.floor(r() * 255); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
-    grainFrames.push(img);
-  }
-})();
-
-/* ================= TIMELINE ================= */
-function wipe(t, t0, dirRight = true) {
-  const els = [$('#w1'), $('#w2'), $('#w3')];
-  let any = false;
-  els.forEach((el, i) => {
-    const k = E.inOutCubic(P(t, t0 + i * .06, .52));
-    const on = k > 0 && k < 1; any = any || on;
-    el.style.display = on ? 'block' : 'none';
-    const x = dirRight ? lerp(-2900, 2300, k) : lerp(2300, -2900, k);
-    el.style.transform = `translate(${x}px,0) skewX(-18deg)`;
-  });
-  return any;
+let CAM = [0, 0, 1, 0], SHAKE = [0, 0];
+function w2s(x, y) {
+  const [cx, cy, z, r] = CAM, a = r * Math.PI / 180;
+  const dx = (x - cx) * z, dy = (y - cy) * z;
+  return [960 + dx * Math.cos(a) - dy * Math.sin(a) + SHAKE[0], 540 + dx * Math.sin(a) + dy * Math.cos(a) + SHAKE[1]];
 }
 function shake(t) {
   let x = 0, y = 0;
-  for (const [ti, A] of [[1.0, 16], [6.5, 12], [7.0, 5], [11.0, 22], [12.5, 10]]) {
+  for (const [ti, A] of [[1.0, 14], [2.0, 8], [6.1, 16], [11.0, 22], [12.45, 10]]) {
     const d = t - ti; if (d < 0 || d > .6) continue;
-    const env = A * Math.exp(-d * 9);
-    x += env * Math.sin(d * 75); y += env * Math.cos(d * 61);
+    const e = A * Math.exp(-d * 9); x += e * Math.sin(d * 75); y += e * Math.cos(d * 61);
   }
   return [x, y];
 }
 
-function render(t) {
-  // clear fx
-  for (const c of [fxBack, fxFront, fxMid, fxS4]) c.clearRect(0, 0, 1920, 1080);
-  grainCtx.putImageData(grainFrames[Math.floor(t * 30) % 8], 0, 0);
-  const [sx, sy] = shake(t);
-  $('#world').style.transform = `translate(${sx}px,${sy}px)`;
+/* ================= BUILD ================= */
+const OV = { x: 0, y: -94, w: 1500, h: 994 }, MX = { x: 1950, y: 57, w: 1000, h: 843 };
+const op = (px, py) => [OV.x + OV.w * px, OV.y + OV.h * py];   // oven photo fraction -> world
+const mp = (px, py) => [MX.x + MX.w * px, MX.y + MX.h * py];   // mixer photo fraction -> world
+function knob(el, img, W, H, px, py, rPct) {
+  const r = W * rPct, cx = W * px, cy = H * py;
+  Object.assign(el.style, { left: (cx - r) + 'px', top: (cy - r) + 'px', width: 2 * r + 'px', height: 2 * r + 'px',
+    backgroundImage: `url(${img})`, backgroundSize: `${W}px ${H}px`, backgroundPosition: `${-(cx - r)}px ${-(cy - r)}px` });
+}
+knob($('#kTemp'), 'assets/oven_r.webp', OV.w, OV.h, .700, .205, .026);
+knob($('#kTime'), 'assets/oven_r.webp', OV.w, OV.h, .700, .782, .026);
+knob($('#kDial'), 'assets/mixer_red.webp', MX.w, MX.h, .823, .674, .045);
+Object.assign($('#lamp').style, { left: (OV.w * .16 - 160) + 'px', top: (OV.h * .2 - 160) + 'px', width: '320px', height: '320px' });
+Object.assign($('#fanFx').style, { left: (OV.w * .23 - 110) + 'px', top: (OV.h * .39 - 110) + 'px', width: '220px', height: '220px' });
 
-  const in1 = t < 2.12, in2 = t >= 1.95 && t < 6.35, in3 = t >= 5.78 && t < 9.98, in4 = t >= 9.9 && t < 12.62, in5 = t >= 12.4;
-  show($('#s1'), in1); show($('#s2'), in2); show($('#s3'), in3); show($('#s4'), in4); show($('#s5'), in5);
-  $('#bgHeat').style.opacity = in2 ? clamp(P(t, 2.6, 1.2) - P(t, 5.7, .5)) : 0;
-
-  // ambient particle weights
-  const wDust = clamp(1 - P(t, 1.8, .3)) + (in5 ? P(t, 12.5, .5) * .5 : 0);
-  const wEmber = (P(t, 2.3, .8) - P(t, 5.7, .4)) + (in4 ? .5 : 0);
-  const wBokeh = in5 ? P(t, 12.4, .6) : (in4 ? .6 : (t < 2 ? .5 : 0));
-  drawAmbient(t, wDust, clamp(wEmber), wBokeh, in3 ? P(t, 6.2, .5) : 0);
-
-  /* ---------- SCENE 1 ---------- */
-  if (in1) {
-    T($('#s1glow'), { s: lerp(.6, 1.15, E.outCubic(P(t, 0, 1.6))), o: E.outCubic(P(t, 0, .8)) });
-    T($('#the'), { y: lerp(30, 0, E.outExpo(P(t, .1, .6))), o: P(t, .1, .4) });
-    const rl = E.outExpo(P(t, .25, .8));
-    $('#ruleL').style.transform = `scaleX(${rl})`; $('#ruleL').style.transformOrigin = '100% 50%';
-    $('#ruleR').style.transform = `scaleX(${rl})`; $('#ruleR').style.transformOrigin = '0% 50%';
-    bakerLetters.forEach((c, i) => {
-      const k = E.outExpo(P(t, .18 + i * .07, .7));
-      T(c, { y: lerp(360, 0, k), r: lerp(8, 0, k) });
-    });
-    const sh = $('#bakerShine');
-    sh.style.webkitMaskPosition = `${lerp(120, -20, E.inOutCubic(P(t, 1.1, .7)))}% 0`;
-    sh.style.opacity = P(t, 1.05, .05) * (1 - P(t, 1.8, .1));
-    const pk = P(t, .78, .22);
-    T($('#promo1'), { s: lerp(3.2, 1, E.inCubic(pk)), r: lerp(-14, -4, pk), o: P(t, .78, .06) });
-    taglineWords.forEach((w, i) => { const k = E.outExpo(P(t, 1.12 + i * .07, .6)); T(w, { y: lerp(40, 0, k), o: k }); });
-    const out = E.inCubic(P(t, 1.72, .4));
-    T($('#s1'), { s: 1 + out * .35, blur: out * 14, o: 1 - out });
-  }
-
-  /* ---------- SCENE 2 : OVEN ---------- */
-  if (in2) {
-    const ent = E.outExpo(P(t, 2.0, 1.0));
-    const exit = E.inCubic(P(t, 5.72, .5));
-    T($('#ovenAWrap'), { x: lerp(1100, 0, ent) - exit * 60, s: 1 + exit * .12 });
-    T($('#ovenA'), { ry: lerp(-38, -4, ent) + Math.sin(t * .8) * 1.2, rx: lerp(8, 0, ent) });
-    T($('#ovenAShadow'), { x: lerp(1100, 0, ent), o: ent, sx: lerp(.4, 1, ent) });
-    T($('#callWrap'), { x: -exit * 60, s: 1 + exit * .12, o: 1 - exit });
-    const heat = E.inOutCubic(P(t, 2.55, 1.0));
-    const flick = t < 2.8 ? 0 : (t < 2.86 ? 1 : t < 2.9 ? .2 : t < 2.95 ? 1 : t < 2.98 ? .4 : 1);
-    const temp = E.outCubic(P(t, 3.55, 1.1)), tim = E.outCubic(P(t, 3.65, 1.1));
-    updOven(ovA, {
-      heat, lamp: flick, fan: (t - 2) * 540 * clamp(P(t, 2.5, .6) + .02), spit: t * 2.2,
-      sheen: P(t, 2.9, .7) + (t > 5.1 ? P(t, 5.1, .7) - 1 : 0),
-      k1: lerp(-135, 135, temp), k2: lerp(-135, 30, E.outBack(P(t, 2.45, .5))), k3: lerp(-135, 135, tim),
-    });
-    // left column
-    T($('#s2tag'), { x: lerp(-60, 0, E.outExpo(P(t, 2.2, .7))), o: P(t, 2.2, .3) });
-    const cnt = E.outCubic(P(t, 2.3, 1.0));
-    $('#s2n').textContent = Math.round(100 * cnt);
-    T($('#s2num'), { y: lerp(120, 0, E.outExpo(P(t, 2.25, .8))), o: P(t, 2.25, .25) });
-    const lp = P(t, 3.25, .35);
-    T($('#s2L'), { s: t < 3.25 ? 0.001 : lerp(2.6, 1, E.outBack(lp)), o: P(t, 3.25, .08), r: lerp(-20, 0, E.outBack(lp)) });
-    T($('#s2sub'), { y: lerp(26, 0, E.outExpo(P(t, 2.9, .6))), o: P(t, 2.9, .4) });
-    T($('#s2sub2'), { y: lerp(26, 0, E.outExpo(P(t, 3.02, .6))), o: P(t, 3.02, .4) });
-    // gauges
-    T($('#gTemp'), { s: lerp(.6, 1, E.outBack(P(t, 3.35, .5))), o: P(t, 3.35, .2) });
-    T($('#gTime'), { s: lerp(.6, 1, E.outBack(P(t, 3.47, .5))), o: P(t, 3.47, .2) });
-    const ta = 135 + 270 * temp;
-    $('#gTempArc').setAttribute('d', arcPath(150, 150, 118, 135, ta));
-    $('#gTempDot').setAttribute('cx', 150 + 118 * Math.cos(ta * Math.PI / 180)); $('#gTempDot').setAttribute('cy', 150 + 118 * Math.sin(ta * Math.PI / 180));
-    $('#gTempV').textContent = Math.round(70 + 180 * temp);
-    const tma = -90 + 359.9 * tim;
-    $('#gTimeArc').setAttribute('d', arcPath(150, 150, 118, -90, tma));
-    $('#gTimeV').textContent = Math.round(120 * tim);
-    const bellK = P(t, 4.95, .6);
-    $('#bellInner').setAttribute('transform', `rotate(${bellK > 0 && bellK < 1 ? Math.sin(bellK * 40) * 28 * (1 - bellK) : 0})`);
-    [['#bellRing1', 4.95], ['#bellRing2', 5.12]].forEach(([id, t0]) => {
-      const k = P(t, t0, .6); $(id).setAttribute('r', 30 + k * 46); $(id).setAttribute('opacity', k > 0 && k < 1 ? (1 - k) : 0);
-    });
-    const dk = P(t, 4.95, .5);
-    T($('#ding'), { y: -dk * 18, s: lerp(.4, 1, E.outBack(P(t, 4.95, .25))), o: dk > 0 ? 1 - P(t, 5.35, .3) : 0 });
-    // callouts
-    CALLS.forEach((c, i) => {
-      const t0 = 3.95 + i * .22;
-      const dp = E.outBack(P(t, t0, .3));
-      c.dot.setAttribute('r', 7 * dp); c.dot.setAttribute('opacity', P(t, t0, .05));
-      const rk = ((t - t0) % 1.1) / 1.1;
-      c.ring.setAttribute('r', 8 + rk * 22); c.ring.setAttribute('opacity', t > t0 ? (1 - rk) * .9 : 0);
-      c.ln.setAttribute('stroke-dasharray', c.len);
-      c.ln.setAttribute('stroke-dashoffset', c.len * (1 - E.inOutCubic(P(t, t0 + .08, .35))));
-      c.lblIn.setAttribute('transform', `translate(${-(c.w + 10) * (1 - E.outExpo(P(t, t0 + .38, .5)))} 0)`);
-    });
-    const colOut = E.inCubic(P(t, 5.72, .4));
-    ['#s2tag', '#s2num', '#s2sub', '#s2sub2'].forEach(s => { const el = $(s); el.style.opacity = Math.min(parseFloat(el.style.opacity || 1), 1 - colOut); });
-    ['#gTemp', '#gTime'].forEach(s => { const el = $(s); el.style.opacity = Math.min(parseFloat(el.style.opacity || 1), 1 - colOut); });
-  }
-
-  /* ---------- SCENE 3 : MIXER ---------- */
-  if (in3) {
-    const R = lerp(0, 2300, E.inOutCubic(P(t, 5.8, .5)));
-    const clipOn = t < 6.32;
-    $('#s3').style.clipPath = clipOn ? `circle(${R}px at 575px 605px)` : 'none';
-    const iris = $('#iris');
-    iris.style.left = (575 - R) + 'px'; iris.style.top = (605 - R) + 'px'; iris.style.width = iris.style.height = (2 * R) + 'px';
-    iris.style.opacity = clipOn && R > 1 ? 1 : 0;
-    // mixer drop
-    const dropK = P(t, 6.05, .45);
-    let my = lerp(-1000, 0, E.inCubic(dropK));
-    let msx = 1, msy = 1;
-    if (t >= 6.5) { const k = P(t, 6.5, .45); const sq = (1 - E.outElastic(k)); msy = 1 - .12 * sq; msx = 1 + .08 * sq; my = 0; }
-    const mixOut = E.inCubic(P(t, 9.6, .4));
-    T($('#mixerA'), { y: my - mixOut * 40, sx: msx, sy: msy, o: 1 - mixOut * .0 });
-    $('#mixerA').style.transformOrigin = '50% 69%';
-    T($('#mxAShadow'), { o: dropK * .9, sx: lerp(.3, 1, E.inCubic(dropK)) });
-    const tilt = lerp(24, 0, E.outBack(P(t, 6.82, .22)));
-    let wA = 0; const u = t - 7.0;
-    if (u > 0) wA = u < .5 ? 13 * u * u / 1.0 : 13 * (.25 + (u - .5));
-    const speed = E.inOutCubic(P(t, 7.0, .5));
-    updMixer(mxA, { t, tilt, whisk: wA, speed, lever: speed, dims: P(t, 7.75, 1.2) });
-    // right column
-    T($('#s3tag'), { x: lerp(60, 0, E.outExpo(P(t, 6.3, .7))), o: P(t, 6.3, .3) - mixOut });
-    const pw = E.outCubic(P(t, 6.45, 1.0));
-    $('#s3n').textContent = Math.round(1500 * pw);
-    T($('#s3num'), { y: lerp(120, 0, E.outExpo(P(t, 6.35, .8))), o: P(t, 6.35, .25) - mixOut });
-    T($('#s3W'), { s: t < 7.4 ? .001 : lerp(2.6, 1, E.outBack(P(t, 7.4, .35))), o: P(t, 7.4, .08) });
-    T($('#s3sub'), { y: lerp(24, 0, E.outExpo(P(t, 6.9, .6))), o: P(t, 6.9, .4) - mixOut });
-    segs.forEach((s, i) => {
-      const on = pw * 12 > i + .5;
-      s.style.background = on ? hexLerp('#ffb547', '#d8142b', i / 11) : 'rgba(40,20,10,.10)';
-      s.style.boxShadow = on ? `0 0 16px ${hexLerp('#ffb547', '#d8142b', i / 11)}` : 'none';
-      T(s, { sy: on ? 1 + .25 * Math.max(0, 1 - (pw * 12 - i) / 3) : 1 });
-    });
-    $('#meter').style.opacity = P(t, 6.45, .2) - mixOut;
-    ['#card1', '#card2', '#card3'].forEach((id, i) => {
-      const k = P(t, 7.55 + i * .14, .5);
-      T($(id), { y: lerp(80, 0, E.outBack(k)) + mixOut * 30, s: lerp(.85, 1, E.outBack(k)), o: P(t, 7.55 + i * .14, .15) - mixOut });
-    });
-    T($('#volt'), { o: P(t, 8.1, .4) - mixOut, y: lerp(16, 0, E.outExpo(P(t, 8.1, .6))) });
-    const tk = E.outExpo(P(t, 7.9, .6));
-    T($('#ticker'), { y: lerp(90, 0, tk) });
-    $('#tickerText').style.transform = `translateX(${-(t - 7.9) * 230}px)`;
-  }
-
-  /* ---------- SCENE 4 : BUNDLE ---------- */
-  if (in4) {
-    $('#rays').style.transform = `rotate(${t * 12}deg) scale(${lerp(.6, 1, E.outCubic(P(t, 9.95, .8)))})`;
-    $('#rays').style.opacity = P(t, 9.95, .5);
-    const eo = E.outExpo(P(t, 9.98, .75)), em = E.outExpo(P(t, 10.06, .75));
-    T($('#ovenB'), { x: lerp(-900, 0, eo), r: lerp(-6, 0, eo) });
-    T($('#mixerB'), { x: lerp(900, 0, em), r: lerp(6, 0, em) });
-    T($('#s4ovSh'), { x: lerp(-900, 0, eo), o: eo });
-    T($('#s4mxSh'), { x: lerp(900, 0, em), o: em });
-    updOven(ovB, { heat: .9 + .1 * Math.sin(t * 6), lamp: 1, fan: t * 540, spit: t * 2.2, sheen: P(t, 10.6, .8), k1: 110, k2: 30, k3: 60 });
-    updMixer(mxB, { t, tilt: 0, whisk: t * 13, speed: .8, lever: 1, dims: 0 });
-    const pk = P(t, 10.3, .5);
-    T($('#plus'), { s: E.outBack(pk) * (1 + .06 * Math.sin(t * 8)), r: lerp(-180, 0, E.outBack(pk)), o: P(t, 10.3, .05) });
-    T($('#s4head'), { y: lerp(-80, 0, E.outExpo(P(t, 10.1, .7))), o: P(t, 10.1, .3), s: lerp(1.2, 1, E.outExpo(P(t, 10.1, .7))) });
-    s4words.forEach((w, i) => { const k = E.outExpo(P(t, 10.4 + i * .06, .5)); T(w, { y: lerp(36, 0, k), o: k }); });
-    T($('#lab1'), { y: lerp(30, 0, E.outExpo(P(t, 10.55, .6))), o: P(t, 10.55, .3) });
-    T($('#lab2'), { y: lerp(30, 0, E.outExpo(P(t, 10.65, .6))), o: P(t, 10.65, .3) });
-    const sk = P(t, 10.8, .2);
-    T($('#slab'), { s: lerp(3.4, 1, E.inCubic(sk)) * (t > 11 ? 1 + .035 * Math.sin((t - 11) * 7) : 1), r: lerp(-16, -3, sk), o: P(t, 10.8, .05) });
-    const out = E.inCubic(P(t, 12.3, .3));
-    $('#s4').style.transform = `scale(${1 + out * .25})`; $('#s4').style.opacity = 1 - out;
-  }
-
-  /* ---------- SCENE 5 : END ---------- */
-  if (in5) {
-    const k = E.outExpo(P(t, 12.45, .9));
-    T($('#ovenC'), { x: lerp(-500, 0, k), s: lerp(1.15, 1, k) });
-    T($('#mixerC'), { x: lerp(-300, 0, E.outExpo(P(t, 12.55, .9))), y: lerp(80, 0, E.outExpo(P(t, 12.55, .9))) });
-    updOven(ovC, { heat: .95, lamp: 1, fan: t * 540, spit: t * 2.2, sheen: P(t, 13.4, .9), k1: 110, k2: 30, k3: 60 });
-    updMixer(mxC, { t, tilt: 0, whisk: t * 13, speed: .8, lever: 1, dims: 0 });
-    T($('#s5glow'), { s: lerp(.7, 1, k), o: k });
-    T($('#e_the'), { x: lerp(60, 0, E.outExpo(P(t, 12.6, .6))), o: P(t, 12.6, .3) });
-    T($('#e_baker'), { x: lerp(120, 0, E.outExpo(P(t, 12.65, .7))), o: P(t, 12.65, .25), blur: lerp(12, 0, E.outExpo(P(t, 12.65, .5))) });
-    const pk = P(t, 12.95, .2);
-    T($('#e_promo'), { s: lerp(2.6, 1, E.inCubic(pk)), r: lerp(-12, -4, pk), o: P(t, 12.95, .05) });
-    T($('#e_line'), { y: lerp(24, 0, E.outExpo(P(t, 13.15, .6))), o: P(t, 13.15, .35) });
-    T($('#e_price'), { y: lerp(24, 0, E.outExpo(P(t, 13.25, .6))), o: P(t, 13.25, .35) });
-    const ck = P(t, 13.3, .5);
-    const press = t > 14.02 && t < 14.2 ? .94 : 1;
-    T($('#cta'), { y: lerp(60, 0, E.outBack(ck)), s: lerp(.7, 1, E.outBack(ck)) * press * (t > 14.2 ? 1 + .025 * Math.sin((t - 14.2) * 9) : 1), o: P(t, 13.3, .15) });
-    $('#ctaShineBar').style.left = lerp(-120, 700, E.inOutCubic(P(t, 13.75, .6))) + 'px';
-    T($('#e_date'), { o: P(t, 13.5, .5), x: lerp(-30, 0, E.outExpo(P(t, 13.5, .7))) });
-    // cursor
-    const cm = E.inOutCubic(P(t, 13.55, .45));
-    const cx = lerp(1900, 1560, cm), cy = lerp(1100, 836, cm);
-    T($('#cursor'), { x: cx, y: cy, s: t > 14.02 && t < 14.2 ? .85 : 1, o: P(t, 13.55, .1) * (1 - P(t, 14.6, .3)) });
-    const rk = P(t, 14.04, .5);
-    T($('#ripple'), { x: 1542, y: 818, s: 1 + rk * 5, o: rk > 0 && rk < 1 ? 1 - rk : 0 });
-  }
-
-  // wipes
-  const w1 = wipe(t, 1.74, true), w2 = t > 9.5 && t < 10.3 ? wipe(t, 9.62, false) : false;
-  if (!(t > 1.6 && t < 2.5) && !(t > 9.5 && t < 10.3)) ['#w1', '#w2', '#w3'].forEach(s => $(s).style.display = 'none');
-
-  // flash
-  const fl = Math.max(0, 1 - Math.abs(t - 12.5) / .18);
-  const fl2 = Math.max(0, 1 - Math.abs(t - 1.0) / .12) * .45;
-  const fl3 = Math.max(0, 1 - Math.abs(t - 11.0) / .12) * .5;
-  $('#flash').style.opacity = Math.max(fl, fl2, fl3);
-
-  drawBursts(t);
-
-  // HUD
-  const secs = [[0, ''], [2.0, ['01', 'THE OVEN']], [6.0, ['02', 'THE MIXER']], [10.0, ['03', 'THE BUNDLE']], [12.5, ['04', 'SHOP NOW']]];
-  let cur = secs[0]; for (const s of secs) if (t >= s[0]) cur = s;
-  $('#hudNum').textContent = cur[1] ? cur[1][0] : ''; $('#hudSec').textContent = cur[1] ? cur[1][1] : '';
-  const hk = cur[0] ? E.outExpo(P(t, cur[0] + .15, .5)) : 0;
-  T($('#hudR'), { y: lerp(-14, 0, hk), o: hk });
-  T($('#hudL'), { o: P(t, 2.1, .4) });
-  const light = t >= 6.05 && t < 9.9;
-  $('#hud').style.color = light ? '#3a2a20' : '#f3dcc0';
-  $('#prog').style.width = (1920 * t / DUR) + 'px';
+const segs = [];
+for (let i = 0; i < 14; i++) { const d = document.createElement('div'); Object.assign(d.style, { position: 'absolute', left: i * 50 + 'px', top: 0, width: '40px', height: '30px', borderRadius: '5px', background: 'rgba(255,255,255,.12)' }); $('#meter').appendChild(d); segs.push(d); }
+$('#tBg').setAttribute('d', arcPath(130, 130, 100, 135, 405));
+const words = (id, text, hi) => text.split(' ').map(w => { const s = document.createElement('span'); s.textContent = w; s.style.display = 'inline-block'; s.style.margin = '0 .24em'; if (hi(w)) s.style.color = 'var(--hot)'; $(id).appendChild(s); return s; });
+const tagWords = words('#iTag', 'BAKE BIGGER · MIX STRONGER', w => w === '·');
+const subWords = words('#bSub', '100L OVEN + 10L MIXER. ONE UNBEATABLE BUNDLE.', w => /^\d/.test(w) || w === '+');
+$('#ctaTxt').textContent = CONFIG.cta + '  ›';
+$('#eDate').textContent = CONFIG.campaign;
+if (CONFIG.bundlePrice) {
+  $('#stamp').firstElementChild.textContent = 'BUNDLE ' + CONFIG.bundlePrice;
+  $('#eKick').innerHTML = (CONFIG.normalPrice ? `<s style="color:rgba(255,255,255,.55)">${CONFIG.normalPrice}</s> &nbsp;` : '') + 'BUNDLE ' + CONFIG.bundlePrice;
 }
 
-window.render = render;
-window.DUR = DUR;
-window.ready = document.fonts.ready.then(() => { render(0); return true; });
+/* cards anchored to world hotspots (AR-style) */
+const CARDS = [
+  { el: $('#cHeat'), a: op(.31, .47), off: [230, -300], t0: 2.78, t1: 3.5 },
+  { el: $('#cTemp'), a: op(.70, .205), off: [130, 40], t0: 3.58, t1: 4.08 },
+  { el: $('#cTime'), a: op(.70, .782), off: [130, -90], t0: 4.3, t1: 4.82 },
+  { el: $('#cFan'), a: op(.23, .39), off: [300, -300], t0: 4.92, t1: 5.45 },
+  { el: $('#cGlass'), a: op(.52, .70), off: [290, 150], t0: 5.02, t1: 5.45 },
+  { el: $('#cBowl'), a: mp(.30, .54), off: [-150, -300], t0: 7.28, t1: 8.05 },
+  { el: $('#cAcc'), a: mp(.62, .08), off: [60, -220], t0: 8.0, t1: 8.85 },
+  { el: $('#cSwatch'), a: mp(.78, .12), off: [240, -60], t0: 8.85, t1: 9.62 },
+  { el: $('#cSpec'), a: mp(.9, .96), off: [60, 40], t0: 8.95, t1: 9.62 },
+];
+const NS = 'http://www.w3.org/2000/svg';
+CARDS.forEach(c => {
+  c.line = document.createElementNS(NS, 'line'); c.line.setAttribute('stroke', '#fff'); c.line.setAttribute('stroke-width', '2.5'); c.line.setAttribute('stroke-opacity', '.85');
+  c.dot = document.createElementNS(NS, 'circle'); c.dot.setAttribute('fill', '#fff');
+  c.ring = document.createElementNS(NS, 'circle'); c.ring.setAttribute('fill', 'none'); c.ring.setAttribute('stroke', '#e3222c'); c.ring.setAttribute('stroke-width', '3');
+  $('#lines').append(c.line, c.ring, c.dot);
+  c.w = c.el.offsetWidth; c.h = c.el.offsetHeight;
+});
+
+/* finger taps: [time, target()] */
+const swPos = id => { const r = $(id).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+const TAPS = [
+  [2.72, () => w2s(...op(.31, .47))],
+  [3.55, () => w2s(...op(.70, .205))],
+  [4.28, () => w2s(...op(.70, .782))],
+  [4.9, () => w2s(...op(.23, .39))],
+  [6.38, () => w2s(...mp(.823, .674))],
+  [7.22, () => w2s(...mp(.30, .54))],
+  [9.02, () => swPos('#swG')],
+  [9.36, () => swPos('#swR')],
+  [14.0, () => [1567, 720]],
+];
+
+/* ================= FX: particles & grain ================= */
+const fxBack = $('#fxBack').getContext('2d'), fxFront = $('#fxFront').getContext('2d');
+const rnd = mulberry32(5);
+const dust = Array.from({ length: 150 }, () => ({ x: rnd() * 2400, y: rnd() * 1300, vx: (rnd() - .5) * 20, vy: -6 - rnd() * 16, r: .6 + rnd() * 2.4, ph: rnd() * 6.28, a: .2 + rnd() * .55, d: .6 + rnd() * .9 }));
+const bokeh = Array.from({ length: 30 }, () => ({ x: rnd() * 2600, y: rnd() * 1300, r: 20 + rnd() * 70, a: .04 + rnd() * .12, ph: rnd() * 6.28, red: rnd() < .6 }));
+const wrap = (v, m) => ((v % m) + m) % m;
+function burst(seed, n, spd, grav, life, cols, spread, dir, rect) {
+  const r = mulberry32(seed);
+  return Array.from({ length: n }, () => { const a = dir + (r() - .5) * spread, v = spd * (.35 + r() * .9);
+    return { vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: grav, life: life * (.6 + r() * .6), c: cols[Math.floor(r() * cols.length)], s: 2 + r() * 5, rot: r() * 6.28, vr: (r() - .5) * 18, rect }; });
+}
+const BURSTS = [
+  { t: 1.0, at: () => [960, 660], p: burst(21, 90, 900, 900, 1.0, ['#fff', '#e3222c', '#ffd6d6'], Math.PI * 2, 0, false) },
+  { t: 6.1, at: () => w2s(2450, 900), p: burst(22, 130, 560, 420, 1.1, ['#ffffff', '#f3ece6', '#ddd2c8'], Math.PI * .9, -Math.PI / 2, false), flour: true },
+  { t: 11.0, at: () => [960, 920], p: burst(23, 190, 1350, 1400, 1.5, ['#ffffff', '#e3222c', '#a50f1b', '#d9d9d9'], Math.PI * 1.25, -Math.PI / 2, true) },
+  { t: 12.47, at: () => [1540, 480], p: burst(24, 110, 800, 450, 1.6, ['#fff', '#ffb3b3', '#e3222c'], Math.PI * 2, 0, false) },
+];
+function drawFx(t) {
+  fxBack.clearRect(0, 0, 1920, 1080); fxFront.clearRect(0, 0, 1920, 1080);
+  const [cx, cy, z] = CAM;
+  for (const b of bokeh) {
+    const x = wrap(b.x - cx * .12, 2600) - 340, y = wrap(b.y - cy * .12, 1300) - 110;
+    const a = b.a * (.7 + .3 * Math.sin(t * 1.8 + b.ph));
+    const g = fxBack.createRadialGradient(x, y, 0, x, y, b.r), col = b.red ? '227,34,44' : '255,255,255';
+    g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`);
+    fxBack.fillStyle = g; fxBack.beginPath(); fxBack.arc(x, y, b.r, 0, 6.283); fxBack.fill();
+  }
+  for (const d of dust) {
+    const x = wrap(d.x + d.vx * t - cx * .35 * d.d + Math.sin(t * 1.3 + d.ph) * 12, 2400) - 240, y = wrap(d.y + d.vy * t - cy * .2 * d.d, 1300) - 110;
+    fxFront.globalAlpha = d.a * .7; fxFront.fillStyle = '#fff';
+    fxFront.beginPath(); fxFront.arc(x, y, d.r * d.d, 0, 6.283); fxFront.fill();
+  }
+  for (const b of BURSTS) {
+    const dt = t - b.t; if (dt < 0 || dt > 2.2) continue;
+    const [bx, by] = b.at();
+    for (const p of b.p) {
+      if (dt > p.life) continue;
+      const k = dt / p.life, x = bx + p.vx * dt * (1 - .35 * k), y = by + p.vy * dt + .5 * p.g * dt * dt;
+      fxFront.globalAlpha = (1 - k) * (b.flour ? .32 : 1); fxFront.fillStyle = p.c;
+      if (p.rect) { fxFront.save(); fxFront.translate(x, y); fxFront.rotate(p.rot + p.vr * dt); fxFront.fillRect(-p.s, -p.s * .45, p.s * 2, p.s * .9); fxFront.restore(); }
+      else { fxFront.beginPath(); fxFront.arc(x, y, p.s * (b.flour ? (1.2 + k * 2) * z : 1) * (1 - k * .4), 0, 6.283); fxFront.fill(); }
+    }
+  }
+  fxFront.globalAlpha = 1;
+}
+const grainCtx = $('#grain').getContext('2d'), grainFrames = [];
+(function () { const r = mulberry32(99); for (let f = 0; f < 8; f++) { const img = grainCtx.createImageData(960, 540);
+  for (let i = 0; i < img.data.length; i += 4) { const v = Math.floor(r() * 255); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; } grainFrames.push(img); } })();
+
+/* ================= RENDER ================= */
+function sheen(el, t, t0, d = .8) { el.firstElementChild.style.left = lerp(-30, 130, E.inOutCubic(P(t, t0, d))) + '%'; }
+
+function render(t) {
+  grainCtx.putImageData(grainFrames[Math.floor(t * 30) % 8], 0, 0);
+  CAM = cam(t); SHAKE = shake(t);
+  const [cx, cy, z, roll] = CAM;
+  $('#world').style.transform = `translate(${960 + SHAKE[0]}px,${540 + SHAKE[1]}px) rotate(${roll}deg) scale(${z}) translate(${-cx}px,${-cy}px)`;
+  $('#bgGlow').style.transform = `translate(${-(cx - 1500) * .08}px,${-(cy - 400) * .08}px)`;
+
+  // motion blur from camera velocity (screen px per frame)
+  const c2 = cam(t + 1 / 120), c1 = cam(t - 1 / 120);
+  const vx = Math.abs((c2[0] - c1[0]) * z) / 2, vy = Math.abs((c2[1] - c1[1]) * z) / 2, vz = Math.abs(c2[2] - c1[2]) / z * 900;
+  const bx = Math.max(0, vx * .3 - 4 + vz * .04), by = Math.max(0, vy * .3 - 4 + vz * .04);
+  $('#mbBlur').setAttribute('stdDeviation', `${bx.toFixed(2)} ${by.toFixed(2)}`);
+  const bright = lerp(.12, 1, E.inOutCubic(P(t, 1.55, .6)));
+  $('#cam').style.filter = ((bx > .3 || by > .3) ? 'url(#mb) ' : '') + (bright < .999 ? `brightness(${bright.toFixed(3)})` : '');
+
+  /* ---------- intro ---------- */
+  const introOn = t < 2.2;
+  $('#intro').style.display = introOn ? 'block' : 'none';
+  if (introOn) {
+    T($('#streak'), { x: lerp(-1500, 1500, E.inOutCubic(P(t, 0, 1.1))), r: -8, o: 1 - P(t, .9, .3) });
+    const ip = E.outBack(P(t, .12, .45));
+    $('#logoIcon').style.transformOrigin = '12% 50%';
+    T($('#logoIcon'), { s: lerp(.2, 1, ip), o: P(t, .12, .12), r: lerp(-30, 0, ip) });
+    const wr = E.outExpo(P(t, .4, .6));
+    $('#logoWord').style.clipPath = `inset(0 ${lerp(76, 0, wr)}% 0 24%)`;
+    T($('#logoWord'), { x: lerp(-60, 0, wr) });
+    $('#logoShine').style.opacity = P(t, .95, .05) * (1 - P(t, 1.5, .1));
+    $('#logoShine').style.backgroundPosition = `${lerp(120, -20, E.inOutCubic(P(t, .95, .6)))}% 0`;
+    const pk = P(t, .8, .2);
+    T($('#iPromo'), { s: lerp(3, 1, E.inCubic(pk)), r: lerp(-10, -2, pk), o: P(t, .8, .05) });
+    tagWords.forEach((w, i) => { const k = E.outExpo(P(t, 1.1 + i * .07, .5)); T(w, { y: lerp(36, 0, k), o: k }); });
+    // fly-through: the logo rushes past the lens
+    const fly = E.inExpo(P(t, 1.6, .55));
+    $('#intro').style.transformOrigin = '50% 48%';
+    T($('#intro'), { s: 1 + fly * 7, o: 1 - E.inCubic(P(t, 1.75, .4)), blur: fly * 10 });
+  }
+
+  /* ---------- oven ---------- */
+  const heat = E.inOutCubic(P(t, 2.72, .8));
+  $('#heat').style.opacity = heat * (.62 + .05 * Math.sin(t * 13));
+  $('#heatSpill').style.opacity = heat * .9;
+  $('#els').style.opacity = heat * (.9 + .1 * Math.sin(t * 17));
+  const flick = t < 2.85 ? 0 : t < 2.9 ? 1 : t < 2.94 ? .15 : t < 2.99 ? 1 : t < 3.02 ? .4 : 1;
+  $('#lamp').style.opacity = flick * .85;
+  $('#fanFx').style.opacity = P(t, 4.9, .3) * .9;
+  $('#fanFx').style.transform = `rotate(${t * 720}deg)`;
+  $('#kTemp').style.transform = `rotate(${lerp(0, 230, E.outCubic(P(t, 3.55, .7)))}deg)`;
+  $('#kTime').style.transform = `rotate(${lerp(0, 250, E.outCubic(P(t, 4.3, .5)))}deg)`;
+  $('#rimO').style.opacity = .55 + heat * .45;
+  sheen($('#ovSheen'), t, t < 4.9 ? 2.1 : t < 9 ? 5.02 : 10.2, t < 4.9 ? .9 : .6);
+  const k100 = E.outExpo(P(t, 1.95, .7));
+  T($('#t100'), { y: lerp(160, 0, k100), o: P(t, 1.95, .3) * (1 - P(t, 9.4, .5)) });
+  $('#n100').textContent = Math.round(100 * E.outCubic(P(t, 2.1, .45)));
+  T($('#l100'), { s: t < 2.52 ? .001 : lerp(2.4, 1, E.outBack(P(t, 2.52, .3))), o: P(t, 2.52, .06) });
+
+  /* ---------- mixer ---------- */
+  const drop = P(t, 5.72, .38);
+  let my = lerp(-1500, 0, E.inCubic(drop)), sx = 1, sy = 1;
+  if (t >= 6.1) { const sq = 1 - E.outElastic(P(t, 6.1, .5)); sy = 1 - .1 * sq; sx = 1 + .06 * sq; my = 0; }
+  const power = inOut(t, 6.4, 7.4, .15, .3);
+  const jx = Math.sin(t * 93) * 3 * power, jy = Math.cos(t * 127) * 2 * power;
+  $('#mixer').style.transformOrigin = '50% 100%';
+  T($('#mixer'), { x: jx, y: my + jy, sx, sy });
+  $('#mixer').style.visibility = t > 5.6 ? 'visible' : 'hidden';
+  $('#mxShadow').style.opacity = E.inCubic(drop);
+  $('#mxShadow').style.transform = `scaleX(${lerp(.3, 1, E.inCubic(drop))})`;
+  $('#rimM').style.opacity = P(t, 5.9, .4) * (.6 + power * .4);
+  $('#kDial').style.transform = `rotate(${lerp(0, 360, E.inOutCubic(P(t, 6.38, .8)))}deg)`;
+  $('#kDial').style.display = t > 6.3 && t < 7.3 ? 'block' : 'none';
+  ['#ring1', '#ring2', '#ring3'].forEach((id, i) => {
+    const k = P(t, 6.42 + i * .22, .7), R = 200 + k * 600;
+    Object.assign($(id).style, { left: -R + 'px', top: -R * .16 + 'px', width: 2 * R + 'px', height: R * .32 + 'px', opacity: k > 0 && k < 1 ? (1 - k) * .9 : 0 });
+  });
+  sheen($('#mxSheen'), t, t < 9.5 ? 6.2 : 10.3, .8);
+  // colour swap (tap gray, then tap back to red)
+  const g1 = E.inOutCubic(P(t, 9.04, .3)), g2 = E.inOutCubic(P(t, 9.38, .3));
+  $('#mixGray').style.clipPath = `inset(0 ${(100 - g1 * 100).toFixed(2)}% 0 ${(g2 * 100).toFixed(2)}%)`;
+  const barK = t < 9.36 ? g1 : g2;
+  $('#swapBar').style.opacity = (barK > 0 && barK < 1) ? 1 : 0;
+  $('#swapBar').style.left = (barK * 1000 - 30) + 'px';
+  const grayOn = g1 > .5 && g2 < .5;
+  $('#swG').style.borderColor = grayOn ? '#fff' : 'rgba(255,255,255,.25)';
+  $('#swR').style.borderColor = !grayOn ? '#fff' : 'rgba(255,255,255,.25)';
+  const k15 = E.outExpo(P(t, 6.25, .8));
+  T($('#t1500'), { y: lerp(160, 0, k15), o: P(t, 6.25, .3) * (1 - P(t, 7.1, .25)) });
+  const pw = E.outCubic(P(t, 6.4, .5));
+  $('#n1500').textContent = Math.round(1500 * pw);
+  T($('#w1500'), { s: t < 6.9 ? .001 : lerp(2.4, 1, E.outBack(P(t, 6.9, .3))), o: P(t, 6.9, .06) });
+  segs.forEach((s, i) => { const on = pw * 14 > i + .5; s.style.background = on ? `rgb(${Math.round(lerp(255, 165, i / 13))},${Math.round(lerp(255, 15, i / 13))},${Math.round(lerp(255, 27, i / 13))})` : 'rgba(255,255,255,.12)'; });
+  $('#bowlFill').style.width = (260 * E.outCubic(P(t, 7.4, .6))) + 'px';
+  // attachments burst out of the bowl and orbit the mixer
+  const accIn = E.outBack(P(t, 7.85, .45)), accOut = E.inCubic(P(t, 8.75, .3));
+  [0, 1, 2].forEach(i => {
+    const el = $('#acc' + i), th = (t - 7.85) * 2.3 + i * 2.094 + 1.2;
+    const R = 820 * accIn + accOut * 900, depth = Math.sin(th);
+    const x = 2450 + R * Math.cos(th), y = 430 + 170 * depth * accIn - 60 - accOut * 300;
+    const w = parseFloat(el.style.width), h = 400, sc = (.55 + .45 * accIn) * (.8 + .25 * depth);
+    el.style.left = (x - w / 2) + 'px'; el.style.top = (y - h / 2) + 'px';
+    el.style.zIndex = depth > 0 ? 5 : 1;
+    T(el, { s: sc, r: Math.sin(th * 1.5) * 12, o: P(t, 7.85, .1) * (1 - accOut), blur: Math.max(0, -depth) * 2.5 });
+    el.style.display = t > 7.8 && t < 9.1 ? 'block' : 'none';
+  });
+  $('#mixer').style.zIndex = 2; $('#oven').style.zIndex = 2;
+
+  /* ---------- bundle ---------- */
+  const kb = E.outExpo(P(t, 9.95, .8));
+  $('#tBundle').style.transformOrigin = '50% 100%';
+  T($('#tBundle'), { y: lerp(-200, 0, kb), o: P(t, 9.95, .35) * (1 - P(t, 12.25, .25)), s: lerp(1.3, 1, kb) });
+  const pk = P(t, 10.25, .5);
+  T($('#plus'), { s: E.outBack(pk) * (1 + .05 * Math.sin(t * 8)), r: lerp(-180, 0, E.outBack(pk)), o: P(t, 10.25, .05) });
+  T($('#lab1'), { y: lerp(40, 0, E.outExpo(P(t, 10.45, .6))), o: P(t, 10.45, .3) });
+  T($('#lab2'), { y: lerp(40, 0, E.outExpo(P(t, 10.55, .6))), o: P(t, 10.55, .3) });
+
+  /* ---------- UI cards ---------- */
+  CARDS.forEach(c => {
+    const on = t > c.t0 - .05 && t < c.t1 + .05;
+    c.el.style.display = on ? 'block' : 'none';
+    c.line.style.display = c.dot.style.display = c.ring.style.display = on ? 'inline' : 'none';
+    if (!on) return;
+    const [ax, ay] = w2s(...c.a);
+    const kin = E.outBack(P(t, c.t0 + .12, .4)), kout = E.inCubic(P(t, c.t1 - .22, .22));
+    const px = ax + c.off[0], py = ay + c.off[1];
+    const left = c.off[0] >= 0 ? px : px - c.w;
+    c.el.style.transformOrigin = c.off[0] >= 0 ? '0% 50%' : '100% 50%';
+    T(c.el, { x: left, y: py - c.h / 2 - kout * 30, s: lerp(.6, 1, kin), o: P(t, c.t0 + .12, .15) * (1 - kout) });
+    const lk = E.outCubic(P(t, c.t0, .25)) * (1 - kout);
+    c.line.setAttribute('x1', ax); c.line.setAttribute('y1', ay);
+    c.line.setAttribute('x2', lerp(ax, px, lk)); c.line.setAttribute('y2', lerp(ay, py, lk));
+    c.dot.setAttribute('cx', ax); c.dot.setAttribute('cy', ay); c.dot.setAttribute('r', Math.max(0, 8 * E.outBack(P(t, c.t0, .25)) * (1 - kout)));
+    const rk = ((t - c.t0) % 1) / 1;
+    c.ring.setAttribute('cx', ax); c.ring.setAttribute('cy', ay); c.ring.setAttribute('r', 10 + rk * 26); c.ring.setAttribute('opacity', (1 - rk) * (1 - kout));
+  });
+  const tp = E.outCubic(P(t, 3.62, .6)), ta = 135 + 270 * tp;
+  $('#tArc').setAttribute('d', arcPath(130, 130, 100, 135, ta)); $('#tV').textContent = Math.round(70 + 180 * tp);
+  const mpg = E.outCubic(P(t, 4.36, .4));
+  $('#mArc').setAttribute('d', arcPath(120, 120, 96, -90, -90 + 359.9 * mpg)); $('#mV').textContent = Math.round(120 * mpg);
+  const bk = P(t, 4.7, .45);
+  $('#bell').setAttribute('transform', `translate(120 120) rotate(${bk > 0 && bk < 1 ? Math.sin(bk * 38) * 26 * (1 - bk) : 0})`);
+
+  /* ---------- kinetic copy ---------- */
+  const why = inOut(t, 5.38, 6.0, .12, .18);
+  $('#why').style.display = why > 0 ? 'block' : 'none';
+  T($('#why1'), { x: lerp(-260, 0, E.outExpo(P(t, 5.38, .35))), o: why });
+  T($('#why2'), { x: lerp(260, 0, E.outExpo(P(t, 5.48, .35))), o: P(t, 5.48, .1) * why });
+  T($('#why'), { s: 1 + P(t, 5.38, .62) * .12, blur: (1 - why) * 8 });
+  const bt = inOut(t, 9.55, 10.25, .2, .25);
+  T($('#better'), { o: bt, y: lerp(20, 0, E.outExpo(P(t, 9.55, .4))) });
+  $('#better').style.letterSpacing = lerp(.9, .4, E.outExpo(P(t, 9.55, .7))) + 'em';
+  subWords.forEach((w, i) => { const k = E.outExpo(P(t, 10.4 + i * .05, .45)); T(w, { y: lerp(34, 0, k), o: k * (1 - P(t, 12.2, .25)) }); });
+  const sk = P(t, 10.8, .2);
+  T($('#stamp'), { s: lerp(3.2, 1, E.inCubic(sk)) * (t > 11 ? 1 + .03 * Math.sin((t - 11) * 7) : 1), r: lerp(-14, -3, sk), o: P(t, 10.8, .05) * (1 - P(t, 12.25, .2)) });
+  $('#bug').style.opacity = P(t, 2.3, .4) * (1 - P(t, 12.3, .3));
+
+  /* ---------- end card ---------- */
+  const ek = t > 12.4;
+  ['#eLogo', '#eKick', '#eHead', '#cta', '#eDate'].forEach(s => $(s).style.display = ek ? 'block' : 'none');
+  if (ek) {
+    T($('#eLogo'), { x: lerp(80, 0, E.outExpo(P(t, 12.5, .7))), o: P(t, 12.5, .3), blur: lerp(10, 0, E.outExpo(P(t, 12.5, .5))) });
+    T($('#eKick'), { x: lerp(-40, 0, E.outExpo(P(t, 12.7, .6))), o: P(t, 12.7, .3) });
+    T($('#eHead'), { y: lerp(50, 0, E.outExpo(P(t, 12.85, .6))), o: P(t, 12.85, .3) });
+    const ck = P(t, 13.25, .5), press = t > 14.0 && t < 14.16 ? .94 : 1;
+    T($('#cta'), { y: lerp(60, 0, E.outBack(ck)), s: lerp(.7, 1, E.outBack(ck)) * press * (t > 14.2 ? 1 + .025 * Math.sin((t - 14.2) * 9) : 1), o: P(t, 13.25, .15) });
+    $('#ctaShine').style.left = lerp(-140, 720, E.inOutCubic(P(t, 13.7, .6))) + 'px';
+    T($('#eDate'), { o: P(t, 13.5, .5), x: lerp(-30, 0, E.outExpo(P(t, 13.5, .7))) });
+  }
+
+  /* ---------- finger ---------- */
+  let fi = -1; for (let i = 0; i < TAPS.length; i++) if (t >= TAPS[i][0] - .45) fi = i;
+  const fing = $('#finger'), fr = $('#fring');
+  const vis = (t > 2.3 && t < 9.75) || t > 13.5;
+  if (fi >= 0 && vis) {
+    const [tt, fn] = TAPS[fi], [tx, ty] = fn();
+    const prev = (fi > 0 && !(tt > 13 && TAPS[fi - 1][0] < 13)) ? TAPS[fi - 1][1]() : [tx + 280, ty + 300];
+    const mk = E.inOutCubic(P(t, tt - .45, .4));
+    const press = t > tt - .05 && t < tt + .12 ? .78 : 1;
+    const o = t > 13 ? P(t, 13.5, .25) : Math.min(P(t, 2.3, .2), 1 - P(t, 9.5, .2));
+    T(fing, { x: lerp(prev[0], tx, mk), y: lerp(prev[1], ty, mk), s: press, o });
+    const rk = P(t, tt, .5);
+    T(fr, { x: tx, y: ty, s: 1 + rk * 2.6, o: rk > 0 && rk < 1 ? 1 - rk : 0 });
+  } else { fing.style.opacity = 0; fr.style.opacity = 0; }
+
+  const fl = Math.max(0, 1 - Math.abs(t - 12.45) / .16), fl2 = Math.max(0, 1 - Math.abs(t - 1.95) / .15) * .6, fl3 = Math.max(0, 1 - Math.abs(t - 11.0) / .1) * .45, fl4 = Math.max(0, 1 - Math.abs(t - 1.0) / .1) * .35;
+  $('#flash').style.opacity = Math.max(fl, fl2, fl3, fl4);
+
+  drawFx(t);
+}
+
+window.render = render; window.DUR = DUR;
+window.ready = Promise.all([document.fonts.ready, ...Array.from(document.images).map(i => i.decode().catch(() => { }))]).then(() => { render(0); return true; });
 const qt = new URLSearchParams(location.search).get('t');
 if (qt !== null) window.ready.then(() => render(parseFloat(qt)));
-else if (!navigator.webdriver) {
-  // live preview in a normal browser
-  window.ready.then(() => { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); });
-}
+else if (!navigator.webdriver) window.ready.then(() => { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); });
 </script>
 </body>
 </html>

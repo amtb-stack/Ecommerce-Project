@@ -7,7 +7,15 @@ const path = require('path'), fs = require('fs');
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, arr) => (v.startsWith('--') && a.push([v.slice(2), arr[i + 1]]), a), []));
 const FPS = +(args.fps || 60), WORKERS = +(args.workers || 4);
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
-const url = 'file://' + path.join(__dirname, 'index.html');
+// serve over http so CSS masks can use the product images (file:// blocks them)
+const http = require('http');
+const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.woff2': 'font/woff2' };
+const server = http.createServer((req, res) => {
+  const f = path.join(__dirname, decodeURIComponent(req.url.split('?')[0]));
+  if (!f.startsWith(__dirname) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+  res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
+}).listen(0);
+let url;
 const outDir = path.join(__dirname, 'out'); fs.mkdirSync(outDir, { recursive: true });
 
 async function page(browser) {
@@ -17,6 +25,8 @@ async function page(browser) {
 }
 
 (async () => {
+  await new Promise(r => server.listening ? r() : server.once('listening', r));
+  url = `http://127.0.0.1:${server.address().port}/index.html`;
   const browser = await chromium.launch({ args: ['--disable-gpu-vsync', '--force-color-profile=srgb'] });
   if (args.stills) {
     const p = await page(browser);
@@ -24,7 +34,7 @@ async function page(browser) {
       await p.evaluate(t => window.render(t), t);
       await p.screenshot({ path: path.join(outDir, `still_${t.toFixed(2)}.png`) });
     }
-    await browser.close(); return;
+    await browser.close(); server.close(); return;
   }
   const dur = 15, total = Math.round(dur * FPS), per = Math.ceil(total / WORKERS);
   const segs = [];
@@ -47,5 +57,6 @@ async function page(browser) {
   fs.writeFileSync(list, segs.map(s => `file '${s}'`).join('\n'));
   execFileSync(FFMPEG, ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', path.join(outDir, 'video_noaudio.mp4')]);
   segs.forEach(s => fs.unlinkSync(s)); fs.unlinkSync(list);
+  server.close();
   console.log('done');
 })();
