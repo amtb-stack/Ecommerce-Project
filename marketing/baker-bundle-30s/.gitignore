@@ -1,0 +1,8 @@
+out/seg*.mp4
+out/segs.txt
+out/still_*.png
+out/video_noaudio.mp4
+out/*.wav
+out/render.log
+out/vo/
+!out/voiceover_30s_en.wav

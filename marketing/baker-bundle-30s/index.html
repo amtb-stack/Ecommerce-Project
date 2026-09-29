@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Baker: Better Together (30 s)</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root{ --ink:#2B211C; --ink2:#6A5647; --red:#ED1B24; }
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#EFE6DA;
+    font-family:Montserrat,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .full{position:absolute;left:0;top:0;width:1080px;height:1920px}
+  .abs{position:absolute}
+  .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0}
+  .w{position:absolute}
+
+  /* ---------- room (background only; product photos are never tinted) ---------- */
+  #wall{left:-3000px;top:-3000px;width:10000px;height:4240px}
+  #gobo{left:-900px;top:300px;width:2200px;height:900px;opacity:.55;filter:blur(26px);mix-blend-mode:soft-light}
+  #gobo i{position:absolute;top:0;height:100%;background:linear-gradient(180deg,rgba(255,250,236,0),rgba(255,248,230,1) 30%,rgba(255,244,222,1) 70%,rgba(255,244,222,0));transform:skewX(-24deg)}
+  #bloom{left:-400px;top:500px;width:1900px;height:1200px;border-radius:50%;
+    background:radial-gradient(ellipse at center,rgba(255,196,110,.55),rgba(255,190,110,.18) 45%,transparent 70%);opacity:0}
+  #counter{left:-3000px;top:1240px;width:10000px;height:3000px;
+    background:
+      repeating-linear-gradient(180deg,rgba(120,84,50,.035) 0 3px,transparent 3px 11px),
+      linear-gradient(180deg,#E3D1B8 0%,#D6BF9F 16%,#CDB290 40%,#BFA17C 100%)}
+  #edge{left:-3000px;top:1238px;width:10000px;height:4px;background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,0))}
+  .sh{position:absolute;background:rgba(58,38,22,.5);filter:blur(9px)}
+  .amb{position:absolute;border-radius:50%;background:radial-gradient(ellipse at center,rgba(70,45,25,.30),transparent 70%)}
+
+  /* ---------- products (exact photos, no filters) ---------- */
+  .prod{position:absolute}
+  .prod>img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+  .sheen{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;mix-blend-mode:screen;opacity:.32;
+    -webkit-mask-size:100% 100%;-webkit-mask-repeat:no-repeat}
+  .sheen i{position:absolute;top:-20%;left:-40%;width:16%;height:140%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-18deg)}
+  /* interior light behind the oven glass (switchable in CONFIG) */
+  .glow{position:absolute;left:0;top:0;width:100%;height:100%;mix-blend-mode:screen;opacity:0}
+  .glow .heat{position:absolute;left:0;top:0;width:100%;height:100%}
+  .glow svg{position:absolute;left:0;top:0;width:100%;height:100%}
+  .fanfx{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:0;
+    background:repeating-conic-gradient(rgba(255,170,80,.45) 0deg 12deg,transparent 12deg 45deg);
+    -webkit-mask-image:radial-gradient(ellipse at center,#000 35%,transparent 70%)}
+  #dialRing{position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:0;
+    background:conic-gradient(from 0deg,transparent 0deg,rgba(255,255,255,.9) 18deg,transparent 40deg,transparent 180deg,rgba(255,255,255,.55) 200deg,transparent 225deg);
+    -webkit-mask-image:radial-gradient(circle,transparent 66%,#000 70%,#000 96%,transparent 100%)}
+
+  /* ---------- type ---------- */
+  .hl{position:absolute;left:84px;width:912px;font-family:'Playfair Display',serif;font-style:italic;font-weight:500;
+    font-size:84px;line-height:1.1;letter-spacing:-.005em;opacity:0;white-space:nowrap}
+  .hl.light{color:#fff;text-shadow:0 4px 28px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.4)}
+  .hl.center{left:0;width:1080px;text-align:center}
+  .lbl{position:absolute;font-weight:600;font-size:28px;letter-spacing:.24em;color:var(--ink2);text-transform:uppercase;white-space:nowrap;opacity:0}
+  .tool{position:absolute;opacity:0}
+  .tool img{position:absolute;left:0;top:0;width:100%;height:100%;filter:drop-shadow(0 26px 22px rgba(70,45,25,.28))}
+  .tool .lbl{left:-100px;right:-100px;top:calc(100% + 26px);text-align:center;opacity:1;color:var(--ink);font-size:30px}
+  #script{position:absolute;left:0;width:1080px;text-align:center;font-family:Allura,cursive;font-size:176px;line-height:1;color:var(--ink);opacity:0;white-space:nowrap}
+  #cta{position:absolute;left:190px;top:1372px;width:700px;height:96px;border-radius:48px;background:var(--red);color:#fff;
+    font-size:33px;font-weight:600;letter-spacing:.02em;text-align:center;line-height:96px;opacity:0;white-space:nowrap;
+    box-shadow:0 18px 40px rgba(237,27,36,.28)}
+  #cta b{font-weight:800}
+  #price{position:absolute;left:0;width:1080px;top:1486px;text-align:center;font-size:28px;font-weight:600;color:var(--ink2);opacity:0}
+  #logo{position:absolute;left:330px;top:286px;width:420px;height:78px;background:url(assets/logo_red.png) no-repeat;background-size:100% 100%;opacity:0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="elGlow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation=".45"/></filter>
+</defs></svg>
+
+<div id="stage">
+  <!-- back world: wall, window light, bloom, counter, shadows -->
+  <div class="world" id="wBack">
+    <div id="wall" class="w"></div>
+    <div id="gobo" class="w"><i style="left:180px;width:260px"></i><i style="left:470px;width:260px"></i><i style="left:900px;width:300px"></i><i style="left:1230px;width:300px"></i></div>
+    <div id="bloom" class="w"></div>
+    <div id="counter" class="w"></div>
+    <div id="edge" class="w"></div>
+    <!-- station A: oven + mixer on one counter -->
+    <div class="amb" style="left:10px;top:1270px;width:640px;height:110px"></div>
+    <div class="sh" id="shOven" style="left:0;top:0;width:10px;height:10px"></div>
+    <div class="amb" style="left:620px;top:1290px;width:440px;height:80px"></div>
+    <div class="sh" style="left:672px;top:1318px;width:340px;height:20px;border-radius:50%"></div>
+    <!-- station B: oven front -->
+    <div class="amb" style="left:2960px;top:1270px;width:660px;height:110px"></div>
+    <div class="sh" style="left:3010px;top:1316px;width:560px;height:22px;border-radius:50%"></div>
+  </div>
+
+  <canvas id="motes" class="full" width="1080" height="1920"></canvas>
+
+  <!-- front world: the products -->
+  <div class="world" id="wFront">
+    <div class="prod" id="ovenA" style="left:53px;top:951px;width:560px;height:378.7px">
+      <img src="assets/oven_pair.webp">
+      <div class="glow" id="glowA" style="clip-path:polygon(33.6% 13.5%,85% 15.8%,85% 73%,33.6% 82.4%)">
+        <div class="heat" style="background:radial-gradient(ellipse 42% 48% at 62% 50%,rgba(255,178,90,.95),rgba(255,120,40,.55) 55%,rgba(150,50,10,.25) 100%)"></div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none"><g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M36 19.5 L40 17.3 L60 18.8 L80 18.2 L83.5 20.5" stroke="#ff8a3a" stroke-width="1.1" stroke-opacity=".7" filter="url(#elGlow)"/>
+          <path d="M36 76.5 L40 79 L60 76.5 L80 72 L83.5 69.5" stroke="#ff8a3a" stroke-width="1.1" stroke-opacity=".7" filter="url(#elGlow)"/>
+          <path d="M36 19.5 L40 17.3 L60 18.8 L80 18.2 L83.5 20.5" stroke="#ffd9a8" stroke-width=".25" stroke-opacity=".7"/>
+          <path d="M36 76.5 L40 79 L60 76.5 L80 72 L83.5 69.5" stroke="#ffd9a8" stroke-width=".25" stroke-opacity=".7"/>
+        </g></svg>
+      </div>
+      <div class="fanfx" id="fanA" style="left:64.7%;top:28.7%;width:11.4%;height:27%"></div>
+      <div class="sheen" id="shA" style="-webkit-mask-image:url(assets/oven_pair.webp)"><i></i></div>
+    </div>
+    <div class="prod" id="mixer" style="left:654px;top:1016px;width:373px;height:314px">
+      <img src="assets/mixer_red.webp">
+      <div id="dialRing"></div>
+      <div class="sheen" id="shM" style="-webkit-mask-image:url(assets/mixer_red.webp)"><i></i></div>
+    </div>
+    <div class="prod" id="ovenB" style="left:3000px;top:951px;width:572px;height:379px">
+      <img src="assets/oven_front.webp">
+      <div class="glow" id="glowB" style="clip-path:polygon(6.8% 13.2%,55.8% 16.6%,55.8% 77.6%,6.8% 80.6%)">
+        <div class="heat" style="background:radial-gradient(ellipse 30% 42% at 31% 48%,rgba(255,178,90,.95),rgba(255,120,40,.55) 55%,rgba(150,50,10,.25) 100%)"></div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none"><g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 21.5 L13 18.8 L31 21 L49 19.5 L53 22" stroke="#ff8a3a" stroke-width="1.1" stroke-opacity=".7" filter="url(#elGlow)"/>
+          <path d="M9.5 72.5 L13 75.5 L31 73.5 L49 75 L53 72" stroke="#ff8a3a" stroke-width="1.1" stroke-opacity=".7" filter="url(#elGlow)"/>
+          <path d="M9.5 21.5 L13 18.8 L31 21 L49 19.5 L53 22" stroke="#ffd9a8" stroke-width=".25" stroke-opacity=".7"/>
+          <path d="M9.5 72.5 L13 75.5 L31 73.5 L49 75 L53 72" stroke="#ffd9a8" stroke-width=".25" stroke-opacity=".7"/>
+        </g></svg>
+      </div>
+      <div class="sheen" id="shB" style="-webkit-mask-image:url(assets/oven_front.webp)"><i></i></div>
+    </div>
+  </div>
+
+  <!-- screen-space type & UI -->
+  <div id="ui" class="full">
+    <div class="hl" id="h1" style="top:268px">A great bake starts…</div>
+    <div class="hl" id="h2" style="top:300px">…before the oven.</div>
+    <div class="hl" id="h3" style="top:300px">Mix with confidence.</div>
+    <div class="tool" id="t0" style="left:92px;top:330px;width:251px;height:360px"><img src="assets/acc_whisk.webp"><div class="lbl">Whisk.</div></div>
+    <div class="tool" id="t1" style="left:407px;top:370px;width:266px;height:320px"><img src="assets/acc_beater.webp"><div class="lbl">Beat.</div></div>
+    <div class="tool" id="t2" style="left:777px;top:330px;width:173px;height:360px"><img src="assets/acc_hook.webp"><div class="lbl">Knead.</div></div>
+    <div class="lbl" id="l10" style="left:0;width:1080px;text-align:center;top:1392px">10L stainless bowl</div>
+    <div class="hl" id="h6" style="top:290px">Bake with confidence.</div>
+    <div class="lbl" id="l100" style="left:88px;top:414px">100L capacity</div>
+    <div class="hl light center" id="h7a" style="top:300px;left:-104px">One starts it.</div>
+    <div class="hl center" id="h7b" style="top:300px">One finishes it.</div>
+    <div class="hl" id="h8" style="top:300px">Less waiting. More sharing.</div>
+    <div id="logo"></div>
+    <div class="lbl" id="names" style="left:0;width:1080px;text-align:center;top:440px;line-height:1.55;font-size:27px;color:var(--ink)">The Baker 100L Oven<br>+ Artisan SE 10L Stand Mixer</div>
+    <div class="hl center" id="h9" style="top:585px;font-size:76px">The complete baking set.</div>
+    <div id="script" style="top:590px">Better Together</div>
+    <div id="cta"></div>
+    <div id="price"></div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const CONFIG = {
+  cta: 'Shop the set on <b>Shopee Mall</b>',
+  price: '',          // e.g. 'Set price RM 1,999  ·  <s>RM 2,450 separately</s>'  ('' hides it)
+  ovenGlow: true,     // interior light behind the oven glass; false keeps the window exactly as photographed
+};
+/* ========================================== */
+const DUR = 30, BAR = 60 / 84 * 4, BEAT = BAR / 4;   // 84 BPM
+const $ = s => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const P = (t, s, d) => clamp((t - s) / d);
+const E = { io: x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2, out: x => 1 - Math.pow(1 - x, 3), sine: x => -(Math.cos(Math.PI * x) - 1) / 2 };
+const B = n => n * BAR;   // bar n start time
+
+/* ---------- shots: [t0, t1, from[cx,cy,z], to[cx,cy,z], ease] ---------- */
+const SHOTS = [
+  [0, B(1), [383, 1122, 3.3], [383, 1122, 3.45], E.sine],          // S1 hook: the glow
+  [B(1), B(2), [800, 1082, 6.2], [794, 1098, 6.35], E.sine],        // S2 red enamel macro
+  [B(2), B(3), [842, 1175, 2.78], [842, 1175, 2.6], E.sine],       // S3 mix with confidence
+  [B(3), B(4), [842, 1122, 1.74], [842, 1118, 1.8], E.sine],       // S4 whisk. beat. knead.
+  [B(4), B(5), [842, 1150, 1.6], [333, 1150, 1.6], E.io],          // S5 the handoff (truck left)
+  [B(5), B(6.5), [3257, 1150, 2.2], [3205, 1150, 2.36], E.sine],   // S6 bake with confidence
+  [B(6.5), B(7), [961, 1229, 4.5], [961, 1229, 4.64], E.sine],     // S7a mixer dial
+  [B(7), B(7.5), [447, 1111, 2.6], [447, 1111, 2.72], E.sine],     // S7b oven fan
+  [B(7.5), DUR, [383, 1125, 3.3], [540, 985, 1.0], x => E.out(clamp(x * (DUR - B(7.5)) / (B(9.6) - B(7.5))))], // S8–S10 pull-out, then still
+];
+function camAt(t) {
+  const s = SHOTS.find(s => t < s[1]) || SHOTS[SHOTS.length - 1];
+  const k = s[4](P(t, s[0], s[1] - s[0]));
+  return [lerp(s[2][0], s[3][0], k), lerp(s[2][1], s[3][1], k), lerp(s[2][2], s[3][2], k), SHOTS.indexOf(s)];
+}
+
+/* ---------- build ---------- */
+// oven contact shadow follows the photo's perspective (left foot low, right foot higher)
+Object.assign($('#shOven').style, { left: '66px', top: '1244px', width: '540px', height: '94px',
+  clipPath: 'polygon(0% 76%,98% 0%,100% 12%,3% 100%)' });
+const dr = 0.079 * 373;   // dial ring radius (world px) on the mixer photo
+Object.assign($('#dialRing').style, { left: (0.823 * 373 - dr) + 'px', top: (0.679 * 314 - dr) + 'px', width: 2 * dr + 'px', height: 2 * dr + 'px' });
+$('#cta').innerHTML = CONFIG.cta;
+$('#price').innerHTML = CONFIG.price;
+
+// dust motes drifting in the window light
+const mctx = $('#motes').getContext('2d');
+function rng(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(7), MOTES = Array.from({ length: 70 }, () => ({ x: R() * 1300, y: R() * 1400, r: .8 + R() * 2.2, a: .15 + R() * .4, ph: R() * 6.3, sp: 6 + R() * 14 }));
+
+function fadeTxt(el, t, a, b, rise = 14) {
+  const k = Math.min(E.out(P(t, a, .45)), 1 - P(t, b - .3, .3));
+  el.style.opacity = k;
+  el.style.transform = `translateY(${lerp(rise, 0, E.out(P(t, a, .6)))}px)`;
+}
+function sweep(el, t, t0, d = .9) { el.firstElementChild.style.left = lerp(-40, 130, E.io(P(t, t0, d))) + '%'; }
+
+/* ================= RENDER ================= */
+function render(t) {
+  const [cx, cy, z, shot] = camAt(t);
+  const tr = `translate(540px,960px) scale(${z}) translate(${-cx}px,${-cy}px)`;
+  $('#wBack').style.transform = tr; $('#wFront').style.transform = tr;
+
+  // light arc: morning cream -> amber -> golden (background only)
+  const warm = Math.max(.35 * P(t, B(4), B(1.5)), E.io(P(t, B(7.5), 3)));
+  const top = [lerp(244, 250, warm), lerp(238, 232, warm), lerp(230, 212, warm)].map(Math.round);
+  const bot = [lerp(229, 238, warm), lerp(219, 210, warm), lerp(206, 180, warm)].map(Math.round);
+  $('#wall').style.background = `linear-gradient(180deg,rgb(${top}) 60%,rgb(${bot}) 100%)`;
+  $('#gobo').style.transform = `translateX(${(cx - 540) * .25}px)`;
+  $('#gobo').style.opacity = .5 + warm * .3;
+  $('#bloom').style.opacity = E.io(P(t, B(7.5) + .2, 2.2)) * .9 + (t < B(1) ? .5 : 0);
+
+  // visibility per shot (oven hidden while the camera frames the mixer alone)
+  $('#ovenA').style.visibility = (shot === 2 || shot === 3) ? 'hidden' : 'visible';
+
+  // oven A interior light: on in the hook, the fan shot and from the bell onward
+  let gA = 0;
+  if (shot === 0) gA = .85; else if (shot === 7) gA = .9; else if (shot >= 8) gA = .9 - .25 * P(t, 25, 2);
+  gA *= .93 + .07 * Math.sin(t * 11) * Math.sin(t * 4.3);
+  $('#glowA').style.opacity = CONFIG.ovenGlow ? gA : 0;
+  $('#fanA').style.opacity = CONFIG.ovenGlow && shot === 7 ? .95 : 0;
+  $('#fanA').style.transform = `rotate(${t * 540}deg)`;
+  // oven B: knob clicks at ~14.6 s, light comes on at 15.2 s
+  const gB = E.io(P(t, B(5) + .9, .9)) * (.93 + .07 * Math.sin(t * 13));
+  $('#glowB').style.opacity = CONFIG.ovenGlow ? gB : 0;
+
+  // dial reflection (S7a): a moving glint on the chrome ring, the dial itself stays as photographed
+  $('#dialRing').style.opacity = shot === 6 ? .75 : 0;
+  $('#dialRing').style.transform = `rotate(${(t - B(6.5)) * 200}deg)`;
+
+  // light sweeps: S2 on the mixer, S3 on the mixer, S6 on the oven, S9 one pass across both
+  const band = lerp(-250, 1330, E.io(P(t, 24.7, 1.1)));   // screen x of the shared S9 sweep
+  const local = (el, w, left) => ((band - ((left - cx) * z + 540)) / (w * z)) * 100;
+  if (t < B(2)) sweep($('#shM'), t, B(1) + .5, 1.1);
+  else if (t < B(3)) sweep($('#shM'), t, B(2) + .6, .9);
+  else if (t > 24) $('#shM').firstElementChild.style.left = (local(null, 373, 654) - 8) + '%';
+  else $('#shM').firstElementChild.style.left = '-40%';
+  $('#shA').firstElementChild.style.left = t > 24 ? (local(null, 560, 53) - 8) + '%' : '-40%';
+  sweep($('#shB'), t, B(5) + 1.6, 1.0);
+
+  // motes
+  mctx.clearRect(0, 0, 1080, 1920);
+  for (const m of MOTES) {
+    const x = ((m.x + Math.sin(t * .6 + m.ph) * 30 - (cx - 540) * .15) % 1300 + 1300) % 1300 - 110;
+    const y = ((m.y - m.sp * t) % 1400 + 1400) % 1400 + 100;
+    mctx.globalAlpha = m.a * (.6 + .4 * Math.sin(t * 1.3 + m.ph)) * (.6 + warm * .6);
+    mctx.fillStyle = '#fff8e8'; mctx.beginPath(); mctx.arc(x, y, m.r, 0, 6.283); mctx.fill();
+  }
+  mctx.globalAlpha = 1;
+
+  /* ---------- type ---------- */
+  fadeTxt($('#h1'), t, .25, B(1) + .05);
+  fadeTxt($('#h2'), t, B(1) + .1, B(2) - .1);
+  fadeTxt($('#h3'), t, B(2) + .3, B(3) - .1);
+  ['#t0', '#t1', '#t2'].forEach((id, i) => {
+    const a = B(3) + i * BEAT, k = E.out(P(t, a, .6)), out = E.io(P(t, B(4) - .5, .5));
+    const el = $(id);
+    el.style.opacity = t < B(3) || t > B(4) ? 0 : k * (1 - out);
+    el.style.transform = `translate(${-out * 160}px,${lerp(24, 0, k) + Math.sin((t - a) * 2.2 + i) * 5}px)`;
+  });
+  fadeTxt($('#l10'), t, B(3) + 1.2, B(4) - .15, 8);
+  fadeTxt($('#h6'), t, B(5) + .7, B(6.5) - .15);
+  fadeTxt($('#l100'), t, B(5) + 1.1, B(6.5) - .15, 8);
+  fadeTxt($('#h7a'), t, B(6.5) + .08, B(7) + .02, 8);
+  fadeTxt($('#h7b'), t, B(7) + .08, B(7.5) + .02, 8);
+  fadeTxt($('#h8'), t, B(7.5) + .8, 24.2);
+  fadeTxt($('#names'), t, 24.4, 99, 10);
+  fadeTxt($('#h9'), t, 24.8, B(9.5) + .1);
+  fadeTxt($('#script'), t, B(9.5) + .15, 99, 18);
+  fadeTxt($('#logo'), t, B(9.5) + .6, 99, 10);
+  fadeTxt($('#cta'), t, 28.0, 99, 16);
+  fadeTxt($('#price'), t, 28.4, 99, 8);
+}
+
+window.render = render; window.DUR = DUR;
+window.ready = Promise.all([document.fonts.load('500 84px "Playfair Display"'), document.fonts.load('176px Allura'), document.fonts.load('600 30px Montserrat'),
+  document.fonts.ready, ...Array.from(document.images).map(i => i.decode().catch(() => { }))]).then(() => { render(0); return true; });
+const qt = new URLSearchParams(location.search).get('t');
+if (qt !== null) window.ready.then(() => render(parseFloat(qt)));
+else if (!navigator.webdriver) window.ready.then(() => { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); });
+</script>
+</body>
+</html>
