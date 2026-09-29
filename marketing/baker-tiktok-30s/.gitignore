@@ -1,0 +1,11 @@
+work/
+out/seg*.mp4
+out/segs.txt
+out/still_*.png
+out/video_noaudio.mp4
+out/*.wav
+out/vo/
+out/render.log
+!out/voiceover_30s_en.wav
+clips/*
+!clips/README.md

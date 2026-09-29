@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Baker: Better Together (TikTok 9:16, 30 s)</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root{ --ink:#2B211C; --ink2:#5E4E42; --red:#E3232D; --cream:#F4EFE8; }
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#1a1512;font-family:Montserrat,sans-serif;-webkit-font-smoothing:antialiased}
+  .full{position:absolute;left:0;top:0;width:1080px;height:1920px}
+  .abs{position:absolute}
+  .layer{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;opacity:0}
+  .layer img{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:50% 50%}
+  .half{position:absolute;left:0;width:1080px;height:960px;overflow:hidden}
+  .half img{position:absolute;left:0;top:-480px;width:1080px;height:1920px;transform-origin:50% 50%}
+  #scrimB{background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.18) 62%,rgba(0,0,0,.5) 100%);opacity:0}
+  #scrimT{background:linear-gradient(0deg,rgba(0,0,0,0) 62%,rgba(0,0,0,.35) 100%);opacity:0}
+
+  /* caption: storyboard style, bold italic serif, lower-left */
+  .cap{position:absolute;left:72px;bottom:500px;width:860px;font-family:'Playfair Display',serif;font-style:italic;font-weight:700;
+    font-size:96px;line-height:1.06;color:#fff;text-shadow:0 4px 26px rgba(0,0,0,.55),0 2px 4px rgba(0,0,0,.35);opacity:0}
+  .cap span{display:block}
+
+  /* split */
+  #plus{left:480px;top:900px;width:120px;height:120px;border-radius:50%;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0}
+  #plus:before,#plus:after{content:'';position:absolute;left:56px;top:28px;width:8px;height:64px;border-radius:4px;background:var(--ink)}
+  #plus:after{transform:rotate(90deg)}
+  #seam{left:0;top:956px;width:1080px;height:8px;background:#fff;opacity:0}
+
+  /* warm product set (used when clip 08 is missing) */
+  #set{background:linear-gradient(180deg,#F6EFE6 0%,#EFE3D3 58%,#E6D3BA 58.1%,#D9C19F 75%,#CDB18C 100%)}
+  #set .light{position:absolute;left:-200px;top:-100px;width:1100px;height:1300px;border-radius:50%;
+    background:radial-gradient(ellipse at center,rgba(255,236,200,.85),rgba(255,230,190,0) 65%)}
+  #set .sh{position:absolute;background:rgba(58,38,22,.45);filter:blur(10px);border-radius:50%}
+  #set img{position:absolute}
+
+  /* S9 / S11 type */
+  #names{left:0;width:1080px;top:300px;text-align:center;color:var(--ink);font-weight:600;font-size:34px;line-height:1.35;opacity:0}
+  #script{left:0;width:1080px;top:392px;text-align:center;font-family:Allura,cursive;font-size:190px;line-height:1;color:var(--ink);opacity:0;white-space:nowrap}
+  .onclip #names,.onclip #script{color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.5)}
+  #logo{left:350px;top:282px;width:380px;height:71px;background:url(assets/logo_red.png) no-repeat;background-size:100% 100%;opacity:0}
+  #cta{left:150px;top:1196px;width:780px;height:108px;border-radius:54px;background:var(--red);color:#fff;font-size:40px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;gap:20px;box-shadow:0 18px 40px rgba(227,35,45,.35);opacity:0;white-space:nowrap}
+  #trust{left:0;width:1080px;top:1348px;display:flex;justify-content:center;gap:38px;color:var(--ink);font-size:27px;font-weight:600;opacity:0}
+  .onclip #trust{color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  #trust div{display:flex;align-items:center;gap:10px;white-space:nowrap}
+
+  /* S10 card */
+  #card{background:var(--cream);opacity:0}
+  #card h2{position:absolute;left:0;width:1080px;top:300px;margin:0;text-align:center;font-weight:700;font-size:60px;color:var(--ink);letter-spacing:-.01em}
+  .row{position:absolute;left:170px;height:140px;display:flex;align-items:center;gap:40px;opacity:0}
+  .row .ic{width:140px;height:140px;border-radius:50%;border:5px solid var(--ink);box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#fff}
+  .row .tx{font-size:46px;font-weight:600;color:var(--ink);line-height:1.1}
+  .arrow{position:absolute;left:228px;width:24px;height:24px;border-right:5px solid var(--ink2);border-bottom:5px solid var(--ink2);transform:rotate(45deg);opacity:0}
+  #pill{position:absolute;left:250px;top:1170px;width:580px;height:100px;border-radius:50px;background:var(--red);color:#fff;text-align:center;line-height:100px;
+    font-size:48px;font-weight:800;letter-spacing:.04em;opacity:0}
+  #sub{position:absolute;left:0;width:1080px;top:1296px;text-align:center;font-size:36px;font-weight:600;color:var(--ink2);opacity:0}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="L1"><img></div>
+  <div class="layer" id="L2"><img></div>
+  <div class="layer" id="split">
+    <div class="half" id="hTop" style="top:0"><img></div>
+    <div class="half" id="hBot" style="top:960px"><img></div>
+  </div>
+  <div class="layer" id="set">
+    <div class="light"></div>
+    <div class="sh" style="left:70px;top:1150px;width:560px;height:34px"></div>
+    <div class="sh" style="left:672px;top:1152px;width:350px;height:24px"></div>
+    <img src="assets/oven_pair.webp" style="left:53px;top:785px;width:560px;height:378.7px">
+    <img src="assets/mixer_red.webp" style="left:654px;top:850px;width:373px;height:314px">
+  </div>
+  <div id="scrimB" class="full"></div>
+  <div id="scrimT" class="full"></div>
+
+  <div class="cap" id="c1"><span>Every great bake</span><span>starts with a</span><span>simple idea.</span></div>
+  <div class="cap" id="c2"><span>The joy</span><span>begins here.</span></div>
+  <div class="cap" id="c3"><span>Mix More.</span><span>Stress Less.</span></div>
+  <div class="cap" id="c4"><span>More batches.</span><span>Less repetition.</span></div>
+  <div class="cap" id="c5"><span>Ready for</span><span>the next step.</span></div>
+  <div class="cap" id="c6"><span>Bake with</span><span>confidence.</span></div>
+  <div class="cap" id="c7"><span>One prepares.</span><span>One finishes.</span></div>
+  <div class="cap" id="c8"><span>Better baking</span><span>brings us together.</span></div>
+  <div id="seam" class="abs"></div>
+  <div id="plus" class="abs"></div>
+
+  <div id="endUI" class="full">
+    <div id="logo" class="abs"></div>
+    <div id="names" class="abs">The Baker 100L Oven +<br>Artisan SE 10L Stand Mixer</div>
+    <div id="script" class="abs">Better Together</div>
+    <div id="cta" class="abs">
+      <svg width="46" height="50" viewBox="0 0 46 50"><path d="M5 15 H41 L38 47 H8 Z" fill="#fff"/><path d="M14 17 V11 a9 9 0 0 1 18 0 V17" fill="none" stroke="#fff" stroke-width="4"/></svg>
+      <span>Shop Now on Shopee Mall</span></div>
+    <div id="trust" class="abs">
+      <div><svg width="34" height="30" viewBox="0 0 34 30"><path d="M17 28 C3 19 1 12 3 7 C6 1 13 1 17 7 C21 1 28 1 31 7 C33 12 31 19 17 28Z" fill="none" stroke="currentColor" stroke-width="3"/></svg>Quality Products</div>
+      <div><svg width="30" height="34" viewBox="0 0 30 34"><path d="M15 2 L27 7 V16 C27 24 21 30 15 32 C9 30 3 24 3 16 V7 Z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M9 17 L13.5 21.5 L21 13" fill="none" stroke="currentColor" stroke-width="3"/></svg>Warranty Support</div>
+      <div><svg width="40" height="30" viewBox="0 0 40 30"><path d="M2 5 H24 V22 H2 Z M24 11 H32 L38 17 V22 H24" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="9" cy="24" r="4" fill="#fff" stroke="currentColor" stroke-width="3"/><circle cx="31" cy="24" r="4" fill="#fff" stroke="currentColor" stroke-width="3"/></svg>Nationwide Delivery</div>
+    </div>
+  </div>
+
+  <div class="layer" id="card">
+    <h2>The Complete Baking Setup</h2>
+    <div class="row" id="r0" style="top:430px"><div class="ic">
+      <svg width="84" height="84" viewBox="0 0 84 84" fill="none" stroke="#2B211C" stroke-width="4.5" stroke-linejoin="round"><path d="M18 20 C18 12 26 10 40 10 H66 C72 10 74 14 74 20 V72 H56 V30 H30"/><path d="M12 42 H50 C50 58 44 66 31 66 C18 66 12 58 12 42 Z"/><path d="M8 76 H78"/><path d="M31 30 V42"/></svg></div>
+      <div class="tx">Mix with confidence</div></div>
+    <div class="arrow" style="top:590px"></div>
+    <div class="row" id="r1" style="top:620px"><div class="ic">
+      <svg width="84" height="84" viewBox="0 0 84 84" fill="none" stroke="#2B211C" stroke-width="4.5" stroke-linejoin="round"><rect x="8" y="16" width="68" height="50" rx="4"/><rect x="15" y="24" width="40" height="34" rx="2"/><circle cx="66" cy="30" r="4"/><circle cx="66" cy="44" r="4"/><path d="M14 66 V72 M70 66 V72"/><path d="M21 35 H49 M21 46 H49"/></svg></div>
+      <div class="tx">Bake with confidence</div></div>
+    <div class="arrow" style="top:780px"></div>
+    <div class="row" id="r2" style="top:810px"><div class="ic">
+      <svg width="84" height="84" viewBox="0 0 84 84" fill="none" stroke="#2B211C" stroke-width="4.5" stroke-linecap="round"><circle cx="42" cy="44" r="28"/><path d="M42 28 V44 L54 52"/><path d="M34 10 H50 M42 10 V16"/></svg></div>
+      <div class="tx">More in less time</div></div>
+    <div class="arrow" style="top:970px"></div>
+    <div class="row" id="r3" style="top:1000px"><div class="ic">
+      <svg width="84" height="84" viewBox="0 0 84 84" fill="none" stroke="#2B211C" stroke-width="4.5" stroke-linejoin="round"><path d="M14 28 H70 L66 76 H18 Z"/><path d="M30 30 V20 a12 12 0 0 1 24 0 V30"/><path d="M34 62 L50 44"/><circle cx="35" cy="47" r="3.5"/><circle cx="49" cy="60" r="3.5"/></svg></div>
+      <div class="tx">Better value as a bundle</div></div>
+    <div id="pill">BUNDLE SAVINGS</div>
+    <div id="sub">More value. More possibilities.</div>
+  </div>
+</div>
+
+<script>
+/* ================= TIMELINE (seconds) ================= */
+// [start, end, kind, clip, clipOffset, caption]
+const SHOTS = [
+  [0.0, 2.9, 'clip', '01', 0, 'c1'],
+  [2.9, 5.6, 'clip', '02', 0, 'c2'],
+  [5.6, 9.4, 'clip', '03', 0, 'c3'],
+  [9.4, 12.9, 'clip', '04', 0, 'c4'],
+  [12.9, 15.8, 'clip', '05', 0, 'c5'],
+  [15.8, 17.9, 'clip', '06', 0, 'c6'],
+  [17.9, 20.9, 'split', ['03', '06'], [3.8, 2.1], 'c7'],
+  [20.9, 23.5, 'clip', '07', 0, 'c8'],
+  [23.5, 25.9, 'pair', '08', 0, null],
+  [25.9, 28.0, 'card', null, 0, null],
+  [28.0, 30.0, 'end', '08', 2.4, null],
+];
+const DISSOLVE = { 2: .3, 7: .4, 8: .35 };   // crossfade into shot index (s)
+const DUR = 30, FPS = 30;
+/* ====================================================== */
+const $ = s => document.querySelector(s);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const P = (t, s, d) => clamp((t - s) / d);
+const out3 = x => 1 - Math.pow(1 - x, 3), io = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+let M = {};
+
+function frameSrc(slot, sec) {
+  const m = M[slot];
+  if (!m || m.mode === 'packshot') return null;
+  if (m.mode === 'still') return `work/${slot}/still.jpg`;
+  const i = clamp(Math.floor(sec * FPS), 0, m.n - 1) + 1;
+  return `work/${slot}/f${String(i).padStart(4, '0')}.jpg`;
+}
+const pending = [];
+function setImg(img, src) { if (src && img.getAttribute('src') !== src) { img.src = src; pending.push(img.decode().catch(() => { })); } }
+
+function showClip(layer, shot, t, op) {
+  const [t0, t1, , slot, off] = shot;
+  const src = frameSrc(slot, t - t0 + off);
+  const img = layer.firstElementChild;
+  if (!src) { layer.style.opacity = 0; return false; }
+  setImg(img, src);
+  img.style.transform = `scale(${lerp(1.0, 1.06, (t - t0) / (t1 - t0 + .5))})`;   // slow push-in
+  layer.style.opacity = op;
+  return true;
+}
+function cap(id, t, a, b) {
+  const el = $('#' + id);
+  const k = Math.min(out3(P(t, a, .5)), 1 - P(t, b - .25, .25));
+  el.style.opacity = k;
+  [...el.children].forEach((s, i) => { const kk = out3(P(t, a + i * .08, .55)); s.style.transform = `translateY(${lerp(26, 0, kk)}px)`; s.style.opacity = kk; });
+}
+function fade(el, t, a, d = .45, rise = 18, b = 99) {
+  const k = Math.min(out3(P(t, a, d)), 1 - P(t, b - .2, .2));
+  el.style.opacity = k; el.style.transform = `translateY(${lerp(rise, 0, out3(P(t, a, d * 1.3)))}px)`;
+}
+
+async function render(t) {
+  pending.length = 0;
+  const si = SHOTS.findIndex(s => t < s[1]), idx = si < 0 ? SHOTS.length - 1 : si, S = SHOTS[idx];
+  ['#L1', '#L2', '#split', '#set', '#card'].forEach(s => $(s).style.opacity = 0);
+  $('#stage').classList.remove('onclip');
+  let scrimB = 0, scrimT = 0;
+  const dz = DISSOLVE[idx] || 0, inD = dz && t < S[0] + dz, dk = inD ? io(P(t, S[0], dz)) : 1;
+  const prev = SHOTS[idx - 1];
+
+  const drawShot = (shot, op, layerId) => {
+    const kind = shot[2];
+    if (kind === 'clip') { showClip($(layerId), shot, t, op); scrimB = Math.max(scrimB, op); }
+    else if (kind === 'split') {
+      const sp = $('#split'); sp.style.opacity = op;
+      const k = out3(P(t, shot[0], .45));
+      const a = frameSrc(shot[3][0], t - shot[0] + shot[4][0]), b = frameSrc(shot[3][1], t - shot[0] + shot[4][1]);
+      setImg($('#hTop img'), a); setImg($('#hBot img'), b);
+      $('#hTop').style.transform = `translateX(${lerp(-1080, 0, k)}px)`;
+      $('#hBot').style.transform = `translateX(${lerp(1080, 0, k)}px)`;
+      const z = lerp(1.0, 1.05, (t - shot[0]) / 3.5);
+      $('#hTop img').style.transform = $('#hBot img').style.transform = `scale(${z})`;
+      scrimB = Math.max(scrimB, op);
+    } else if (kind === 'pair' || kind === 'end') {
+      if (!showClip($(layerId), shot, t, op)) {
+        const set = $('#set'); set.style.opacity = op;
+        const z = lerp(1.0, 1.04, P(t, 23.5, 6.5));
+        set.style.transform = `scale(${z})`; set.style.transformOrigin = '50% 60%';
+      } else { $('#stage').classList.add('onclip'); scrimT = op; scrimB = Math.max(scrimB, op * .6); }
+    } else if (kind === 'card') {
+      const c = $('#card'); c.style.opacity = 1;
+      c.style.clipPath = `inset(${lerp(100, 0, out3(P(t, shot[0], .35)))}% 0 0 0)`;
+    }
+  };
+  if (inD && prev) { drawShot(prev, 1, '#L2'); drawShot(S, dk, '#L1'); } else drawShot(S, 1, '#L1');
+  // the end card sits on the same set as S9 when there is no clip 08
+  $('#scrimB').style.opacity = scrimB * (S[2] === 'end' || S[2] === 'pair' ? .4 : 1);
+  $('#scrimT').style.opacity = scrimT;
+
+  // captions (storyboard lines)
+  SHOTS.forEach(s => { if (s[5]) cap(s[5], t, s[0] + .15, s[1] + (s[5] === 'c7' ? 0 : .05)); });
+  $('#seam').style.opacity = S[2] === 'split' ? out3(P(t, S[0] + .3, .2)) : 0;
+  const pk = S[2] === 'split' ? out3(P(t, S[0] + .45, .35)) : 0;
+  $('#plus').style.opacity = pk; $('#plus').style.transform = `scale(${lerp(.4, 1, pk)}) rotate(${lerp(-90, 0, pk)}deg)`;
+
+  // S9 + S11
+  const endOn = t >= 23.5 && !(t >= 25.9 && t < 28.0);
+  $('#endUI').style.display = endOn ? 'block' : 'none';
+  if (endOn) {
+    if (t < 25.9) { fade($('#names'), t, 23.7, .5, 14, 25.9); fade($('#script'), t, 24.0, .6, 22, 25.9); $('#logo').style.opacity = 0; }
+    else {
+      $('#names').style.opacity = 0;
+      fade($('#logo'), t, 28.05, .45, 10); fade($('#script'), t, 28.15, .5, 20);
+      $('#script').style.top = '372px';
+    }
+    if (t < 25.9) $('#script').style.top = '392px';
+    fade($('#cta'), t, 28.45, .45, 24); fade($('#trust'), t, 28.8, .45, 12);
+    if (t < 28) { $('#cta').style.opacity = 0; $('#trust').style.opacity = 0; }
+  }
+  // S10 card
+  if (S[2] === 'card') {
+    ['#r0', '#r1', '#r2', '#r3'].forEach((r, i) => fade($(r), t, 26.1 + i * .22, .4, 20));
+    document.querySelectorAll('.arrow').forEach((a, i) => a.style.opacity = out3(P(t, 26.3 + i * .22, .3)));
+    const pk2 = out3(P(t, 27.05, .35));
+    $('#pill').style.opacity = pk2; $('#pill').style.transform = `scale(${lerp(.85, 1, pk2)})`;
+    fade($('#sub'), t, 27.3, .35, 10);
+  }
+  await Promise.all(pending);
+}
+
+window.DUR = DUR;
+window.render = render;
+window.ready = fetch('work/manifest.json').then(r => r.json()).then(m => { M = m; }).catch(() => { M = {}; })
+  .then(() => Promise.all([document.fonts.load('italic 700 96px "Playfair Display"'), document.fonts.load('190px Allura'), document.fonts.load('600 40px Montserrat'),
+    document.fonts.ready, ...Array.from(document.images).map(i => i.decode().catch(() => { }))]))
+  .then(() => render(0)).then(() => true);
+const qt = new URLSearchParams(location.search).get('t');
+if (qt !== null) window.ready.then(() => render(parseFloat(qt)));
+else if (!navigator.webdriver) window.ready.then(() => { const t0 = performance.now(); (async function loop() { await render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); });
+</script>
+</body>
+</html>
