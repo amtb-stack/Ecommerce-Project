@@ -33,11 +33,12 @@ SLOTS = {
     '08': (4.8, None, 'Oven + mixer side by side in the kitchen'),   # falls back to the product photos
 }
 EXT = ('.mp4', '.mov', '.m4v', '.webm', '.mkv', '.avi', '.mts')
+IMG = ('.jpg', '.jpeg', '.png', '.webp')   # AI-generated or photographed stills also work (slow push-in is added)
 
 
 def find_clip(slot):
     for p in sorted(CLIPS.iterdir()) if CLIPS.exists() else []:
-        if p.name.startswith(slot) and p.suffix.lower() in EXT:
+        if p.name.startswith(slot) and p.suffix.lower() in EXT + IMG:
             return p
     return None
 
@@ -72,6 +73,21 @@ def extract(slot, clip, need, cfg):
     return {'mode': 'seq', 'n': n, 'file': clip.name}
 
 
+def still(slot, path, cfg):
+    d = WORK / slot
+    d.mkdir(parents=True, exist_ok=True)
+    for f in d.glob('*.jpg'):
+        f.unlink()
+    im = Image.open(path).convert('RGB')
+    s = max(W / im.width, H / im.height)
+    im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
+    x = int((im.width - W) * min(1, max(0, cfg.get('focus', .5))))
+    y = int((im.height - H) * min(1, max(0, cfg.get('focusY', .5))))
+    im.crop((x, y, x + W, y + H)).save(d / 'still.jpg', quality=92)
+    print(f'{slot}: {path.name} -> still image')
+    return {'mode': 'still', 'file': path.name}
+
+
 def placeholder(slot, box, desc):
     d = WORK / slot
     d.mkdir(parents=True, exist_ok=True)
@@ -99,7 +115,9 @@ manifest = {}
 for slot, (need, box, desc) in SLOTS.items():
     clip = find_clip(slot)
     cfg = cfg_all.get(slot, {})
-    if clip:
+    if clip and clip.suffix.lower() in IMG:
+        manifest[slot] = still(slot, clip, cfg)
+    elif clip:
         manifest[slot] = extract(slot, clip, need, cfg)
     elif box:
         manifest[slot] = placeholder(slot, box, desc)

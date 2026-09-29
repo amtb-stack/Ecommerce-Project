@@ -1,6 +1,6 @@
 # Drop your clips here
 
-Name each file by its storyboard slot (any video format, vertical or horizontal):
+Name each file by its storyboard slot. Any video format, or a still image (.jpg/.png/.webp, e.g. AI-generated), vertical or horizontal. Prompts for each shot are in ../GENERATION_PROMPTS.md:
 
 | File name starts with | Storyboard | Clip |
 |---|---|---|
