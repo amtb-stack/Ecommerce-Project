@@ -2,12 +2,15 @@
 
 This edit follows the pasted storyboard (`reference/storyboard.webp`) shot for shot, in a 1080×1920 TikTok frame. It uses the storyboard's captions, an English voiceover, and the storyboard's end graphics: the Complete Baking Setup card, BUNDLE SAVINGS, Shop Now on Shopee Mall, and Quality Products · Warranty Support · Nationwide Delivery.
 
-**Status:** `out/TheBaker_TikTok_30s_PREVIEW_placeholders.mp4` is a timing preview only. Every lifestyle shot is a blurred, labelled placeholder cut from the storyboard. Drop the real clips into `clips/` (see `clips/README.md`) and re-render to get the final video.
+**Ready to post:** `out/TheBaker_TikTok_30s_Bold.mp4` is a bold, cinematic product version. Every shot is built from the real product photos (`make_plates.py`: a dark warm studio, the products exactly as photographed). Any real clip or AI-generated image you drop into `clips/` with the same slot number replaces that shot on the next render.
+
+**Earlier preview:** `out/TheBaker_TikTok_30s_PREVIEW_placeholders.mp4` is a timing preview only. Every lifestyle shot is a blurred, labelled placeholder cut from the storyboard. Drop the real clips into `clips/` (see `clips/README.md`) and re-render to get the final video.
 
 ## Final render once the clips are in
 ```bash
 pip install numpy scipy imageio-ffmpeg pillow            # plus Node 18+ with the `playwright` package
 export FFMPEG=$(python3 -c "import imageio_ffmpeg as i; print(i.get_ffmpeg_exe())")
+python3 make_plates.py                                    # product plates (fallback for every slot)
 python3 prepare.py                                        # clips -> 9:16 frames (centre crop; see clips/config.json)
 node render.cjs --fps 30 --workers 4                      # -> out/video_noaudio.mp4
 $FFMPEG -i out/video_noaudio.mp4 -i out/mix.wav -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p -c:a aac -b:a 256k \
