@@ -15,6 +15,24 @@ A Flappy Bird-style bakery game for a prize competition. The whole game is one f
 
 Everyone starts at Level 1. The game speeds up at 10, 20, 30, 45, 60 and 80 points (Level 7 is the last level and continues until you crash).
 
+### Bosses (Levels 3, 5 and 7)
+
+When a run reaches Level 3, 5 or 7, the bread columns pause and a boss attacks. A red warning shows where each attack will go before it moves. Every attack wave survived is 1 point, and beating the boss adds a bonus.
+
+| Level | Boss | Attacks | Points |
+|---|---|---|---|
+| 3 | Doughzilla | Dough balls, single, double and aimed | 6 waves + 2 bonus |
+| 5 | Rolling Pin Rex | Cookie volleys, cookie-tray walls, aimed shots | 8 waves + 3 bonus |
+| 7 | The Grand Oven (hardest) | Fireball volleys, double walls, heat beams, aimed bursts | 10 waves + 5 bonus |
+
+### From Level 4: disturbance and distraction
+
+From Level 4 the gaps stop getting smaller. Instead, the bakery gets in your way:
+
+- **Disturbances** change your flight. Fans push you down and floor vents push you up while you fly through them (blue arrows show the direction). From Level 6, pastries are thrown at the height you're flying.
+- **Distractions** only get in your eyes: oven steam and flour clouds (Level 4+), sprinkle storms (5+), slowly dimming lights (6+) and decoy croissants (7). They can't hurt you.
+
+
 ## Running the competition
 
 The leaderboard is saved **on the device the game runs on**. Run the competition on **one shared device** (a tablet or laptop at the counter). Scores played on other phones only appear on those phones.
@@ -52,7 +70,13 @@ Each phone that opens the link keeps its own scores. For the prize competition, 
 
 ## Tuning difficulty
 
-The `LEVELS` table at the top of the script controls speed, gravity, flap strength, gap height, obstacle spacing and the largest jump between gaps for each level. Keep `flap² / (2 × gravity)` at about 55 px. After any change, run the tests: the autopilot check proves every level can still be beaten.
+Three tables at the top of the script control difficulty:
+
+- `LEVELS`: speed, gravity, flap strength, gap height, obstacle spacing and the largest jump between gaps. Keep `flap² / (2 × gravity)` at about 55 px.
+- `HAZARDS`: per level, how often fans/vents and ovens appear, fan strength, how often pastries are thrown, and which distractions are on. Keep `fanForce` below that level's gravity.
+- `BOSSES`: waves, bonus, time between attacks, warning time, attack speeds and attack types for each boss.
+
+After any change, run the tests: the autopilot proves every level and every boss can still be beaten.
 
 ## Tests
 
@@ -63,7 +87,7 @@ npx playwright install chromium
 npm test
 ```
 
-This runs 10 checks against both `file://` and a local web server: console errors, level config, autopilot beatability, frame-rate independence, input, layout at 5 screen sizes, leaderboard rules, staff panel, audio, and test isolation. Screenshots go to `tests/screenshots/`.
+This runs 12 checks against both `file://` and a local web server: console errors, level config and progression, autopilot beatability, frame-rate independence, input, layout at 5 screen sizes, leaderboard rules, staff panel, audio, test isolation, hazards per level, and boss fights. Screenshots go to `tests/screenshots/`.
 
 Tests open the game with `?test=1`. That mode uses a **separate** leaderboard and shows a blue "TEST MODE" badge, so never run the event from a `?test=1` link.
 

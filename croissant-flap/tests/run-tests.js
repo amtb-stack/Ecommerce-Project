@@ -144,8 +144,9 @@ function pageAutopilot(opts) {
   const LEVELS = H.getConfig().LEVELS;
   const FRAME = 1 / 60;
   const STEPS = Math.round(FRAME / C.DT);
-  const HORIZON = opts.horizon || 54;
+  const HORIZON = opts.horizon || 90; // 1.5 s: longer than any warning plus travel time
   const MARGIN = 1.5;
+  let capHits = 0;
 
   function hitsRect(cx, cy, rx, ry, x0, y0, x1, y1) {
     const nx = Math.max(x0, Math.min(cx, x1));
@@ -163,8 +164,10 @@ function pageAutopilot(opts) {
     const ry = C.HITBOX_RY + MARGIN;
     const cx = C.CROISSANT_X;
     const obs = s.obstacles;
+    const hz = s.hazards;
     const memo = new Set();
     let nodes = 0;
+    // k = physics steps from now. Hazards wait `wait` steps, then move (shots, walls) or burn for `life` steps (beams).
     function dead(y, k) {
       if (y + ry >= C.GROUND_Y) return true;
       const shift = sp * C.DT * k;
@@ -175,12 +178,40 @@ function pageAutopilot(opts) {
         if (x1 < cx - rx || x0 > cx + rx) continue;
         if (hitsRect(cx, y, rx, ry, x0, -1e4, x1, o.gapTop) || hitsRect(cx, y, rx, ry, x0, o.gapBottom, x1, 1e4)) return true;
       }
+      for (let i = 0; i < hz.length; i++) {
+        const h = hz[i];
+        if (h.kind === 'beam') {
+          if (k > h.wait && k - h.wait <= h.life && hitsRect(cx, y, rx, ry, h.x, h.y0, h.x1, h.y1)) return true;
+          continue;
+        }
+        if (k <= h.wait) continue;
+        const hx = h.x + h.vx * C.DT * (k - h.wait);
+        if (h.kind === 'shot') {
+          const dx = (hx - cx) / (rx + h.r);
+          const dy = (h.y - y) / (ry + h.r);
+          if (dx * dx + dy * dy < 1) return true;
+        } else if (hitsRect(cx, y, rx, ry, hx, -1e4, hx + h.w, h.gapTop) || hitsRect(cx, y, rx, ry, hx, h.gapBottom, hx + h.w, 1e4)) {
+          return true;
+        }
+      }
       return false;
+    }
+    // Fans and vents act while the (unpadded) hitbox overlaps their column, measured before this step's scroll.
+    function force(k) {
+      const shift = sp * C.DT * k;
+      let a = 0;
+      for (let i = 0; i < obs.length; i++) {
+        const o = obs[i];
+        if (!o.force) continue;
+        const x0 = o.x - shift;
+        if (cx + C.HITBOX_RX > x0 && cx - C.HITBOX_RX < x0 + o.w) a += o.force;
+      }
+      return a;
     }
     function frameSim(y, vy, flap, f) {
       for (let i = 0; i < STEPS; i++) {
         if (flap && i === 0) vy = fv;
-        vy = Math.min(vy + g * C.DT, C.TERMINAL_VY);
+        vy = Math.min(vy + (g + force(f * STEPS + i)) * C.DT, C.TERMINAL_VY);
         y += vy * C.DT;
         if (y < C.CEILING_Y) { y = C.CEILING_Y; if (vy < 0) vy = 0; }
         if (dead(y, f * STEPS + i + 1)) return null;
@@ -189,7 +220,7 @@ function pageAutopilot(opts) {
     }
     function ok(f, y, vy) {
       if (f >= HORIZON) return true;
-      if (++nodes > 150000) return true;
+      if (++nodes > 150000) { capHits++; return true; }
       const key = f + '|' + Math.round(y * 2) + '|' + Math.round(vy / 4);
       if (memo.has(key)) return false;
       let r = frameSim(y, vy, false, f);
@@ -205,19 +236,50 @@ function pageAutopilot(opts) {
 
   if (opts.start === 'level') {
     H.setSeed(opts.seed);
-    H.startAtLevel(opts.level, opts.lock);
-  } else {
+    H.startAtLevel(opts.level, opts.lock, opts.boss);
+  } else if (opts.start === 'ready') {
     H.flap(); // first flap from the ready screen starts a normal run
   }
 
-  // Audit obstacle generation while playing.
+  const cfg = H.getConfig();
+  const fanForces = cfg.HAZARDS.map((z) => z.fanForce);
+  const stats = {
+    kinds: new Set(), looks: new Set(), hazardKinds: new Set(), forces: new Set(), bossesSeen: [],
+    fxMax: { clouds: 0, steam: 0, sprinkles: 0, dim: 0, decoys: 0 }, bossFinishScore: null
+  };
+  const seenHazards = new Set();
+
+  // Audit obstacle and hazard generation while playing.
   const seen = new Map();
   const violations = [];
   const spacings = LEVELS.map((L) => L.spacing);
   let prev = null;
   function audit(s) {
     const L = LEVELS[s.level - 1];
+    if (s.boss) {
+      prev = null; // columns restart from scratch after a boss
+      if (stats.bossesSeen.indexOf(s.boss.level) < 0) stats.bossesSeen.push(s.boss.level);
+    }
+    Object.keys(stats.fxMax).forEach((k) => { stats.fxMax[k] = Math.max(stats.fxMax[k], s.fx[k]); });
+    if (s.airForce !== 0) {
+      stats.forces.add(s.airForce);
+      if (fanForces.indexOf(Math.abs(s.airForce)) < 0) violations.push('unexpected air force ' + s.airForce);
+    }
+    s.hazards.forEach((h) => {
+      if (seenHazards.has(h.id)) return;
+      seenHazards.add(h.id);
+      stats.hazardKinds.add(h.kind + ':' + h.skin);
+      const B = s.boss ? cfg.BOSSES[s.boss.level] : null;
+      const tel = h.skin === 'pastry' ? cfg.PASTRY.telegraph : h.kind === 'beam' ? Math.max(1, B.telegraph) : B ? B.telegraph : 0;
+      if (h.wait < Math.round(tel / C.DT) - 2) violations.push(h.kind + ' warning too short: ' + h.wait + ' steps');
+      if (h.kind === 'shot' && (h.y < C.SHOT_MIN_Y - 1e-6 || h.y > C.SHOT_MAX_Y + 1e-6)) violations.push('shot lane outside play area ' + h.y);
+      if (h.kind === 'wall' && (h.gapTop < C.GAP_MARGIN - 1e-6 || h.gapBottom > C.GROUND_Y - C.GAP_MARGIN + 1e-6)) violations.push('wall gap outside margins');
+      if (h.kind === 'beam' && (h.y0 < C.SHOT_MIN_Y - 1e-6 || h.y1 > C.SHOT_MAX_Y + 1e-6)) violations.push('beam outside play area');
+    });
     s.obstacles.forEach((o) => {
+      stats.kinds.add(o.kind);
+      stats.looks.add(o.top);
+      stats.looks.add(o.bottom);
       const key = Math.round((o.x + s.distance) * 1000);
       const rec = seen.get(key);
       if (!rec) {
@@ -240,17 +302,26 @@ function pageAutopilot(opts) {
   const log = [];
   let last = -1;
   let frames = 0;
+  let sawBoss = false;
   while (frames < opts.maxFrames) {
     const s = H.getState();
     if (s.score !== last) { log.push([s.score, s.level]); last = s.score; }
-    if (s.screen !== 'playing' || s.score >= opts.targetScore) break;
+    if (s.boss) sawBoss = true;
+    if (sawBoss && !s.boss && stats.bossFinishScore === null) stats.bossFinishScore = s.score;
+    if (s.screen !== 'playing' || s.score >= (opts.targetScore || Infinity)) break;
+    if (opts.stopAfterBoss !== undefined && stats.bossFinishScore !== null && s.score >= stats.bossFinishScore + opts.stopAfterBoss) break;
     audit(s);
     if (decide(s)) H.flap();
     H.step(FRAME, FRAME * 1000);
     frames++;
   }
   const end = H.getState();
-  return { score: end.score, screen: end.screen, level: end.level, frames, log, violations: violations.slice(0, 10) };
+  return {
+    score: end.score, screen: end.screen, level: end.level, frames, log, violations: violations.slice(0, 10),
+    kinds: [...stats.kinds], looks: [...stats.looks], hazardKinds: [...stats.hazardKinds], forces: [...stats.forces],
+    bossesSeen: stats.bossesSeen, bossesDefeated: end.bossesDefeated, fxMax: stats.fxMax, bossFinishScore: stats.bossFinishScore,
+    y: end.croissant.y, capHits
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +348,8 @@ check(1, 'Console: zero errors and zero failed requests on every screen', async 
   await waitScreen(page, 'countdown');
   await step(page, 3.05);
   assert.strictEqual((await st(page)).screen, 'playing');
+  await page.evaluate(pageAutopilot, { start: 'level', level: 5, lock: true, boss: true, seed: 2, maxFrames: 400 });
+  await page.evaluate(pageAutopilot, { start: 'level', level: 7, lock: true, seed: 2, maxFrames: 400 });
   await page.keyboard.press('Escape');
   await waitScreen(page, 'paused');
   await page.click('#btnEndRun');
@@ -295,12 +368,12 @@ check(1, 'Console: zero errors and zero failed requests on every screen', async 
   await page.click('#scrStaff [data-back]');
   await waitScreen(page, 'menu');
   await sleep(300);
-  return 'visited menu, how to play, prizes, leaderboard, ready, playing, paused, countdown, game over, staff';
+  return 'visited menu, how to play, prizes, leaderboard, ready, playing, boss fight, Level 7 hazards, paused, countdown, game over, staff';
 });
 
-check(2, 'Level config is monotonic and levels change at exactly 10/20/30/45/60/80', async (env) => {
+check(2, 'Levels: config, progression at exactly 10/20/30/45/60/80, bosses at 3/5/7 in a normal run', async (env) => {
   const { page } = await env.open();
-  const { LEVELS } = await page.evaluate(() => window.__croissant.getConfig());
+  const { LEVELS, BOSSES } = await page.evaluate(() => window.__croissant.getConfig());
   assert.strictEqual(LEVELS.length, 7, 'exactly 7 levels');
   for (let i = 1; i < LEVELS.length; i++) {
     const a = LEVELS[i - 1];
@@ -308,36 +381,48 @@ check(2, 'Level config is monotonic and levels change at exactly 10/20/30/45/60/
     assert.ok(b.startsAt > a.startsAt, 'thresholds increase');
     assert.ok(b.speed > a.speed, 'speed increases');
     assert.ok(b.gravity > a.gravity, 'gravity increases');
-    assert.ok(b.gap < a.gap, 'gap decreases');
     assert.ok(b.spacing <= a.spacing, 'spacing does not grow');
+    // Gaps shrink up to Level 4; after that difficulty comes from hazards, not gaps.
+    if (b.level <= 4) assert.ok(b.gap < a.gap, `gap shrinks up to Level 4 (level ${b.level})`);
+    else {
+      assert.strictEqual(b.gap, a.gap, `gap stays the same from Level 4 (level ${b.level})`);
+      assert.strictEqual(b.maxShift, a.maxShift, `gap movement stays the same from Level 4 (level ${b.level})`);
+    }
   }
   const jumps = LEVELS.map((L) => (L.flap * L.flap) / (2 * L.gravity));
   jumps.forEach((j, i) => assert.ok(j >= 50 && j <= 60, `level ${i + 1} jump ${j.toFixed(1)} px is outside 50-60`));
   assert.deepStrictEqual(LEVELS.map((L) => L.startsAt), [0, 10, 20, 30, 45, 60, 80]);
+  // Boss points can never push a run past the next level during the fight.
+  [3, 5].forEach((lv) => {
+    const B = BOSSES[lv];
+    assert.ok(LEVELS[lv - 1].startsAt + B.waves + B.bonus < LEVELS[lv].startsAt, `Level ${lv} boss points stay inside Level ${lv}`);
+  });
 
-  // Play a normal run (from the ready screen) to 81 points with the autopilot.
+  // Play a normal run from the ready screen through all three bosses with the autopilot.
   let result = null;
   for (const seed of [11, 12, 13, 14, 15]) {
     await page.evaluate((s) => window.__croissant.setSeed(s), seed);
     await page.click('#btnPlay');
     await waitScreen(page, 'ready');
-    result = await page.evaluate(pageAutopilot, { start: 'ready', targetScore: 81, maxFrames: 60 * 400 });
-    if (result.score >= 81) break;
+    result = await page.evaluate(pageAutopilot, { start: 'ready', targetScore: 100, maxFrames: 60 * 600 });
+    if (result.score >= 100) break;
     await page.evaluate(() => window.__croissant.endRunWithScore(0, 1));
     await step(page, 1.1);
     await page.click('#btnGoMenu');
   }
-  assert.ok(result.score >= 81, `autopilot only reached ${result.score} in progressive mode`);
-  assert.deepStrictEqual(result.violations, [], 'obstacle audit');
+  assert.ok(result.score >= 100, `autopilot only reached ${result.score} in a normal run`);
+  assert.deepStrictEqual(result.violations, [], 'obstacle and hazard audit');
+  assert.deepStrictEqual(result.bossesSeen, [3, 5, 7], 'bosses appear at Levels 3, 5 and 7, in order');
+  assert.deepStrictEqual(result.bossesDefeated, [3, 5, 7], 'all three bosses beaten');
   const expected = (score) => LEVELS.reduce((lv, L) => (score >= L.startsAt ? L.level : lv), 1);
   for (const [score, level] of result.log) assert.strictEqual(level, expected(score), `score ${score} should be level ${expected(score)}, got ${level}`);
   const changes = [];
   for (let i = 1; i < result.log.length; i++) if (result.log[i][1] !== result.log[i - 1][1]) changes.push(result.log[i][0]);
   assert.deepStrictEqual(changes, [10, 20, 30, 45, 60, 80]);
-  return `jump heights ${jumps.map((j) => j.toFixed(1)).join(', ')} px; level changed at ${changes.join(', ')} points`;
+  return `jump heights ${jumps.map((j) => j.toFixed(1)).join(', ')} px; gaps fixed from Level 4; level changed at ${changes.join(', ')}; bosses ${result.bossesSeen.join(', ')} met and beaten in a run to ${result.score}`;
 });
 
-check(3, 'Beatable: autopilot passes 30+ obstacles on every level with 5 seeds', async (env) => {
+check(3, 'Beatable: autopilot passes 30 columns on every level (fans, vents, pastries included), 5 seeds each', async (env) => {
   const { page } = await env.open();
   const rows = [];
   for (let level = 1; level <= 7; level++) {
@@ -347,11 +432,104 @@ check(3, 'Beatable: autopilot passes 30+ obstacles on every level with 5 seeds',
       assert.deepStrictEqual(r.violations, [], `level ${level} seed ${seed} obstacle audit`);
       assert.strictEqual(r.level, level, 'level stays locked');
       assert.ok(r.score >= 30, `level ${level} seed ${seed}: autopilot passed only ${r.score} obstacles (screen ${r.screen})`);
+      assert.strictEqual(r.capHits, 0, 'autopilot search finished every decision');
       scores.push(r.score);
     }
     rows.push(`L${level}: ${scores.join('/')}`);
   }
   return rows.join('  ');
+});
+
+check(11, 'Hazards by level: none before 4; fans, vents, ovens, flour from 4; sprinkles 5; pastries, dimming 6; decoys 7; distractions never change the physics', async (env) => {
+  const { page } = await env.open();
+  const cfg = await page.evaluate(() => window.__croissant.getConfig());
+  cfg.HAZARDS.forEach((z, i) => {
+    assert.ok(z.fanForce < cfg.LEVELS[i].gravity, `Level ${i + 1}: a vent must never beat gravity`);
+    if (i < 3) assert.ok(!z.fanChance && !z.ovenChance && !z.pastryEvery && !z.clouds && !z.sprinkles && !z.dimming && !z.decoys, `Level ${i + 1} has no hazards`);
+  });
+  const want = {
+    4: { pastry: false, clouds: true, sprinkles: false, dim: false, decoys: false },
+    5: { pastry: false, clouds: true, sprinkles: true, dim: false, decoys: false },
+    6: { pastry: true, clouds: true, sprinkles: true, dim: true, decoys: false },
+    7: { pastry: true, clouds: true, sprinkles: true, dim: true, decoys: true }
+  };
+  const rows = [];
+  for (let level = 1; level <= 7; level++) {
+    let r = null;
+    for (const seed of [21, 22, 23, 24, 25]) {
+      r = await page.evaluate(pageAutopilot, { start: 'level', level, lock: true, seed, targetScore: 25, maxFrames: 60 * 90 });
+      if (level < 4 || ['fan', 'vent', 'oven'].every((k) => r.kinds.includes(k))) break;
+    }
+    assert.deepStrictEqual(r.violations, [], `level ${level} audit`);
+    assert.ok(r.score >= 25, `level ${level}: autopilot reached only ${r.score}`);
+    const pastry = r.hazardKinds.includes('shot:pastry');
+    if (level < 4) {
+      assert.deepStrictEqual(r.kinds, ['classic'], `Level ${level} only has plain columns`);
+      assert.deepStrictEqual(r.forces, [], `Level ${level} has no air push`);
+      assert.ok(!pastry, `Level ${level} has no pastries`);
+      assert.deepStrictEqual(Object.values(r.fxMax), [0, 0, 0, 0, 0], `Level ${level} has no distractions`);
+      if (level === 1) assert.deepStrictEqual(r.looks.sort(), ['baguette', 'loaves'], 'Level 1 keeps the classic look');
+      else assert.ok(r.looks.includes('log') || r.looks.includes('cake'), `Level ${level} adds new obstacle looks`);
+    } else {
+      const w = want[level];
+      const z = cfg.HAZARDS[level - 1];
+      ['fan', 'vent', 'oven'].forEach((k) => assert.ok(r.kinds.includes(k), `Level ${level} has ${k} columns`));
+      assert.ok(r.forces.length > 0 && r.forces.every((f) => Math.abs(f) === z.fanForce), `Level ${level} air push is exactly ±${z.fanForce}`);
+      assert.ok(r.forces.some((f) => f > 0) && r.forces.some((f) => f < 0), `Level ${level} pushes both down (fans) and up (vents)`);
+      assert.strictEqual(pastry, w.pastry, `Level ${level} pastries`);
+      assert.ok(r.fxMax.steam > 0, `Level ${level} oven steam`);
+      assert.strictEqual(r.fxMax.clouds > 0, w.clouds, `Level ${level} flour clouds`);
+      assert.strictEqual(r.fxMax.sprinkles > 0, w.sprinkles, `Level ${level} sprinkles`);
+      assert.strictEqual(r.fxMax.dim > 0, w.dim, `Level ${level} dimming`);
+      assert.strictEqual(r.fxMax.decoys > 0, w.decoys, `Level ${level} decoys`);
+    }
+    rows.push(`L${level}: ${r.kinds.join('/')}${pastry ? '+pastries' : ''} fx ${Object.keys(r.fxMax).filter((k) => r.fxMax[k] > 0).join('/') || 'none'}`);
+  }
+  // Distractions use their own randomness; the same seed and inputs must give exactly the same run.
+  const a = await page.evaluate(pageAutopilot, { start: 'level', level: 7, lock: true, seed: 7, targetScore: 20, maxFrames: 60 * 60 });
+  const b = await page.evaluate(pageAutopilot, { start: 'level', level: 7, lock: true, seed: 7, targetScore: 20, maxFrames: 60 * 60 });
+  assert.deepStrictEqual([b.score, b.frames, b.y], [a.score, a.frames, a.y], 'identical runs despite random distractions');
+  return rows.join('; ') + '; same seed gives the same run despite distractions';
+});
+
+check(12, 'Bosses at Levels 3, 5 and 7: warned, beatable (5 seeds each), 1 point per wave + bonus, Level 7 hardest', async (env) => {
+  const { page } = await env.open();
+  const { BOSSES } = await page.evaluate(() => window.__croissant.getConfig());
+  assert.deepStrictEqual(Object.keys(BOSSES), ['3', '5', '7'], 'bosses only at Levels 3, 5 and 7');
+  const [b3, b5, b7] = [BOSSES[3], BOSSES[5], BOSSES[7]];
+  assert.ok(b3.waves < b5.waves && b5.waves < b7.waves, 'more waves each time');
+  assert.ok(b3.interval > b5.interval && b5.interval > b7.interval, 'attacks come faster each time');
+  assert.ok(b3.shotSpeed < b5.shotSpeed && b5.shotSpeed < b7.shotSpeed, 'faster shots each time');
+  assert.ok(b7.patterns.length > b5.patterns.length && b5.patterns.length > b3.patterns.length, 'more attack types each time');
+  assert.ok(b7.telegraph >= 0.8, 'even the hardest boss warns at least 0.8 s ahead');
+
+  const rows = [];
+  for (const lv of [3, 5, 7]) {
+    const B = BOSSES[lv];
+    const kinds = new Set();
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const r = await page.evaluate(pageAutopilot, { start: 'level', level: lv, lock: true, boss: true, seed, stopAfterBoss: 3, maxFrames: 60 * 120 });
+      assert.deepStrictEqual(r.violations, [], `${B.name} seed ${seed} audit`);
+      assert.deepStrictEqual(r.bossesDefeated, [lv], `${B.name} beaten with seed ${seed} (score ${r.score}, screen ${r.screen})`);
+      assert.strictEqual(r.bossFinishScore, B.waves + B.bonus, `${B.name}: ${B.waves} waves + ${B.bonus} bonus`);
+      assert.ok(r.score >= r.bossFinishScore + 3, `play continues after ${B.name}`);
+      assert.strictEqual(r.capHits, 0, 'autopilot search finished every decision');
+      r.hazardKinds.forEach((k) => kinds.add(k.split(':')[0]));
+    }
+    const need = { 3: ['shot'], 5: ['shot', 'wall'], 7: ['shot', 'wall', 'beam'] }[lv];
+    need.forEach((k) => assert.ok(kinds.has(k), `${B.name} uses ${k} attacks`));
+    rows.push(`${B.name} (L${lv}): beaten 5/5, ${B.waves}+${B.bonus} pts, ${[...kinds].join('/')}`);
+  }
+
+  // Columns pause during a fight and the health bar shows the boss.
+  await page.evaluate(pageAutopilot, { start: 'level', level: 5, lock: true, boss: true, seed: 3, maxFrames: 100 });
+  const s = await st(page);
+  assert.strictEqual(s.screen, 'playing');
+  assert.strictEqual(s.boss.phase, 'fight');
+  assert.strictEqual(s.obstacles.length, 0, 'no columns during a boss fight');
+  assert.ok(await visible(page, '#bossBar'), 'boss health bar visible');
+  assert.strictEqual(await page.textContent('#bossName'), 'Rolling Pin Rex');
+  return rows.join('; ') + '; columns pause and the health bar shows during fights';
 });
 
 check(4, 'Frame-rate independence (33.3 / 16.7 / 8.3 / 6.9 ms frames)', async (env) => {
@@ -648,6 +826,10 @@ check(6, 'Layout: every screen at 5 sizes (screenshots + automated audit)', asyn
       for (let i = 0; i < 4; i++) { H.flap(); H.step(0.3); }
     });
     await shoot('playing');
+    await page.evaluate(pageAutopilot, { start: 'level', level: 7, lock: true, boss: true, seed: 4, maxFrames: 330 });
+    await shoot('boss');
+    await page.evaluate(pageAutopilot, { start: 'level', level: 6, lock: true, seed: 3, maxFrames: 480 });
+    await shoot('hazards');
     await page.click('#btnPause'); await waitScreen(page, 'paused'); await shoot('paused');
     await page.evaluate(() => window.__croissant.endRunWithScore(57, 5));
     await step(page, 1.1);
@@ -655,7 +837,7 @@ check(6, 'Layout: every screen at 5 sizes (screenshots + automated audit)', asyn
     await shoot('gameover-form');
   }
   assert.deepStrictEqual(problems, []);
-  return `${VIEWPORTS.length * 9} screenshots in tests/screenshots/${env.target}/; no audit problems` +
+  return `${VIEWPORTS.length * 11} screenshots in tests/screenshots/${env.target}/; no audit problems` +
     (scrolled.length ? `; scrolling areas (touch-scroll verified on phones): ${scrolled.join(', ')}` : '');
 });
 
@@ -895,7 +1077,9 @@ check(9, 'Audio: nothing before interaction, starts on first tap, mute persists,
   // Tempo rises 3 BPM per level, applied at the next bar.
   await page.evaluate(() => window.__croissant.startAtLevel(7, true));
   await page.waitForFunction(() => window.__croissant.getState().audio.tempo === 138, null, { timeout: 4000 });
-  return 'context created only on first gesture; mute = gain 0 and persists; music stops when paused or hidden; Level 7 tempo 138 BPM';
+  await page.evaluate(() => window.__croissant.startAtLevel(7, true, true));
+  await page.waitForFunction(() => window.__croissant.getState().audio.tempo === 150, null, { timeout: 4000 });
+  return 'context created only on first gesture; mute = gain 0 and persists; music stops when paused or hidden; Level 7 tempo 138 BPM, 150 BPM during the boss';
 });
 
 check(10, 'Test isolation: test mode uses its own storage key; no hook in normal mode', async (env) => {
@@ -926,7 +1110,9 @@ check(10, 'Test isolation: test mode uses its own storage key; no hook in normal
 // ---------------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------------
-(async () => {
+if (require.main !== module) {
+  module.exports = { pageAutopilot, pageLayoutAudit };
+} else (async () => {
   const server = await startServer();
   const bases = {
     file: 'file://' + path.join(ROOT, 'index.html'),
@@ -934,6 +1120,7 @@ check(10, 'Test isolation: test mode uses its own storage key; no hook in normal
   };
   const browser = await chromium.launch();
   const results = [];
+  checks.sort((a, b) => a.id - b.id);
   for (const target of TARGETS) {
     for (const c of checks) {
       if (ONLY && !ONLY.includes(c.id)) continue;
