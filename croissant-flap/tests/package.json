@@ -1,0 +1,13 @@
+{
+  "name": "croissant-flap-tests",
+  "private": true,
+  "description": "Headless browser checks for croissant-flap/index.html",
+  "scripts": {
+    "test": "node run-tests.js",
+    "test:file": "node run-tests.js --target=file",
+    "test:http": "node run-tests.js --target=http"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

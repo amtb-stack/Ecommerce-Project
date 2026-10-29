@@ -1,0 +1,2725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b2314">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Croissant Flap: fly a croissant through the bakery and climb the leaderboard.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3 22c2-9 7-14 13-14s11 5 13 14c-3-2-6-3-8-3-2 0-3 1-5 1s-3-1-5-1c-2 0-5 1-8 3z' fill='%23e9a23f' stroke='%237a3c10' stroke-width='1.5'/%3E%3C/svg%3E">
+<title>Croissant Flap</title>
+<style>
+  :root {
+    --cream: #fff4de;
+    --cream-2: #f7e7c6;
+    --butter: #f6c453;
+    --caramel: #c8782f;
+    --choc: #3b2314;
+    --choc-2: #5a3720;
+    --gold: #f2c230;
+    --silver: #c7cbd3;
+    --bronze: #d99a62;
+    --danger: #a3341f;
+    --focus: #1f5fd1;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--choc);
+  }
+  body {
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--choc);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: none;
+  }
+  #stage {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background-color: var(--choc);
+    background-image: radial-gradient(rgba(255, 222, 170, 0.08) 1.5px, transparent 1.7px);
+    background-size: 22px 22px;
+  }
+  #safe {
+    position: absolute;
+    top: env(safe-area-inset-top, 0px);
+    right: env(safe-area-inset-right, 0px);
+    bottom: env(safe-area-inset-bottom, 0px);
+    left: env(safe-area-inset-left, 0px);
+  }
+  #frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 360px;
+    height: 640px;
+    overflow: hidden;
+    background: #f8ebd3;
+    touch-action: none;
+    font-size: 15px;
+    line-height: 1.3;
+  }
+  #game {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    padding: 0.5em;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .hud-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4em;
+  }
+  .hud-group {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+  }
+  .pill {
+    background: rgba(59, 35, 20, 0.86);
+    color: var(--cream);
+    border-radius: 999px;
+    padding: 0.25em 0.7em;
+    font-size: max(12px, 0.85em);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  #hudScore {
+    text-align: center;
+    font-size: 3.2em;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin-top: 0.08em;
+    text-shadow: 0 3px 0 var(--choc), 2px 0 0 var(--choc), -2px 0 0 var(--choc), 0 -2px 0 var(--choc), 0 2px 0 var(--choc);
+  }
+  .icon-btn {
+    pointer-events: auto;
+    width: max(44px, 2.9em);
+    height: max(44px, 2.9em);
+    border-radius: 50%;
+    border: 2px solid var(--choc);
+    background: var(--cream);
+    color: var(--choc);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex: 0 0 auto;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(59, 35, 20, 0.45);
+    touch-action: manipulation;
+  }
+  .icon-btn svg { width: 55%; height: 55%; fill: currentColor; }
+  .icon-btn .ico-off, .icon-btn[aria-pressed="true"] .ico-on { display: none; }
+  .icon-btn[aria-pressed="true"] .ico-off { display: block; }
+  #btnPause .ico-play { display: none; }
+  #btnPause.is-paused .ico-play { display: block; }
+  #btnPause.is-paused .ico-pause { display: none; }
+
+  /* ---------- In-game overlays ---------- */
+  #readyHint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 58%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 3;
+    padding: 0 0.8em;
+  }
+  .bubble {
+    display: inline-block;
+    background: rgba(59, 35, 20, 0.88);
+    color: var(--cream);
+    padding: 0.55em 0.95em;
+    border-radius: 1em;
+    font-weight: 700;
+  }
+  .bubble small { display: block; font-weight: 400; font-size: max(12px, 0.8em); margin-top: 0.2em; }
+  #countdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6em;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 4px 0 var(--choc), 3px 0 0 var(--choc), -3px 0 0 var(--choc), 0 -3px 0 var(--choc);
+    pointer-events: none;
+    z-index: 3;
+  }
+  #levelBanner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 28%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 3;
+  }
+  #levelBanner span {
+    display: inline-block;
+    background: var(--butter);
+    border: 3px solid var(--choc);
+    border-radius: 1em;
+    padding: 0.3em 0.9em;
+    font-weight: 800;
+    font-size: 1.6em;
+    animation: pop 1.4s ease-out forwards;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    15% { transform: scale(1.08); opacity: 1; }
+    25% { transform: scale(1); }
+    80% { opacity: 1; }
+    100% { transform: translateY(-0.6em); opacity: 0; }
+  }
+  @keyframes fade {
+    0%, 80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  #testBadge {
+    position: absolute;
+    left: 0.4em;
+    bottom: 0.4em;
+    background: var(--focus);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0.2em 0.5em;
+    border-radius: 0.4em;
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  /* ---------- Screens and panels ---------- */
+  .screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.7em;
+    z-index: 5;
+  }
+  .screen.dim { background: rgba(59, 35, 20, 0.4); }
+  .panel {
+    position: relative;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(255, 244, 222, 0.97);
+    border: 3px solid var(--choc);
+    border-radius: 1em;
+    padding: 0.9em;
+    text-align: center;
+    box-shadow: 0 0.35em 0 rgba(59, 35, 20, 0.4);
+  }
+  .panel.narrow { max-width: 17em; }
+  /* Panels with a long list keep their header and buttons visible; only the list scrolls. */
+  .panel.has-list { display: flex; flex-direction: column; overflow: hidden; }
+  .panel.has-list > * { flex: 0 0 auto; }
+  .panel.has-list > .scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0.15em;
+  }
+  h1, h2, h3 { margin: 0 0 0.4em; line-height: 1.1; }
+  h1 { font-size: max(20px, calc(32px * var(--k, 1))); letter-spacing: 0.01em; white-space: nowrap; }
+  h1 .accent { color: #a85a17; }
+  h2 { font-size: 1.6em; }
+  h3 { font-size: 1.1em; margin-top: 0.7em; text-align: left; }
+  p { margin: 0.4em 0; }
+  .subtitle { margin-top: -0.2em; font-weight: 700; color: var(--choc-2); }
+  .small { font-size: max(12px, 0.85em); color: var(--choc-2); }
+  .title { cursor: default; transition: color 3s linear; }
+  .title.holding { color: #8a4a12; }
+  .stack { display: flex; flex-direction: column; gap: 0.5em; margin-top: 0.6em; }
+  .row { display: flex; gap: 0.5em; justify-content: center; flex-wrap: wrap; margin-top: 0.6em; }
+  .row.nowrap { flex-wrap: nowrap; margin-top: 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45em; margin-top: 0.5em; }
+  .grid2 .btn { font-size: max(12px, 0.9em); padding: 0.3em 0.5em; line-height: 1.15; }
+  .row > .btn { flex: 1 1 auto; }
+  .btn {
+    font: inherit;
+    font-weight: 700;
+    font-size: 1.05em;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.45em 1em;
+    border-radius: 999px;
+    border: 2px solid var(--choc);
+    background: var(--cream-2);
+    color: var(--choc);
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(59, 35, 20, 0.45);
+    touch-action: manipulation;
+  }
+  .btn.primary { background: var(--butter); }
+  .btn.big { font-size: 1.25em; }
+  .btn.danger { background: #f6d6cc; color: var(--danger); border-color: var(--danger); }
+  .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(59, 35, 20, 0.45); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn:focus-visible, .icon-btn:focus-visible, input:focus-visible, .title:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .notice {
+    background: #fff1c2;
+    border: 2px solid var(--danger);
+    color: var(--danger);
+    border-radius: 0.6em;
+    padding: 0.35em 0.6em;
+    font-size: max(12px, 0.8em);
+    font-weight: 700;
+  }
+
+  /* ---------- Prizes ---------- */
+  .prizes {
+    list-style: none;
+    margin: 0.7em 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    font-size: 0.95em;
+  }
+  .prizes li { display: flex; align-items: center; gap: 0.5em; justify-content: center; font-weight: 700; }
+  .prizes.big { font-size: 1.1em; gap: 0.5em; }
+  .prizes.inline { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.25em 0.8em; margin-top: 0.2em; font-size: max(12px, 0.85em); }
+  .prizes.inline li { gap: 0.3em; }
+  .badge {
+    display: inline-block;
+    min-width: 2.7em;
+    padding: 0.1em 0.45em;
+    border-radius: 999px;
+    font-weight: 800;
+    border: 2px solid var(--choc);
+    font-size: max(12px, 0.85em);
+    text-align: center;
+    background: var(--cream-2);
+  }
+  .badge.p1 { background: var(--gold); }
+  .badge.p2 { background: var(--silver); }
+  .badge.p3 { background: var(--bronze); }
+  .terms { text-align: left; margin: 0.5em 0; padding-left: 1.2em; }
+  .terms li { margin: 0.25em 0; }
+  .levels {
+    list-style: none;
+    padding: 0;
+    margin: 0.4em 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.2em, 1fr));
+    gap: 0.3em;
+    font-size: max(12px, 0.85em);
+  }
+  .levels li { background: var(--cream-2); border-radius: 0.5em; padding: 0.25em 0.3em; font-weight: 700; }
+
+  /* ---------- Leaderboard ---------- */
+  .lb {
+    list-style: none;
+    margin: 0.6em 0;
+    padding: 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+  }
+  .lb li {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.4em 0.55em;
+    border-radius: 0.6em;
+    background: rgba(247, 231, 198, 0.9);
+    border: 2px solid transparent;
+  }
+  .lb li.p1 { background: #fde9a6; border-color: #c99a0c; }
+  .lb li.p2 { background: #eceef2; border-color: #8d939e; }
+  .lb li.p3 { background: #f6dcc4; border-color: #b0692e; }
+  .lb li.empty { justify-content: center; font-weight: 700; }
+  .lb .rank { flex: 0 0 auto; }
+  .lb .who { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .lb .name { font-weight: 800; overflow-wrap: anywhere; }
+  .lb .meta { font-size: max(12px, 0.8em); color: var(--choc-2); overflow-wrap: anywhere; }
+  .lb .prize { font-size: max(12px, 0.8em); font-weight: 800; color: #6e3f0c; }
+  .lb .score { flex: 0 0 auto; font-weight: 800; font-size: 1.3em; }
+
+  /* ---------- Game over + form ---------- */
+  .stats { display: flex; justify-content: center; gap: 0.5em; margin: 0.3em 0; }
+  .stats div { background: var(--cream-2); border-radius: 0.6em; padding: 0.3em 0.5em; min-width: 4.2em; }
+  .stats span { display: block; font-size: max(12px, 0.75em); font-weight: 700; color: var(--choc-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stats b { font-size: 1.5em; }
+  .good { color: #2f6b1f; font-weight: 800; }
+  .field { text-align: left; margin: 0.35em 0; }
+  .field label { display: block; font-weight: 700; font-size: max(12px, 0.9em); margin-bottom: 0.15em; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    font: inherit;
+    font-size: max(16px, 1em);
+    min-height: 44px;
+    padding: 0.35em 0.6em;
+    border: 2px solid var(--choc);
+    border-radius: 0.5em;
+    background: #fff;
+    color: var(--choc);
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
+  }
+  input[aria-invalid="true"] { border-color: var(--danger); }
+  .err { display: block; color: var(--danger); font-size: max(12px, 0.8em); font-weight: 700; }
+  .err:empty { display: none; }
+  .check {
+    display: flex;
+    gap: 0.55em;
+    align-items: center;
+    text-align: left;
+    font-size: max(12px, 0.88em);
+    margin: 0.4em 0;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .check input { width: 24px; height: 24px; flex: 0 0 auto; margin: 0; accent-color: var(--caramel); }
+  .form-title { font-weight: 800; }
+
+  /* ---------- Modals ---------- */
+  .modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 16, 8, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8em;
+    z-index: 20;
+  }
+  .modal .panel { max-width: 19em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #levelBanner span { animation: fade 1.4s linear forwards; }
+    .btn:active:not(:disabled) { transform: none; }
+    .title { transition: none; }
+  }
+</style>
+</head>
+<body>
+<noscript><p style="color:#fff4de;padding:1em;font-family:sans-serif">Croissant Flap needs JavaScript turned on.</p></noscript>
+<div id="stage">
+  <div id="safe">
+    <div id="frame">
+      <canvas id="game" aria-label="Croissant Flap game area"></canvas>
+
+      <div id="hud" hidden>
+        <div class="hud-row">
+          <div class="hud-group">
+            <span class="pill" id="hudLevel">LV 1</span>
+            <span class="pill" id="hudBest">BEST 0</span>
+          </div>
+          <div class="hud-group">
+            <button type="button" class="icon-btn" id="btnPause" aria-label="Pause">
+              <svg class="ico-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button type="button" class="icon-btn btn-mute" aria-label="Mute sound" aria-pressed="false">
+              <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="hudScore">0</div>
+      </div>
+
+      <div id="readyHint" hidden>
+        <div class="bubble">Tap or press Space to start<small>Space, ↑, W, click or tap to flap</small></div>
+      </div>
+      <div id="countdown" hidden aria-live="assertive">3</div>
+      <div id="levelBanner" hidden><span>LEVEL 2</span></div>
+
+      <section class="screen" id="scrMenu" hidden aria-labelledby="menuTitle">
+        <div class="panel">
+          <h1 id="menuTitle" class="title">Croissant <span class="accent">Flap</span></h1>
+          <p class="subtitle" id="menuShop" hidden></p>
+          <div class="stack">
+            <button type="button" class="btn primary big" id="btnPlay" data-autofocus>Play</button>
+            <button type="button" class="btn" data-go="leaderboard">Leaderboard</button>
+            <button type="button" class="btn" data-go="prizes">Prizes &amp; Rules</button>
+            <div class="row nowrap">
+              <button type="button" class="btn" data-go="howto">How to Play</button>
+              <button type="button" class="icon-btn btn-mute" aria-label="Mute sound" aria-pressed="false">
+                <svg class="ico-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <svg class="ico-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <ul class="prizes" data-prizes aria-label="Prizes"></ul>
+          <p class="small" id="rotateHint" hidden>Tip: play upright</p>
+          <p class="notice storage-notice" hidden></p>
+        </div>
+      </section>
+
+      <section class="screen dim" id="scrPaused" hidden aria-labelledby="pausedTitle">
+        <div class="panel narrow">
+          <h2 id="pausedTitle">Paused</h2>
+          <div class="stack">
+            <button type="button" class="btn primary" id="btnResume" data-autofocus>Resume</button>
+            <button type="button" class="btn" id="btnEndRun">End run</button>
+          </div>
+          <p class="small">Press P or Esc to resume.</p>
+        </div>
+      </section>
+
+      <section class="screen dim" id="scrGameOver" hidden aria-labelledby="goTitle">
+        <div class="panel">
+          <h2 id="goTitle">Game Over</h2>
+          <div class="stats">
+            <div><span>Score</span><b id="goScore">0</b></div>
+            <div><span>Level</span><b id="goLevel">1</b></div>
+            <div><span>Best</span><b id="goBest">0</b></div>
+          </div>
+          <p class="good" id="goNewBest" hidden>New best on this device!</p>
+          <form id="entryForm" hidden novalidate autocomplete="off">
+            <p class="form-title">You made the top 10! Save your score:</p>
+            <div class="field">
+              <label for="inName">Name</label>
+              <input type="text" id="inName" maxlength="12" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next">
+              <span class="err" id="errName" aria-live="polite"></span>
+            </div>
+            <div class="field">
+              <label for="inContact">Phone or email</label>
+              <input type="text" id="inContact" maxlength="254" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+              <span class="err" id="errContact" aria-live="polite"></span>
+            </div>
+            <label class="check"><input type="checkbox" id="inConsent"><span id="consentText"></span></label>
+            <div class="row">
+              <button type="submit" class="btn primary" id="btnSave" disabled>Save score</button>
+              <button type="button" class="btn" id="btnSkip">Skip</button>
+            </div>
+          </form>
+          <p id="goResult" role="status"></p>
+          <div class="row" id="goActions">
+            <button type="button" class="btn primary" id="btnRetry">Retry</button>
+            <button type="button" class="btn" id="btnGoMenu">Menu</button>
+          </div>
+          <p class="notice storage-notice" hidden></p>
+        </div>
+      </section>
+
+      <section class="screen" id="scrLeaderboard" hidden aria-labelledby="lbTitle">
+        <div class="panel has-list">
+          <h2 id="lbTitle">Leaderboard</h2>
+          <ul class="prizes inline" data-prizes aria-label="Prizes"></ul>
+          <div class="scroll">
+            <ol class="lb" id="lbList"></ol>
+            <p class="small" id="lbNote"></p>
+          </div>
+          <p class="notice storage-notice" hidden></p>
+          <button type="button" class="btn" data-back data-autofocus>Back</button>
+        </div>
+      </section>
+
+      <section class="screen" id="scrPrizes" hidden aria-labelledby="prizesTitle">
+        <div class="panel">
+          <h2 id="prizesTitle">Prizes &amp; Rules</h2>
+          <ul class="prizes big" data-prizes aria-label="Prizes"></ul>
+          <ul class="terms" id="termsList"></ul>
+          <p class="small" id="eventEnd"></p>
+          <button type="button" class="btn" data-back data-autofocus>Back</button>
+        </div>
+      </section>
+
+      <section class="screen" id="scrHowTo" hidden aria-labelledby="howTitle">
+        <div class="panel">
+          <h2 id="howTitle">How to Play</h2>
+          <p>Fly the croissant through the gaps. Each gap is 1 point. Don't hit the bread or the counter!</p>
+          <h3>On a computer</h3>
+          <ul class="terms">
+            <li><b>Space</b>, <b>↑</b>, <b>W</b> or <b>click</b> to flap</li>
+            <li><b>P</b> or <b>Esc</b> to pause</li>
+            <li><b>M</b> to mute</li>
+          </ul>
+          <h3>On a phone or tablet</h3>
+          <ul class="terms">
+            <li><b>Tap</b> anywhere to flap</li>
+            <li>Use the buttons at the top to pause or mute</li>
+          </ul>
+          <h3>Levels</h3>
+          <p class="small">Everyone starts at Level 1. The bakery gets faster at:</p>
+          <ol class="levels" id="levelList"></ol>
+          <button type="button" class="btn" data-back data-autofocus>Back</button>
+        </div>
+      </section>
+
+      <section class="screen" id="scrStaff" hidden aria-labelledby="staffTitle">
+        <div class="panel has-list">
+          <h2 id="staffTitle">Staff panel</h2>
+          <p class="small" id="staffInfo"></p>
+          <ol class="lb scroll" id="staffList"></ol>
+          <p class="notice storage-notice" hidden></p>
+          <div class="grid2">
+            <button type="button" class="btn" id="btnExportCsv">Export CSV</button>
+            <button type="button" class="btn" id="btnExportJson">Export JSON</button>
+            <button type="button" class="btn danger" id="btnClear">Clear all</button>
+            <button type="button" class="btn" data-back data-autofocus>Close</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal" id="dlgPin" hidden role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+        <form class="panel" id="pinForm" novalidate autocomplete="off">
+          <h2 id="pinTitle">Staff access</h2>
+          <div class="field">
+            <label for="inPin">Enter PIN</label>
+            <input type="password" id="inPin" inputmode="numeric" autocomplete="off" maxlength="12">
+          </div>
+          <p class="err" id="pinErr" role="alert"></p>
+          <div class="row">
+            <button type="submit" class="btn primary" id="btnPinOk">Unlock</button>
+            <button type="button" class="btn" data-close>Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal" id="dlgConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="panel">
+          <h2 id="confirmTitle">Are you sure?</h2>
+          <p id="confirmText"></p>
+          <div class="row">
+            <button type="button" class="btn danger" id="btnConfirmOk">Yes</button>
+            <button type="button" class="btn" data-close>Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="testBadge" hidden>TEST MODE: separate scores</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ==========================================================================
+  // CONFIG
+  // ==========================================================================
+
+  // Everything event staff may want to change lives here.
+  const EVENT_CONFIG = {
+    shopName: 'Croissant Flap',
+    prizes: [
+      { place: '1st', prize: 'Stand Mixer' },
+      { place: '2nd', prize: 'Kitchen Scale' },
+      { place: '3rd', prize: 'Kitchen Scale' }
+    ],
+    eventEndText: 'Winners are announced after the event ends.',
+    termsText: [
+      'Prizes go to the top 3 on the official event device\'s leaderboard when the event ends.',
+      'One prize per person. Ties go to whoever reached the score first.',
+      'Staff verify winners before awarding. The game never awards anything automatically.',
+      'Contact details are stored only on this device and used only to contact winners.'
+    ],
+    adminPin: '2468'
+  };
+
+  // Units: logical px and seconds. flap = initial upward velocity of one flap.
+  // Keep flap^2 / (2 * gravity) at about 55 px so a flap feels the same on every level.
+  const LEVELS = [
+    { level: 1, startsAt: 0,  speed: 130, gravity: 1000, flap: -330, gap: 175, spacing: 250, maxShift: 110 },
+    { level: 2, startsAt: 10, speed: 145, gravity: 1050, flap: -340, gap: 165, spacing: 240, maxShift: 130 },
+    { level: 3, startsAt: 20, speed: 160, gravity: 1100, flap: -350, gap: 155, spacing: 230, maxShift: 145 },
+    { level: 4, startsAt: 30, speed: 172, gravity: 1150, flap: -360, gap: 147, spacing: 220, maxShift: 160 },
+    { level: 5, startsAt: 45, speed: 184, gravity: 1200, flap: -365, gap: 140, spacing: 210, maxShift: 170 },
+    { level: 6, startsAt: 60, speed: 196, gravity: 1250, flap: -372, gap: 133, spacing: 200, maxShift: 180 },
+    { level: 7, startsAt: 80, speed: 210, gravity: 1300, flap: -380, gap: 126, spacing: 190, maxShift: 190 }
+  ];
+
+  const W = 360;
+  const H = 640;
+  const GROUND_Y = 560;
+  const OBSTACLE_W = 64;
+  const GAP_MARGIN = 50;
+  const CROISSANT_X = 110;
+  const CROISSANT_W = 44;
+  const CROISSANT_H = 30;
+  const HITBOX_RX = (CROISSANT_W / 2) * 0.85;
+  const HITBOX_RY = (CROISSANT_H / 2) * 0.85;
+  const CEILING_Y = CROISSANT_H / 2;
+  const START_Y = 280;
+  const TERMINAL_VY = 600;
+  const FIRST_OBSTACLE_LEAD = 40;
+  const SPAWN_AHEAD = 10;
+  const DT = 1 / 120;
+  const MAX_FRAME = 0.1;
+  const LEVEL_EASE_TIME = 1;
+  const GAMEOVER_PANEL_DELAY = 0.6;
+  const BUTTON_ARM_DELAY = 1.0;
+  const COUNTDOWN_SECONDS = 3;
+  const SHAKE_TIME = 0.35;
+  const MENU_SCROLL_SPEED = 45;
+  const FAR_FACTOR = 0.15;
+  const MID_FACTOR = 0.4;
+  const MAX_PARTICLES = 60;
+  const LEADERBOARD_SIZE = 10;
+  const NAME_MAX = 12;
+  const STAFF_HOLD_MS = 3000;
+  const SPRITE_H = 600;
+  const CROISSANT_SPRITE_W = 56;
+  const CROISSANT_SPRITE_H = 44;
+
+  const TEST_MODE = (function () {
+    try { return new URLSearchParams(window.location.search).get('test') === '1'; } catch (e) { return false; }
+  })();
+  const STORAGE_KEY = TEST_MODE ? 'croissantFlap.test.v1' : 'croissantFlap.v1';
+  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  // ==========================================================================
+  // STORAGE
+  // ==========================================================================
+
+  let NAME_RE;
+  try {
+    NAME_RE = new RegExp('^[\\p{L}\\p{M}\\p{N}]+(?: [\\p{L}\\p{M}\\p{N}]+)*$', 'u');
+  } catch (e) {
+    NAME_RE = /^[A-Za-z0-9À-ɏ]+(?: [A-Za-z0-9À-ɏ]+)*$/;
+  }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const PHONE_RE = /^\+?\d[\d -]*\d$/;
+
+  function normalizeName(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+  function isValidName(s) {
+    const len = Array.from(s).length;
+    return len >= 1 && len <= NAME_MAX && NAME_RE.test(s);
+  }
+  function normalizeContact(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+
+  // Returns the identity used to match the same person across runs, or '' if invalid.
+  function contactKey(raw) {
+    const c = normalizeContact(raw);
+    if (!c || c.length > 254) return '';
+    if (c.indexOf('@') >= 0) return EMAIL_RE.test(c) ? 'mail:' + c.toLowerCase() : '';
+    if (!PHONE_RE.test(c)) return '';
+    const digits = c.replace(/\D/g, '');
+    return digits.length >= 8 && digits.length <= 15 ? 'tel:' + digits : '';
+  }
+
+  function isValidEntry(e) {
+    return !!e && typeof e === 'object' &&
+      typeof e.name === 'string' && isValidName(e.name) &&
+      typeof e.contact === 'string' && contactKey(e.contact) !== '' &&
+      Number.isInteger(e.score) && e.score >= 1 &&
+      Number.isInteger(e.level) && e.level >= 1 && e.level <= LEVELS.length &&
+      typeof e.at === 'string' && !isNaN(Date.parse(e.at));
+  }
+
+  const Store = (function () {
+    let data = fresh();
+    let status = 'ok'; // ok | blocked | reset
+    let onChange = null;
+
+    function fresh() { return { version: 1, leaderboard: [], bestScore: 0, muted: false }; }
+    function ls() { return window.localStorage; }
+
+    function sanitize(d) {
+      if (!d || typeof d !== 'object' || !Array.isArray(d.leaderboard)) return null;
+      return {
+        version: 1,
+        leaderboard: d.leaderboard.filter(isValidEntry).map(function (e) {
+          return { name: e.name, contact: e.contact, score: e.score, level: e.level, at: e.at };
+        }),
+        bestScore: Number.isInteger(d.bestScore) && d.bestScore >= 0 ? d.bestScore : 0,
+        muted: d.muted === true
+      };
+    }
+
+    function load() {
+      let raw;
+      try { raw = ls().getItem(STORAGE_KEY); } catch (e) { setStatus('blocked'); return; }
+      if (raw === null) return;
+      let parsed = null;
+      try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+      const clean = sanitize(parsed);
+      if (clean) { data = clean; return; }
+      // Keep the unreadable data so staff can recover it, then start fresh.
+      try { ls().setItem(STORAGE_KEY + '.corrupt-backup', raw); } catch (e) { /* best effort */ }
+      setStatus('reset');
+      save();
+    }
+
+    function save() {
+      try {
+        ls().setItem(STORAGE_KEY, JSON.stringify(data));
+        if (status === 'blocked') setStatus('ok');
+        return true;
+      } catch (e) {
+        setStatus('blocked');
+        return false;
+      }
+    }
+
+    function setStatus(s) {
+      if (status === s) return;
+      status = s;
+      if (onChange) onChange();
+    }
+
+    return {
+      load: load,
+      save: save,
+      get: function () { return data; },
+      status: function () { return status; },
+      best: function () { return data.bestScore; },
+      setBest: function (n) { data.bestScore = n; save(); },
+      setMuted: function (m) { data.muted = !!m; save(); },
+      onChange: function (fn) { onChange = fn; }
+    };
+  })();
+
+  function sortEntries(list) {
+    return list.sort(function (a, b) {
+      return (b.score - a.score) || (Date.parse(a.at) - Date.parse(b.at));
+    });
+  }
+
+  function csvCell(v) {
+    let s = String(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // stops spreadsheet formula injection
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  const Leaderboard = {
+    list: function () { return sortEntries(Store.get().leaderboard.slice()); },
+    qualifies: function (score) {
+      if (!(score >= 1)) return false;
+      const l = this.list();
+      // A new score is always the latest, so it must beat (not tie) the 10th place.
+      return l.length < LEADERBOARD_SIZE || score > l[LEADERBOARD_SIZE - 1].score;
+    },
+    add: function (input) {
+      const entry = {
+        name: normalizeName(input.name),
+        contact: normalizeContact(input.contact),
+        score: input.score,
+        level: input.level,
+        at: input.at
+      };
+      if (!isValidEntry(entry)) return { status: 'invalid' };
+      const key = contactKey(entry.contact);
+      const list = this.list();
+      let existing = null;
+      for (let i = 0; i < list.length; i++) {
+        if (contactKey(list[i].contact) === key) { existing = list[i]; break; }
+      }
+      if (existing && existing.score >= entry.score) {
+        return { status: 'kept', rank: list.indexOf(existing) + 1, best: existing.score };
+      }
+      const next = sortEntries(list.filter(function (e) { return e !== existing; }).concat([entry]))
+        .slice(0, LEADERBOARD_SIZE);
+      const rank = next.indexOf(entry) + 1;
+      if (rank === 0) return { status: 'not-qualified' };
+      Store.get().leaderboard = next;
+      const saved = Store.save();
+      return { status: 'added', rank: rank, saved: saved };
+    },
+    clear: function () {
+      Store.get().leaderboard = [];
+      return Store.save();
+    },
+    toCSV: function () {
+      const rows = [['Rank', 'Name', 'Contact', 'Score', 'Level reached', 'Achieved (local time)', 'Achieved (ISO 8601)']];
+      this.list().forEach(function (e, i) {
+        rows.push([i + 1, e.name, e.contact, e.score, e.level, formatDateTime(e.at, true), e.at]);
+      });
+      return '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n';
+    },
+    toJSON: function () {
+      return JSON.stringify({
+        game: 'Croissant Flap',
+        shop: EVENT_CONFIG.shopName,
+        exportedAt: new Date().toISOString(),
+        leaderboard: this.list().map(function (e, i) {
+          return { rank: i + 1, name: e.name, contact: e.contact, score: e.score, level: e.level, at: e.at };
+        })
+      }, null, 2);
+    }
+  };
+
+  // Short form for the public board; full form (year + seconds) for staff and exports.
+  function formatDateTime(iso, full) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const opts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    if (full) { opts.year = 'numeric'; opts.second = '2-digit'; }
+    try { return d.toLocaleString(undefined, opts); } catch (e) { return d.toISOString(); }
+  }
+
+  function localDateStamp() {
+    const d = new Date();
+    const p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  function downloadText(filename, text, mime) {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+
+  // ==========================================================================
+  // AUDIO (procedural bakery jazz + sound effects, Web Audio API only)
+  // ==========================================================================
+
+  const Sound = (function () {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    let ctx = null;
+    let master = null;
+    let musicBus = null;
+    let sfxBus = null;
+    let noiseBuf = null;
+    let muted = false;
+    let musicOn = false;
+    let timer = 0;
+    let notes = 0;
+    let slot = 0;
+    let bar = 0;
+    let loopN = 0;
+    let nextTime = 0;
+    let tempo = 120;
+    let targetTempo = 120;
+    let onReady = null;
+
+    const LOOKAHEAD = 0.1;
+    const TICK_MS = 25;
+
+    function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+    // Rootless jazz voicings for the piano; bass uses root + chord tones.
+    const CHORDS = {
+      Gm7:    { tones: [43, 46, 50, 53], voicing: [58, 62, 65, 69] },
+      C7:     { tones: [36, 40, 43, 46], voicing: [58, 62, 64, 69] },
+      Fmaj7:  { tones: [41, 45, 48, 52], voicing: [57, 60, 64, 67] },
+      D7:     { tones: [38, 42, 45, 48], voicing: [54, 57, 60, 64] },
+      F7:     { tones: [41, 45, 48, 51], voicing: [57, 60, 63, 67] },
+      Bbmaj7: { tones: [46, 50, 53, 57], voicing: [57, 62, 65, 69] },
+      Bdim7:  { tones: [47, 50, 53, 56], voicing: [56, 59, 62, 65] },
+      Am7:    { tones: [45, 48, 52, 55], voicing: [55, 60, 64, 67] }
+    };
+    const PROG = [
+      ['Gm7'], ['C7'], ['Fmaj7'], ['D7'],
+      ['Gm7'], ['C7'], ['Fmaj7'], ['F7'],
+      ['Bbmaj7'], ['Bdim7'], ['Am7'], ['D7'],
+      ['Gm7'], ['C7'], ['Fmaj7', 'D7'], ['Gm7', 'C7']
+    ];
+    // 8 swung eighth-note slots per bar: note name, '-' to hold, '.' for rest.
+    const MELODY_TEXT = [
+      '. D5 F5 D5 Bb4 - . .',
+      '. E5 G5 E5 C5 - Bb4 -',
+      'A4 - C5 - E5 - - .',
+      '. F#5 - E5 D5 - C5 -',
+      'Bb4 . D5 . F5 - E5 -',
+      'D5 - Bb4 - G4 - . .',
+      '. A4 C5 F5 E5 - C5 -',
+      'Eb5 - - - . C5 D5 Eb5',
+      'D5 - - . F5 - D5 -',
+      'D5 - B4 - Ab4 - F4 -',
+      'E5 - C5 - A4 - G4 -',
+      'F#4 . A4 . C5 - D5 -',
+      'Bb4 - D5 F5 A5 - G5 -',
+      'F5 E5 D5 C5 Bb4 - G4 -',
+      'A4 C5 E5 - F#5 - D5 -',
+      'Bb4 - D5 - E5 - . .'
+    ];
+    const MELODY = MELODY_TEXT.map(parseBar);
+
+    function noteToMidi(n) {
+      const m = /^([A-G])(#|b)?(\d)$/.exec(n);
+      const pc = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
+      return 12 * (Number(m[3]) + 1) + pc;
+    }
+    function parseBar(text) {
+      const tokens = text.split(/\s+/);
+      const out = [];
+      tokens.forEach(function (t, i) {
+        if (t === '-') { if (out.length) out[out.length - 1].len++; }
+        else if (t !== '.') out.push({ slot: i, len: 1, midi: noteToMidi(t) });
+      });
+      return out;
+    }
+
+    function slotOffset(i, beat) { return Math.floor(i / 2) * beat + (i % 2 ? beat * 2 / 3 : 0); }
+
+    function makeNoise() {
+      const len = Math.floor(ctx.sampleRate);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      return buf;
+    }
+
+    function unlock() {
+      if (!AC) return;
+      if (!ctx) {
+        try { ctx = new AC(); } catch (e) { ctx = null; return; }
+        master = ctx.createGain();
+        master.gain.value = muted ? 0 : 1;
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -16;
+        comp.knee.value = 12;
+        comp.ratio.value = 4;
+        comp.attack.value = 0.004;
+        comp.release.value = 0.2;
+        master.connect(comp);
+        comp.connect(ctx.destination);
+        musicBus = ctx.createGain();
+        musicBus.gain.value = 0.3;
+        musicBus.connect(master);
+        sfxBus = ctx.createGain();
+        sfxBus.gain.value = 0.75;
+        sfxBus.connect(master);
+        noiseBuf = makeNoise();
+        // A silent buffer played inside the gesture unlocks audio on older iOS.
+        const silent = ctx.createBufferSource();
+        silent.buffer = ctx.createBuffer(1, 1, 22050);
+        silent.connect(ctx.destination);
+        silent.start(0);
+        ctx.onstatechange = notify;
+      }
+      if (ctx.state !== 'running') {
+        try {
+          const p = ctx.resume();
+          if (p && p.then) p.then(notify, function () {});
+        } catch (e) { /* resumed on a later gesture */ }
+      }
+      notify();
+    }
+
+    function notify() { if (onReady) onReady(); }
+    function running() { return !!ctx && ctx.state === 'running'; }
+
+    function setMuted(m) {
+      muted = !!m;
+      if (master) master.gain.value = muted ? 0 : 1;
+    }
+
+    function startMusic() {
+      if (!running() || musicOn) return;
+      musicOn = true;
+      nextTime = ctx.currentTime + 0.06;
+      timer = setInterval(tick, TICK_MS);
+      tick();
+    }
+    function stopMusic() {
+      musicOn = false;
+      if (timer) clearInterval(timer);
+      timer = 0;
+    }
+
+    function tick() {
+      if (!musicOn || !ctx) return;
+      if (nextTime < ctx.currentTime - 0.05) nextTime = ctx.currentTime + 0.05;
+      while (nextTime < ctx.currentTime + LOOKAHEAD) {
+        scheduleSlot(nextTime);
+        advance();
+      }
+    }
+
+    function advance() {
+      const beat = 60 / tempo;
+      nextTime += (slot % 2 === 0 ? beat * 2 / 3 : beat / 3);
+      slot++;
+      if (slot === 8) {
+        slot = 0;
+        bar++;
+        if (bar === PROG.length) { bar = 0; loopN++; }
+        tempo = targetTempo; // tempo changes land on the next bar line
+      }
+    }
+
+    function scheduleSlot(t) {
+      const beat = 60 / tempo;
+      const chords = PROG[bar];
+      const nextChords = PROG[(bar + 1) % PROG.length];
+      const odd = loopN % 2 === 1;
+
+      if (slot % 2 === 0) bassNote(t, walkingBass(chords, nextChords, slot / 2, bar), beat * 0.92);
+
+      if (chords.length === 1) {
+        const hits = odd ? [2, 6] : [0, 3];
+        if (hits.indexOf(slot) >= 0) piano(t, CHORDS[chords[0]].voicing, beat * 0.55, slot === 0 ? 1 : 0.8);
+      } else if (slot === 0 || slot === 4) {
+        piano(t, CHORDS[chords[slot === 0 ? 0 : 1]].voicing, beat * 0.55, 0.9);
+      }
+
+      if (slot % 2 === 0) ride(t, slot === 0 ? 0.55 : 0.42);
+      if (slot === 3 || slot === 7) ride(t, 0.28);
+      if (slot === 2 || slot === 6) brush(t, 0.35);
+
+      MELODY[bar].forEach(function (n) {
+        if (n.slot !== slot) return;
+        const dur = slotOffset(n.slot + n.len, beat) - slotOffset(n.slot, beat);
+        lead(t, n.midi, dur, odd ? 1 : 0);
+      });
+    }
+
+    function walkingBass(chords, nextChords, beatIdx, barIdx) {
+      const nextRoot = CHORDS[nextChords[0]].tones[0];
+      const approach = barIdx % 2 ? nextRoot + 1 : nextRoot - 1;
+      if (chords.length === 2) {
+        const a = CHORDS[chords[0]].tones;
+        const b = CHORDS[chords[1]].tones;
+        return [a[0], b[0] - 1, b[0], approach][beatIdx];
+      }
+      const t = CHORDS[chords[0]].tones;
+      return (barIdx % 2 ? [t[0], t[2], t[1], approach] : [t[0], t[1], t[2], approach])[beatIdx];
+    }
+
+    function envGain(t, attack, peak, end) {
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, Math.max(t + attack + 0.01, end));
+      return g;
+    }
+
+    function bassNote(t, midi, dur) {
+      const o = ctx.createOscillator();
+      const f = ctx.createBiquadFilter();
+      const g = envGain(t, 0.012, 0.5, t + dur);
+      o.type = 'sawtooth';
+      o.frequency.value = mtof(midi);
+      f.type = 'lowpass';
+      f.Q.value = 2;
+      f.frequency.setValueAtTime(900, t);
+      f.frequency.exponentialRampToValueAtTime(240, t + dur);
+      o.connect(f); f.connect(g); g.connect(musicBus);
+      o.start(t); o.stop(t + dur + 0.02);
+      notes++;
+    }
+
+    function piano(t, voicing, dur, vel) {
+      voicing.forEach(function (m) {
+        const g = envGain(t, 0.006, 0.07 * vel, t + dur + 0.25);
+        const o1 = ctx.createOscillator();
+        const o2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        o1.type = 'sine';
+        o1.frequency.value = mtof(m);
+        o2.type = 'sine';
+        o2.frequency.value = mtof(m) * 4;
+        g2.gain.value = 0.18;
+        o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(musicBus);
+        o1.start(t); o2.start(t);
+        o1.stop(t + dur + 0.3); o2.stop(t + dur + 0.3);
+      });
+      notes++;
+    }
+
+    function noiseHit(t, peak, len, type, freq, bus) {
+      const s = ctx.createBufferSource();
+      const f = ctx.createBiquadFilter();
+      const g = envGain(t, 0.003, peak, t + len);
+      s.buffer = noiseBuf;
+      f.type = type;
+      f.frequency.value = freq;
+      s.connect(f); f.connect(g); g.connect(bus);
+      s.start(t, Math.random() * 0.5, len + 0.05);
+      return f;
+    }
+
+    function ride(t, vel) { noiseHit(t, 0.11 * vel, 0.09, 'highpass', 7000, musicBus); notes++; }
+    function brush(t, vel) { noiseHit(t, 0.12 * vel, 0.16, 'bandpass', 2600, musicBus); notes++; }
+
+    function lead(t, midi, dur, voice) {
+      const end = t + Math.max(0.08, dur);
+      if (voice === 0) {
+        // Clarinet-ish: square wave, soft low-pass, delayed vibrato.
+        const o = ctx.createOscillator();
+        const f = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        o.type = 'square';
+        o.frequency.value = mtof(midi);
+        f.type = 'lowpass';
+        f.frequency.value = 1700;
+        f.Q.value = 0.7;
+        lfo.frequency.value = 5.5;
+        lfoGain.gain.setValueAtTime(0, t);
+        lfoGain.gain.linearRampToValueAtTime(9, t + 0.2);
+        lfo.connect(lfoGain); lfoGain.connect(o.detune);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.085, t + 0.035);
+        g.gain.setValueAtTime(0.085, Math.max(t + 0.04, end - 0.05));
+        g.gain.linearRampToValueAtTime(0.0001, end + 0.06);
+        o.connect(f); f.connect(g); g.connect(musicBus);
+        o.start(t); lfo.start(t);
+        o.stop(end + 0.08); lfo.stop(end + 0.08);
+      } else {
+        // Vibraphone-ish: sine plus a bright partial with a long decay.
+        const g = envGain(t, 0.005, 0.16, end + 0.45);
+        const o1 = ctx.createOscillator();
+        const o2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        o1.type = 'sine';
+        o1.frequency.value = mtof(midi);
+        o2.type = 'sine';
+        o2.frequency.value = mtof(midi) * 3.99;
+        g2.gain.value = 0.12;
+        o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(musicBus);
+        o1.start(t); o2.start(t);
+        o1.stop(end + 0.5); o2.stop(end + 0.5);
+      }
+      notes++;
+    }
+
+    function tone(t, freq, type, peak, len, endFreq) {
+      const o = ctx.createOscillator();
+      const g = envGain(t, 0.005, peak, t + len);
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t + len);
+      o.connect(g); g.connect(sfxBus);
+      o.start(t); o.stop(t + len + 0.03);
+    }
+
+    function sfx(name) {
+      if (!running()) return;
+      const t = ctx.currentTime + 0.005;
+      if (name === 'flap') {
+        const f = noiseHit(t, 0.32, 0.11, 'bandpass', 1100, sfxBus);
+        f.frequency.setValueAtTime(1300, t);
+        f.frequency.exponentialRampToValueAtTime(450, t + 0.11);
+      } else if (name === 'score') {
+        tone(t, 1046.5, 'sine', 0.2, 0.12);
+        tone(t + 0.07, 1568, 'sine', 0.18, 0.22);
+      } else if (name === 'levelup') {
+        [72, 76, 79, 84].forEach(function (m, i) { tone(t + i * 0.075, mtof(m), 'triangle', 0.2, 0.18); });
+        tone(t + 0.3, mtof(88), 'sine', 0.1, 0.35);
+      } else if (name === 'crash') {
+        tone(t, 170, 'sine', 0.7, 0.32, 45);
+        noiseHit(t, 0.3, 0.18, 'lowpass', 500, sfxBus);
+      }
+    }
+
+    return {
+      unlock: unlock,
+      running: running,
+      setMuted: setMuted,
+      isMuted: function () { return muted; },
+      startMusic: startMusic,
+      stopMusic: stopMusic,
+      setLevel: function (lvl) { targetTempo = 120 + 3 * (lvl - 1); },
+      sfx: sfx,
+      onReady: function (fn) { onReady = fn; },
+      info: function () {
+        return {
+          contextState: ctx ? ctx.state : 'none',
+          musicPlaying: musicOn,
+          notesScheduled: notes,
+          masterGain: master ? master.gain.value : null,
+          tempo: tempo
+        };
+      }
+    };
+  })();
+
+  // ==========================================================================
+  // INPUT
+  // ==========================================================================
+
+  const frameEl = document.getElementById('frame');
+  let lastInputWasKey = false;
+
+  function isTextField(el) {
+    if (!el || el === document.body || !el.tagName) return false;
+    if (el.isContentEditable) return true;
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+    if (el.tagName !== 'INPUT') return false;
+    const t = (el.type || 'text').toLowerCase();
+    return ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'].indexOf(t) === -1;
+  }
+
+  function keyId(e) {
+    if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') return 'space';
+    if (e.key === 'ArrowUp' || e.key === 'Up') return 'up';
+    if (e.key === 'Escape' || e.key === 'Esc') return 'esc';
+    return (e.key || '').toLowerCase();
+  }
+
+  function onKeyDown(e) {
+    lastInputWasKey = true;
+    const id = keyId(e);
+    if (state.dialog) {
+      if (id === 'esc') { e.preventDefault(); closeDialog(); }
+      return;
+    }
+    if (isTextField(e.target)) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const control = e.target && e.target.closest ? e.target.closest('button, a[href], input, select, summary, label') : null;
+    // Space/Enter on a focused control activates that control; it must not also flap.
+    if (control && (id === 'space' || id === 'enter')) return;
+    switch (id) {
+      case 'space':
+      case 'up':
+      case 'w':
+        e.preventDefault();
+        if (!e.repeat) onFlapKey();
+        break;
+      case 'arrowdown':
+      case 'arrowleft':
+      case 'arrowright':
+      case 'pageup':
+      case 'pagedown':
+        e.preventDefault();
+        break;
+      case 'p':
+      case 'esc':
+        if (!e.repeat) onPauseKey(id);
+        break;
+      case 'm':
+        if (!e.repeat) toggleMute();
+        break;
+    }
+  }
+
+  function onFlapKey() {
+    const s = state.screen;
+    if (s === 'ready' || s === 'playing') requestFlap();
+    else if (s === 'gameover' && sim.gameoverArmed && entryForm.hidden) goReady();
+  }
+
+  function onPauseKey(id) {
+    const s = state.screen;
+    if (s === 'playing' || s === 'countdown') pauseGame();
+    else if (s === 'paused') resumeGame();
+    else if (id === 'esc' && (s === 'leaderboard' || s === 'prizes' || s === 'howto' || s === 'staff')) goMenu();
+  }
+
+  function onFramePointerDown(e) {
+    lastInputWasKey = false;
+    if (state.dialog) return;
+    if (e.target.closest && e.target.closest('button, input, label, select, textarea, a, .panel, .modal')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (state.screen === 'ready' || state.screen === 'playing') {
+      e.preventDefault();
+      requestFlap();
+    }
+  }
+
+  window.addEventListener('keydown', onKeyDown);
+  frameEl.addEventListener('pointerdown', onFramePointerDown);
+  ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(function (type) {
+    window.addEventListener(type, function () { Sound.unlock(); }, { capture: true, passive: true });
+  });
+  // Mouse clicks focus buttons; drop that focus so Space keeps flapping instead of re-pressing the button.
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest ? e.target.closest('button') : null;
+    if (b && e.detail > 0) b.blur();
+  });
+  frameEl.addEventListener('contextmenu', function (e) {
+    if (!isTextField(e.target)) e.preventDefault();
+  });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  document.addEventListener('dblclick', function (e) { e.preventDefault(); });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) pauseGame();
+    else Sound.unlock();
+    syncMusic();
+  });
+  window.addEventListener('blur', pauseGame);
+  window.addEventListener('pagehide', pauseGame);
+  window.addEventListener('resize', layout);
+  window.addEventListener('orientationchange', layout);
+
+  // ==========================================================================
+  // PHYSICS
+  // ==========================================================================
+
+  const state = {
+    screen: 'menu',
+    dialog: null,
+    alpha: 0
+  };
+
+  const sim = {
+    y: START_Y, prevY: START_Y, vy: 0, rot: 0, peakY: START_Y,
+    distance: 0, prevDistance: 0,
+    obstacles: [],
+    nextObstacleX: Infinity,
+    lastGapCenter: START_Y,
+    score: 0,
+    level: 1,
+    levelLocked: false,
+    phys: { speed: LEVELS[0].speed, gravity: LEVELS[0].gravity, flap: LEVELS[0].flap },
+    ease: null,
+    seed: 0,
+    seedOverride: null,
+    rngState: 1,
+    flapQueued: false,
+    flaps: 0,
+    t: 0,
+    acc: 0,
+    countdownT: 0,
+    dyingT: 0,
+    gameoverT: 0,
+    gameoverArmed: false,
+    flapPulse: 0,
+    shakeT: 0,
+    crashAt: null,
+    qualifies: false,
+    newBest: false
+  };
+
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+  function rand() {
+    // mulberry32
+    let t = (sim.rngState = (sim.rngState + 0x6D2B79F5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  function randomSeed() {
+    try {
+      const a = new Uint32Array(1);
+      window.crypto.getRandomValues(a);
+      return a[0];
+    } catch (e) {
+      return Math.floor(Math.random() * 4294967296);
+    }
+  }
+
+  function levelForScore(score) {
+    let lvl = 1;
+    for (let i = 0; i < LEVELS.length; i++) if (score >= LEVELS[i].startsAt) lvl = LEVELS[i].level;
+    return lvl;
+  }
+
+  function setLevel(n, instant) {
+    const L = LEVELS[n - 1];
+    sim.level = n;
+    const target = { speed: L.speed, gravity: L.gravity, flap: L.flap };
+    if (instant) {
+      sim.phys = target;
+      sim.ease = null;
+    } else {
+      sim.ease = { from: { speed: sim.phys.speed, gravity: sim.phys.gravity, flap: sim.phys.flap }, to: target, t: 0 };
+    }
+    Sound.setLevel(n);
+  }
+
+  function updateEase(dt) {
+    const e = sim.ease;
+    if (!e) return;
+    e.t = Math.min(1, e.t + dt / LEVEL_EASE_TIME);
+    const k = e.t * e.t * (3 - 2 * e.t);
+    sim.phys.speed = e.from.speed + (e.to.speed - e.from.speed) * k;
+    sim.phys.gravity = e.from.gravity + (e.to.gravity - e.from.gravity) * k;
+    sim.phys.flap = e.from.flap + (e.to.flap - e.from.flap) * k;
+    if (e.t >= 1) sim.ease = null;
+  }
+
+  function resetRun() {
+    sim.seed = sim.seedOverride !== null ? sim.seedOverride : randomSeed();
+    sim.rngState = sim.seed | 0;
+    sim.obstacles.length = 0;
+    sim.distance = sim.prevDistance = 0;
+    sim.y = sim.prevY = sim.peakY = START_Y;
+    sim.vy = 0;
+    sim.rot = 0;
+    sim.acc = 0;
+    sim.score = 0;
+    sim.levelLocked = false;
+    sim.flapQueued = false;
+    sim.flaps = 0;
+    sim.lastGapCenter = START_Y;
+    sim.nextObstacleX = Infinity;
+    sim.qualifies = false;
+    sim.newBest = false;
+    sim.gameoverArmed = false;
+    sim.shakeT = 0;
+    clearParticles();
+    setLevel(1, true);
+    updateHud(true);
+  }
+
+  function startRun() {
+    sim.nextObstacleX = sim.distance + W + FIRST_OBSTACLE_LEAD;
+    sim.vy = 0;
+    setScreen('playing');
+  }
+
+  function requestFlap() {
+    if (state.screen === 'ready') startRun();
+    if (state.screen === 'playing') sim.flapQueued = true;
+  }
+
+  function spawnObstacle() {
+    const L = LEVELS[sim.level - 1];
+    const minC = GAP_MARGIN + L.gap / 2;
+    const maxC = GROUND_Y - GAP_MARGIN - L.gap / 2;
+    const c = clamp(sim.lastGapCenter + (rand() * 2 - 1) * L.maxShift, minC, maxC);
+    sim.obstacles.push({
+      x: sim.nextObstacleX,
+      gap: L.gap,
+      gapCenter: c,
+      gapTop: c - L.gap / 2,
+      gapBottom: c + L.gap / 2,
+      scored: false
+    });
+    sim.lastGapCenter = c;
+    sim.nextObstacleX += L.spacing;
+  }
+
+  // Ellipse vs axis-aligned rectangle: scale space so the ellipse becomes a unit circle.
+  function ellipseHitsRect(cx, cy, rx, ry, x0, y0, x1, y1) {
+    const nx = clamp(cx, x0, x1);
+    const ny = clamp(cy, y0, y1);
+    const dx = (nx - cx) / rx;
+    const dy = (ny - cy) / ry;
+    return dx * dx + dy * dy < 1;
+  }
+
+  function collides() {
+    if (sim.y + HITBOX_RY >= GROUND_Y) return true;
+    for (let i = 0; i < sim.obstacles.length; i++) {
+      const o = sim.obstacles[i];
+      const x0 = o.x - sim.distance;
+      const x1 = x0 + OBSTACLE_W;
+      if (x1 < CROISSANT_X - HITBOX_RX || x0 > CROISSANT_X + HITBOX_RX) continue;
+      if (ellipseHitsRect(CROISSANT_X, sim.y, HITBOX_RX, HITBOX_RY, x0, -1000, x1, o.gapTop)) return true;
+      if (ellipseHitsRect(CROISSANT_X, sim.y, HITBOX_RX, HITBOX_RY, x0, o.gapBottom, x1, GROUND_Y + 1000)) return true;
+    }
+    return false;
+  }
+
+  function stepPlaying(dt) {
+    updateEase(dt);
+    if (sim.flapQueued) {
+      sim.flapQueued = false;
+      sim.vy = sim.phys.flap;
+      sim.flaps++;
+      sim.flapPulse = 1;
+      emitCrumbs(REDUCED_MOTION ? 2 : 6, CROISSANT_X - 14, sim.y + 8, false);
+      Sound.sfx('flap');
+    }
+    sim.vy = Math.min(sim.vy + sim.phys.gravity * dt, TERMINAL_VY);
+    sim.y += sim.vy * dt;
+    if (sim.y < CEILING_Y) {
+      sim.y = CEILING_Y;
+      if (sim.vy < 0) sim.vy = 0;
+    }
+    if (sim.y < sim.peakY) sim.peakY = sim.y;
+    sim.rot += (clamp(sim.vy * 0.0016, -0.45, 0.85) - sim.rot) * Math.min(1, dt * 14);
+    sim.distance += sim.phys.speed * dt;
+
+    while (sim.nextObstacleX - sim.distance <= W + SPAWN_AHEAD) spawnObstacle();
+    while (sim.obstacles.length && sim.obstacles[0].x + OBSTACLE_W - sim.distance < -20) sim.obstacles.shift();
+
+    for (let i = 0; i < sim.obstacles.length; i++) {
+      const o = sim.obstacles[i];
+      if (!o.scored && o.x + OBSTACLE_W - sim.distance < CROISSANT_X) {
+        o.scored = true;
+        addPoint();
+      }
+    }
+    if (collides()) crash();
+  }
+
+  function addPoint() {
+    sim.score++;
+    const lvl = sim.levelLocked ? sim.level : levelForScore(sim.score);
+    if (lvl > sim.level) {
+      setLevel(lvl, false);
+      showLevelBanner(lvl);
+      Sound.sfx('levelup');
+    } else {
+      Sound.sfx('score');
+    }
+    updateHud(false);
+  }
+
+  function crash() {
+    sim.dyingT = 0;
+    sim.crashAt = new Date().toISOString();
+    sim.shakeT = REDUCED_MOTION ? 0 : SHAKE_TIME;
+    sim.flapQueued = false;
+    if (sim.vy < 0) sim.vy = 0;
+    emitCrumbs(REDUCED_MOTION ? 6 : 18, CROISSANT_X, sim.y, true);
+    Sound.sfx('crash');
+    sim.newBest = sim.score > Store.best();
+    if (sim.newBest) Store.setBest(sim.score);
+    sim.qualifies = Leaderboard.qualifies(sim.score);
+    setScreen('dying');
+  }
+
+  function stepDying(dt) {
+    sim.dyingT += dt;
+    const floor = GROUND_Y - HITBOX_RY;
+    if (sim.y < floor) {
+      sim.vy = Math.min(sim.vy + sim.phys.gravity * 1.4 * dt, TERMINAL_VY);
+      sim.y = Math.min(floor, sim.y + sim.vy * dt);
+    }
+    sim.rot += (1.2 - sim.rot) * Math.min(1, dt * 8);
+    if (sim.dyingT >= GAMEOVER_PANEL_DELAY) showGameOver();
+  }
+
+  function stepIdle(dt, speed) {
+    sim.distance += speed * dt;
+    if (sim.distance > 1e6) sim.distance = sim.prevDistance = 0;
+    sim.y = START_Y + Math.sin(sim.t * 3) * 6;
+    sim.vy = 0;
+    sim.rot += (0 - sim.rot) * Math.min(1, dt * 8);
+  }
+
+  function update(dt) {
+    sim.prevY = sim.y;
+    sim.prevDistance = sim.distance;
+    sim.t += dt;
+    updateParticles(dt);
+    if (sim.flapPulse > 0) sim.flapPulse = Math.max(0, sim.flapPulse - dt * 5);
+    if (sim.shakeT > 0) sim.shakeT = Math.max(0, sim.shakeT - dt);
+    switch (state.screen) {
+      case 'playing':
+        stepPlaying(dt);
+        break;
+      case 'ready':
+        stepIdle(dt, sim.phys.speed);
+        break;
+      case 'countdown':
+        sim.countdownT -= dt;
+        updateCountdownText();
+        if (sim.countdownT <= 0) setScreen('playing');
+        break;
+      case 'dying':
+        stepDying(dt);
+        break;
+      case 'gameover':
+        sim.gameoverT += dt;
+        if (!sim.gameoverArmed && sim.gameoverT >= BUTTON_ARM_DELAY - GAMEOVER_PANEL_DELAY) setGameOverArmed(true);
+        break;
+      case 'paused':
+        break;
+      default:
+        stepIdle(dt, MENU_SCROLL_SPEED);
+    }
+  }
+
+  // ---- Particles (pooled) ----
+  const particles = [];
+  for (let i = 0; i < MAX_PARTICLES; i++) particles.push({ on: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, size: 2, color: '#000' });
+  const CRUMB_COLORS = ['#f3c27d', '#d9893b', '#b8691f', '#fbe3a8'];
+
+  function emitCrumbs(n, x, y, burst) {
+    for (let i = 0; i < particles.length && n > 0; i++) {
+      const p = particles[i];
+      if (p.on) continue;
+      p.on = true;
+      p.x = x + (Math.random() - 0.5) * 8;
+      p.y = y + (Math.random() - 0.5) * 6;
+      if (burst) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 60 + Math.random() * 160;
+        p.vx = Math.cos(a) * s;
+        p.vy = Math.sin(a) * s - 60;
+      } else {
+        p.vx = -60 - Math.random() * 90;
+        p.vy = -30 + Math.random() * 90;
+      }
+      p.max = p.life = 0.45 + Math.random() * 0.4;
+      p.size = 1.5 + Math.random() * 2.2;
+      p.color = CRUMB_COLORS[(Math.random() * CRUMB_COLORS.length) | 0];
+      n--;
+    }
+  }
+  function updateParticles(dt) {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      if (!p.on) continue;
+      p.life -= dt;
+      if (p.life <= 0) { p.on = false; continue; }
+      p.vy += 600 * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+  }
+  function clearParticles() { for (let i = 0; i < particles.length; i++) particles[i].on = false; }
+
+  // ==========================================================================
+  // RENDERING
+  // ==========================================================================
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const sprites = {};
+  let R = 1; // device pixels per logical unit
+
+  function makeSprite(w, h, draw) {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * R));
+    c.height = Math.max(1, Math.round(h * R));
+    const g = c.getContext('2d');
+    g.setTransform(c.width / w, 0, 0, c.height / h, 0, 0);
+    draw(g, w, h);
+    return c;
+  }
+
+  function buildSprites() {
+    sprites.far = makeSprite(W, GROUND_Y, drawFarLayer);
+    sprites.mid = makeSprite(W, GROUND_Y, drawMidLayer);
+    sprites.ground = makeSprite(W, H - GROUND_Y, drawGroundLayer);
+    sprites.baguette = makeSprite(OBSTACLE_W, SPRITE_H, drawBaguetteSprite);
+    sprites.loaves = makeSprite(OBSTACLE_W, SPRITE_H, drawLoafSprite);
+    sprites.croissant = makeSprite(CROISSANT_SPRITE_W, CROISSANT_SPRITE_H, drawCroissantSprite);
+  }
+
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+
+  function drawLamp(g, x) {
+    const glow = g.createRadialGradient(x, 70, 4, x, 70, 85);
+    glow.addColorStop(0, 'rgba(255, 214, 130, 0.6)');
+    glow.addColorStop(1, 'rgba(255, 214, 130, 0)');
+    g.fillStyle = glow;
+    g.fillRect(x - 90, 0, 180, 170);
+    g.strokeStyle = '#3b2314';
+    g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 44); g.stroke();
+    g.fillStyle = '#b8733a';
+    g.beginPath();
+    g.moveTo(x - 8, 44); g.lineTo(x + 8, 44); g.lineTo(x + 21, 64); g.lineTo(x - 21, 64);
+    g.closePath(); g.fill();
+    g.fillStyle = '#8a4f22';
+    g.fillRect(x - 21, 62, 42, 3);
+    g.fillStyle = '#fff2c4';
+    g.beginPath(); g.arc(x, 67, 6, 0, Math.PI * 2); g.fill();
+  }
+
+  function drawFarLayer(g) {
+    g.fillStyle = '#f8ebd3';
+    g.fillRect(0, 0, W, GROUND_Y);
+    g.fillStyle = '#f1dfbf';
+    for (let x = 0; x < W; x += 24) g.fillRect(x, 0, 11, 410);
+
+    // Shop window with awning
+    const wx = 110, wy = 112, ww = 180, wh = 190;
+    const sky = g.createLinearGradient(0, wy, 0, wy + wh);
+    sky.addColorStop(0, '#bfe2f2');
+    sky.addColorStop(1, '#eef8fb');
+    g.fillStyle = sky;
+    g.fillRect(wx, wy, ww, wh);
+    g.fillStyle = '#d3e5ec';
+    g.fillRect(wx + 8, wy + 100, 42, 90);
+    g.fillRect(wx + 58, wy + 70, 52, 120);
+    g.fillRect(wx + 118, wy + 108, 56, 82);
+    g.fillStyle = '#bfd5de';
+    for (let i = 0; i < 4; i++) {
+      g.fillRect(wx + 66, wy + 82 + i * 26, 12, 14);
+      g.fillRect(wx + 90, wy + 82 + i * 26, 12, 14);
+    }
+    g.strokeStyle = '#8b5a2b';
+    g.lineWidth = 8;
+    g.strokeRect(wx, wy, ww, wh);
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
+    g.moveTo(wx, wy + wh * 0.45); g.lineTo(wx + ww, wy + wh * 0.45);
+    g.stroke();
+    g.fillStyle = '#7a4a26';
+    g.fillRect(wx - 10, wy + wh + 2, ww + 20, 9);
+    const ax = wx - 14, aw = ww + 28, ay = wy - 36, ah = 26, n = 9;
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = i % 2 ? '#fff4de' : '#c9533f';
+      g.fillRect(ax + i * aw / n, ay, aw / n + 0.5, ah);
+      g.beginPath();
+      g.arc(ax + (i + 0.5) * aw / n, ay + ah, aw / n / 2, 0, Math.PI);
+      g.fill();
+    }
+    g.fillStyle = '#7a3a2a';
+    g.fillRect(ax - 3, ay - 5, aw + 6, 6);
+    // "OPEN" sign
+    g.strokeStyle = '#3b2314';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(wx + 72, wy + 4); g.lineTo(wx + 80, wy + 22);
+    g.moveTo(wx + 108, wy + 4); g.lineTo(wx + 100, wy + 22);
+    g.stroke();
+    g.fillStyle = '#3b2314';
+    rr(g, wx + 66, wy + 22, 48, 20, 4); g.fill();
+    g.fillStyle = '#ffd966';
+    g.font = 'bold 13px "Trebuchet MS", sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('OPEN', wx + 90, wy + 33);
+
+    // Pendant lamps (drawn at x and x - W so the tile wraps seamlessly)
+    [55, 305].forEach(function (x) { drawLamp(g, x); drawLamp(g, x - W); drawLamp(g, x + W); });
+
+    // Chair rail and wainscot
+    g.fillStyle = '#8b5a2b';
+    g.fillRect(0, 410, W, 8);
+    g.fillStyle = '#c99a63';
+    g.fillRect(0, 418, W, GROUND_Y - 418);
+    g.strokeStyle = '#a8763f';
+    g.lineWidth = 3;
+    for (let x = 8; x < W; x += 60) g.strokeRect(x, 432, 44, GROUND_Y - 446);
+  }
+
+  function boule(g, cx, cy, rx, ry) {
+    g.fillStyle = '#c98b45';
+    g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#f2cf96';
+    g.lineWidth = 2;
+    g.beginPath(); g.arc(cx - 3, cy - 2, rx * 0.55, Math.PI * 1.15, Math.PI * 1.6); g.stroke();
+    g.beginPath(); g.arc(cx + 4, cy - 1, rx * 0.5, Math.PI * 1.25, Math.PI * 1.75); g.stroke();
+  }
+
+  function stick(g, x, y, len, ang) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(ang);
+    g.fillStyle = '#d99a4e';
+    g.beginPath(); g.ellipse(0, 0, len / 2, 5, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#f5d39b';
+    g.lineWidth = 1.5;
+    for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(i * 10 - 3, 2); g.lineTo(i * 10 + 3, -2); g.stroke(); }
+    g.restore();
+  }
+
+  function miniCroissant(g, cx, cy, s) {
+    g.fillStyle = '#e3a245';
+    g.strokeStyle = '#a8601e';
+    g.lineWidth = 1;
+    [[-6, 3, 3.5, 4.5, 0.7], [6, 3, 3.5, 4.5, -0.7], [-3, 0, 4.5, 6, 0.3], [3, 0, 4.5, 6, -0.3], [0, -0.5, 5, 7, 0]].forEach(function (l) {
+      g.beginPath();
+      g.ellipse(cx + l[0] * s, cy + l[1] * s, l[2] * s, l[3] * s, l[4], 0, Math.PI * 2);
+      g.fill(); g.stroke();
+    });
+  }
+
+  function drawRack(g, x0) {
+    const w = 110;
+    g.fillStyle = '#8f5a2e';
+    g.fillRect(x0, 170, 7, GROUND_Y - 170);
+    g.fillRect(x0 + w - 7, 170, 7, GROUND_Y - 170);
+    g.fillRect(x0 - 4, 164, w + 8, 8);
+    const shelves = [240, 320, 400, 480];
+    shelves.forEach(function (sy) {
+      g.fillStyle = '#a86d39'; g.fillRect(x0, sy, w, 7);
+      g.fillStyle = '#7a4a26'; g.fillRect(x0, sy + 7, w, 3);
+    });
+    [x0 + 22, x0 + 55, x0 + 88].forEach(function (cx) { boule(g, cx, 229, 14, 11); });
+    stick(g, x0 + 35, 290, 70, -1.2);
+    stick(g, x0 + 50, 288, 74, -1.4);
+    stick(g, x0 + 66, 290, 70, -1.7);
+    stick(g, x0 + 80, 292, 66, -1.95);
+    g.fillStyle = '#b58a52';
+    rr(g, x0 + 18, 298, 74, 22, 5); g.fill();
+    g.strokeStyle = '#8f6a3a';
+    g.lineWidth = 1.5;
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(x0 + 20, 304 + i * 6); g.lineTo(x0 + 90, 304 + i * 6); g.stroke(); }
+    [x0 + 20, x0 + 44, x0 + 68, x0 + 92].forEach(function (cx) { miniCroissant(g, cx, 391, 1.2); });
+    g.fillStyle = '#d4954f';
+    rr(g, x0 + 10, 456, 42, 24, 7); g.fill();
+    rr(g, x0 + 58, 456, 42, 24, 7); g.fill();
+    g.fillStyle = '#ecc086';
+    g.fillRect(x0 + 14, 460, 34, 5);
+    g.fillRect(x0 + 62, 460, 34, 5);
+  }
+
+  function drawChalkboard(g, x, y) {
+    g.strokeStyle = '#3b2314';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(x + 14, 250); g.lineTo(x + 14, y);
+    g.moveTo(x + 88, 250); g.lineTo(x + 88, y);
+    g.stroke();
+    g.fillStyle = '#8b5a2b';
+    rr(g, x - 4, y - 4, 110, 84, 6); g.fill();
+    g.fillStyle = '#2f3a33';
+    g.fillRect(x + 2, y + 2, 98, 72);
+    g.fillStyle = '#f4efe2';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = 'bold 13px "Trebuchet MS", sans-serif';
+    g.fillText('TODAY', x + 51, y + 15);
+    g.font = '11px "Trebuchet MS", sans-serif';
+    g.fillText('Croissants', x + 51, y + 33);
+    g.fillText('Pain au choc', x + 51, y + 48);
+    g.fillText('Baguettes', x + 51, y + 63);
+  }
+
+  function drawWallShelf(g, x0, y) {
+    g.fillStyle = '#a86d39';
+    g.fillRect(x0, y, 132, 7);
+    g.fillStyle = '#7a4a26';
+    g.fillRect(x0 + 10, y + 7, 6, 14);
+    g.fillRect(x0 + 116, y + 7, 6, 14);
+    // cake on a stand
+    g.fillStyle = '#e8e2d6';
+    g.fillRect(x0 + 26, y - 6, 4, 6);
+    g.beginPath(); g.ellipse(x0 + 28, y - 7, 18, 3, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#f1c6a0';
+    g.fillRect(x0 + 14, y - 28, 28, 20);
+    g.fillStyle = '#f29db0';
+    g.fillRect(x0 + 14, y - 31, 28, 7);
+    g.fillStyle = '#c62f45';
+    g.beginPath(); g.arc(x0 + 28, y - 34, 3.5, 0, Math.PI * 2); g.fill();
+    // cookie jar
+    g.fillStyle = 'rgba(210, 232, 240, 0.85)';
+    rr(g, x0 + 58, y - 36, 30, 36, 6); g.fill();
+    g.fillStyle = '#b8733a';
+    g.fillRect(x0 + 60, y - 42, 26, 7);
+    g.fillStyle = '#c8873f';
+    [[66, -10], [78, -12], [72, -22], [66, -30], [80, -28]].forEach(function (c) {
+      g.beginPath(); g.arc(x0 + c[0], y + c[1], 5.5, 0, Math.PI * 2); g.fill();
+    });
+    // cupcake
+    g.fillStyle = '#d69b5c';
+    g.beginPath();
+    g.moveTo(x0 + 100, y); g.lineTo(x0 + 120, y); g.lineTo(x0 + 123, y - 14); g.lineTo(x0 + 97, y - 14);
+    g.closePath(); g.fill();
+    g.fillStyle = '#fbe6ef';
+    g.beginPath(); g.arc(x0 + 110, y - 17, 11, Math.PI, 0); g.fill();
+    g.beginPath(); g.arc(x0 + 110, y - 24, 6, Math.PI, 0); g.fill();
+  }
+
+  function drawMidLayer(g) {
+    drawRack(g, 14);
+    drawChalkboard(g, 178, 318);
+    drawWallShelf(g, 212, 222);
+    // Wash the mid layer slightly so it reads as background behind the obstacles.
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = 'rgba(248, 235, 211, 0.28)';
+    g.fillRect(0, 0, W, GROUND_Y);
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  function drawGroundLayer(g, w, h) {
+    g.fillStyle = '#7a4a26';
+    g.fillRect(0, 0, w, 14);
+    g.fillStyle = '#a86d39';
+    g.fillRect(0, 2, w, 3);
+    g.strokeStyle = 'rgba(59, 35, 20, 0.35)';
+    g.lineWidth = 1;
+    for (let x = 0; x < w; x += 45) { g.beginPath(); g.moveTo(x + 4, 9); g.lineTo(x + 32, 9); g.stroke(); }
+    g.fillStyle = '#4a2c1a';
+    g.fillRect(0, 14, w, 3);
+    for (let x = 0, col = 0; x < w; x += 20, col++) {
+      for (let y = 17, row = 0; y < h; y += 20, row++) {
+        g.fillStyle = (col + row) % 2 ? '#d9a066' : '#fff4de';
+        g.fillRect(x, y, 20, 20);
+      }
+    }
+  }
+
+  function drawBaguetteSprite(g, w, h) {
+    const grad = g.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, '#a95e24');
+    grad.addColorStop(0.22, '#dc9a4f');
+    grad.addColorStop(0.5, '#f3c27d');
+    grad.addColorStop(0.8, '#d48d44');
+    grad.addColorStop(1, '#9c5420');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+    for (let y = h - 46; y > -30; y -= 56) {
+      g.save();
+      g.translate(w / 2, y);
+      g.rotate(-0.45);
+      g.fillStyle = '#f8dfac';
+      g.beginPath(); g.ellipse(0, 0, 21, 5.5, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#b8702f';
+      g.lineWidth = 1.5;
+      g.stroke();
+      g.restore();
+    }
+    let s = 7;
+    g.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    for (let i = 0; i < 140; i++) {
+      s = (s * 16807) % 2147483647;
+      const px = 6 + (s % 52);
+      s = (s * 16807) % 2147483647;
+      g.fillRect(px, s % h, 1.5, 1.5);
+    }
+    // Crust heel at the open end; the silhouette stays a full rectangle.
+    g.fillStyle = '#9b5320';
+    g.fillRect(0, h - 12, w, 12);
+    g.fillStyle = '#c47a35';
+    g.fillRect(3, h - 12, w - 6, 4);
+    g.strokeStyle = '#5a3216';
+    g.lineWidth = 2.5;
+    g.strokeRect(1.25, -5, w - 2.5, h + 5 - 1.25);
+  }
+
+  function drawLoafSprite(g, w, h) {
+    g.fillStyle = '#9a6334';
+    g.fillRect(0, 0, w, 10);
+    g.fillStyle = '#c08550';
+    g.fillRect(0, 2, w, 3);
+    const kinds = [['#e6a24a', '#f6c879', '#b8691f'], ['#efd2a0', '#fbe8c4', '#c08a50'], ['#8d5a37', '#a9734c', '#5e3820']];
+    for (let y = 10, i = 0; y < h; y += 46, i++) {
+      const k = kinds[i % kinds.length];
+      g.fillStyle = k[0];
+      g.fillRect(0, y, w, 46);
+      g.fillStyle = k[1];
+      g.fillRect(0, y, w, 13);
+      g.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      g.beginPath(); g.ellipse(w / 2, y + 6, w * 0.38, 3.5, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = k[2];
+      g.lineWidth = 2;
+      for (let j = 0; j < 3; j++) { g.beginPath(); g.moveTo(12 + j * 16, y + 11); g.lineTo(21 + j * 16, y + 3); g.stroke(); }
+      g.fillStyle = 'rgba(80, 40, 10, 0.18)';
+      g.fillRect(0, y, 6, 46);
+      g.fillRect(w - 6, y, 6, 46);
+      g.fillStyle = '#4a2c1a';
+      g.fillRect(0, y + 44, w, 2);
+    }
+    g.strokeStyle = '#4a2c1a';
+    g.lineWidth = 2.5;
+    g.strokeRect(1.25, 1.25, w - 2.5, h + 5);
+  }
+
+  function drawCroissantSprite(g, w, h) {
+    g.translate(w / 2, h / 2);
+    // Lobes from the tips inward so the middle roll sits in front.
+    const lobes = [
+      [-17.5, 8.5, 4.5, 6, 0.9], [17.5, 8.5, 4.5, 6, -0.9],
+      [-14, 4, 6.5, 9.5, 0.6], [14, 4, 6.5, 9.5, -0.6],
+      [-6.5, 0.5, 8, 12.5, 0.25], [6.5, 0.5, 8, 12.5, -0.25],
+      [0, 0, 8.5, 13.5, 0]
+    ];
+    lobes.forEach(function (l) {
+      const grad = g.createRadialGradient(l[0] - l[2] * 0.3, l[1] - l[3] * 0.45, 1, l[0], l[1], Math.max(l[2], l[3]) * 1.1);
+      grad.addColorStop(0, '#ffe7a8');
+      grad.addColorStop(0.45, '#f0b04a');
+      grad.addColorStop(1, '#b8621c');
+      g.fillStyle = grad;
+      g.beginPath();
+      g.ellipse(l[0], l[1], l[2], l[3], l[4], 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#7a3c10';
+      g.lineWidth = 1.2;
+      g.stroke();
+      // Highlight streak on each layer
+      g.save();
+      g.translate(l[0], l[1]);
+      g.rotate(l[4]);
+      g.strokeStyle = 'rgba(255, 250, 230, 0.75)';
+      g.lineWidth = 1.4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.ellipse(0, 0, l[2] * 0.6, l[3] * 0.72, 0, Math.PI * 1.2, Math.PI * 1.55);
+      g.stroke();
+      g.restore();
+    });
+  }
+
+  function blitTile(img, offset, y, shx, shy) {
+    const tw = img.width;
+    let ox = -((offset * R) % tw);
+    if (ox > 0) ox -= tw;
+    ox = Math.round(ox + shx * R);
+    if (ox > 0) ox -= tw;
+    const oy = Math.round((y + shy) * R);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    for (let x = ox; x < canvas.width; x += tw) ctx.drawImage(img, x, oy);
+  }
+
+  function drawObstacle(o, sx) {
+    if (sx > W || sx + OBSTACLE_W < 0) return;
+    const b = sprites.baguette;
+    const l = sprites.loaves;
+    const ky = b.height / SPRITE_H;
+    const ht = o.gapTop;
+    if (ht > 0) ctx.drawImage(b, 0, b.height - ht * ky, b.width, ht * ky, sx, 0, OBSTACLE_W, ht);
+    const hb = GROUND_Y - o.gapBottom;
+    if (hb > 0) ctx.drawImage(l, 0, 0, l.width, hb * ky, sx, o.gapBottom, OBSTACLE_W, hb);
+  }
+
+  function drawParticles() {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      if (!p.on) continue;
+      ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawCroissant(cy) {
+    const wob = REDUCED_MOTION ? 0 : Math.sin(sim.t * 9) * 0.04;
+    const p = sim.flapPulse;
+    ctx.save();
+    ctx.translate(CROISSANT_X, cy);
+    ctx.rotate(sim.rot + wob);
+    ctx.scale(1 + 0.1 * p, 1 - 0.1 * p);
+    ctx.drawImage(sprites.croissant, -CROISSANT_SPRITE_W / 2, -CROISSANT_SPRITE_H / 2, CROISSANT_SPRITE_W, CROISSANT_SPRITE_H);
+    ctx.restore();
+  }
+
+  function render() {
+    const a = state.alpha;
+    const dist = sim.prevDistance + (sim.distance - sim.prevDistance) * a;
+    const cy = sim.prevY + (sim.y - sim.prevY) * a;
+    let shx = 0;
+    let shy = 0;
+    if (sim.shakeT > 0) {
+      const m = (sim.shakeT / SHAKE_TIME) * 5;
+      shx = (Math.random() * 2 - 1) * m;
+      shy = (Math.random() * 2 - 1) * m;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#f8ebd3';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    blitTile(sprites.far, dist * FAR_FACTOR, 0, shx, shy);
+    blitTile(sprites.mid, dist * MID_FACTOR, 0, shx, shy);
+    ctx.setTransform(R, 0, 0, R, shx * R, shy * R);
+    for (let i = 0; i < sim.obstacles.length; i++) drawObstacle(sim.obstacles[i], sim.obstacles[i].x - dist);
+    blitTile(sprites.ground, dist, GROUND_Y, shx, shy);
+    ctx.setTransform(R, 0, 0, R, shx * R, shy * R);
+    drawParticles();
+    drawCroissant(cy);
+  }
+
+  // ==========================================================================
+  // UI SCREENS
+  // ==========================================================================
+
+  const $ = function (id) { return document.getElementById(id); };
+  const safeEl = $('safe');
+  const hud = $('hud');
+  const hudScore = $('hudScore');
+  const hudLevel = $('hudLevel');
+  const hudBest = $('hudBest');
+  const btnPause = $('btnPause');
+  const readyHint = $('readyHint');
+  const countdownEl = $('countdown');
+  const levelBanner = $('levelBanner');
+  const entryForm = $('entryForm');
+  const inName = $('inName');
+  const inContact = $('inContact');
+  const inConsent = $('inConsent');
+  const btnSave = $('btnSave');
+  const errName = $('errName');
+  const errContact = $('errContact');
+  const goResult = $('goResult');
+  const goActions = $('goActions');
+  const dlgPin = $('dlgPin');
+  const dlgConfirm = $('dlgConfirm');
+  const inPin = $('inPin');
+  const pinErr = $('pinErr');
+  const menuTitle = $('menuTitle');
+
+  const SCREEN_EL = {
+    menu: $('scrMenu'),
+    paused: $('scrPaused'),
+    gameover: $('scrGameOver'),
+    leaderboard: $('scrLeaderboard'),
+    prizes: $('scrPrizes'),
+    howto: $('scrHowTo'),
+    staff: $('scrStaff')
+  };
+  const HUD_SCREENS = { ready: true, playing: true, paused: true, countdown: true, dying: true };
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function ordinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  function setScreen(name) {
+    state.screen = name;
+    Object.keys(SCREEN_EL).forEach(function (k) { SCREEN_EL[k].hidden = k !== name; });
+    hud.hidden = !HUD_SCREENS[name];
+    readyHint.hidden = name !== 'ready';
+    countdownEl.hidden = name !== 'countdown';
+    btnPause.classList.toggle('is-paused', name === 'paused');
+    btnPause.setAttribute('aria-label', name === 'paused' ? 'Resume' : 'Pause');
+    if (name !== 'playing' && name !== 'countdown') levelBanner.hidden = true;
+    if (name === 'leaderboard') renderLeaderboard($('lbList'), false);
+    if (name === 'staff') renderStaff();
+    fixFocus();
+    syncMusic();
+  }
+
+  function fixFocus() {
+    const a = document.activeElement;
+    if (a && a !== document.body && a.closest && a.closest('[hidden]')) a.blur();
+    if (!lastInputWasKey) return;
+    const scr = SCREEN_EL[state.screen];
+    const target = scr && !scr.hidden ? scr.querySelector('[data-autofocus]') : null;
+    if (target) target.focus();
+  }
+
+  function syncMusic() {
+    if (Sound.running() && !document.hidden && state.screen !== 'paused') Sound.startMusic();
+    else Sound.stopMusic();
+  }
+
+  function updateHud(force) {
+    if (force || hudScore.textContent !== String(sim.score)) hudScore.textContent = String(sim.score);
+    const lv = 'LV ' + sim.level;
+    if (force || hudLevel.textContent !== lv) hudLevel.textContent = lv;
+    const best = 'BEST ' + Math.max(Store.best(), sim.score);
+    if (force || hudBest.textContent !== best) hudBest.textContent = best;
+  }
+
+  let bannerTimer = 0;
+  function showLevelBanner(n) {
+    const span = levelBanner.firstElementChild;
+    span.textContent = 'LEVEL ' + n + '!';
+    levelBanner.hidden = false;
+    span.style.animation = 'none';
+    void span.offsetWidth; // restart the CSS animation
+    span.style.animation = '';
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(function () { levelBanner.hidden = true; }, 1500);
+  }
+
+  let countdownShown = -1;
+  function updateCountdownText(force) {
+    const n = Math.max(1, Math.ceil(sim.countdownT));
+    if (force || n !== countdownShown) {
+      countdownShown = n;
+      countdownEl.textContent = String(n);
+    }
+  }
+
+  function goReady() {
+    resetRun();
+    setScreen('ready');
+  }
+
+  function goMenu() {
+    resetRun();
+    setScreen('menu');
+  }
+
+  function pauseGame() {
+    if (state.screen === 'playing' || state.screen === 'countdown') setScreen('paused');
+  }
+
+  function resumeGame() {
+    if (state.screen !== 'paused') return;
+    sim.flapQueued = false;
+    sim.countdownT = COUNTDOWN_SECONDS;
+    updateCountdownText(true);
+    setScreen('countdown');
+  }
+
+  function endRunFromPause() {
+    if (state.screen !== 'paused') return;
+    crash();
+  }
+
+  function toggleMute() {
+    const m = !Sound.isMuted();
+    Sound.setMuted(m);
+    Store.setMuted(m);
+    updateMuteButtons();
+  }
+
+  function updateMuteButtons() {
+    const m = Sound.isMuted();
+    document.querySelectorAll('.btn-mute').forEach(function (b) {
+      b.setAttribute('aria-pressed', m ? 'true' : 'false');
+      b.setAttribute('aria-label', m ? 'Unmute sound' : 'Mute sound');
+    });
+  }
+
+  function updateNotices() {
+    const s = Store.status();
+    let msg = '';
+    if (s === 'blocked') msg = 'Scores can\'t be saved on this device (storage is blocked or full). They will be lost when this page closes.';
+    else if (s === 'reset') msg = 'Saved scores on this device couldn\'t be read, so the leaderboard was reset. A backup copy was kept.';
+    document.querySelectorAll('.storage-notice').forEach(function (n) {
+      n.textContent = msg;
+      n.hidden = !msg;
+    });
+  }
+
+  // ---- Game over and leaderboard entry ----
+  function showGameOver() {
+    $('goScore').textContent = String(sim.score);
+    $('goLevel').textContent = String(sim.level);
+    $('goBest').textContent = String(Store.best());
+    $('goNewBest').hidden = !sim.newBest;
+    goResult.textContent = '';
+    entryForm.reset();
+    errName.textContent = '';
+    errContact.textContent = '';
+    inName.removeAttribute('aria-invalid');
+    inContact.removeAttribute('aria-invalid');
+    entryForm.hidden = !sim.qualifies;
+    goActions.hidden = sim.qualifies;
+    sim.gameoverT = 0;
+    setGameOverArmed(false);
+    setScreen('gameover');
+  }
+
+  // Panel controls stay disabled briefly so a frantic tap can't press Retry or Skip by accident.
+  function setGameOverArmed(on) {
+    sim.gameoverArmed = on;
+    SCREEN_EL.gameover.querySelectorAll('button, input').forEach(function (c) { c.disabled = !on; });
+    if (on) {
+      validateForm();
+      if (!entryForm.hidden && window.matchMedia && window.matchMedia('(pointer: fine)').matches) inName.focus();
+    }
+  }
+
+  function readForm() {
+    const name = normalizeName(inName.value);
+    const contact = normalizeContact(inContact.value);
+    const nameOk = isValidName(name);
+    const contactOk = contactKey(contact) !== '';
+    return { name: name, contact: contact, nameOk: nameOk, contactOk: contactOk, valid: nameOk && contactOk && inConsent.checked };
+  }
+
+  function validateForm() {
+    const v = readForm();
+    const nameBad = inName.value.trim() !== '' && !v.nameOk;
+    const contactBad = inContact.value.trim() !== '' && !v.contactOk;
+    errName.textContent = nameBad ? 'Use 1–12 letters, numbers or single spaces.' : '';
+    errContact.textContent = contactBad ? 'Enter a phone number (8–15 digits) or an email address.' : '';
+    if (nameBad) inName.setAttribute('aria-invalid', 'true'); else inName.removeAttribute('aria-invalid');
+    if (contactBad) inContact.setAttribute('aria-invalid', 'true'); else inContact.removeAttribute('aria-invalid');
+    btnSave.disabled = !(v.valid && sim.gameoverArmed);
+    return v;
+  }
+
+  function finishEntry(message) {
+    entryForm.reset();
+    entryForm.hidden = true;
+    goActions.hidden = false;
+    goResult.textContent = message;
+    sim.qualifies = false;
+  }
+
+  function onSaveEntry(e) {
+    e.preventDefault();
+    if (!sim.gameoverArmed || entryForm.hidden) return;
+    const v = validateForm();
+    if (!v.valid) return;
+    const res = Leaderboard.add({ name: v.name, contact: v.contact, score: sim.score, level: sim.level, at: sim.crashAt });
+    let msg;
+    if (res.status === 'added') {
+      msg = 'Saved! You\'re #' + res.rank + ' on the leaderboard.' + (res.rank <= EVENT_CONFIG.prizes.length ? ' That\'s a prize spot right now!' : '');
+      if (!res.saved) msg += ' Warning: this device can\'t store scores, so it will be lost when the page closes.';
+    } else if (res.status === 'kept') {
+      msg = 'Your best score with this contact is still ' + res.best + ' (#' + res.rank + ').';
+    } else {
+      msg = 'This score no longer makes the top 10.';
+    }
+    finishEntry(msg);
+    updateNotices();
+  }
+
+  // ---- Leaderboard and staff lists ----
+  function renderLeaderboard(listEl, staff) {
+    const list = Leaderboard.list();
+    listEl.textContent = '';
+    if (!list.length) {
+      listEl.appendChild(el('li', 'empty', 'No scores yet. Be the first!'));
+      return;
+    }
+    list.forEach(function (e, i) {
+      const li = el('li', i < 3 ? 'p' + (i + 1) : '');
+      li.appendChild(el('span', 'rank badge ' + (i < 3 ? 'p' + (i + 1) : 'pn'), ordinal(i + 1)));
+      const who = el('span', 'who');
+      who.appendChild(el('span', 'name', e.name));
+      who.appendChild(el('span', 'meta', 'Level ' + e.level + ' · ' + formatDateTime(e.at, staff)));
+      if (staff) who.appendChild(el('span', 'meta contact', e.contact));
+      if (i < EVENT_CONFIG.prizes.length) who.appendChild(el('span', 'prize', 'Prize: ' + EVENT_CONFIG.prizes[i].prize));
+      li.appendChild(who);
+      li.appendChild(el('span', 'score', String(e.score)));
+      listEl.appendChild(li);
+    });
+  }
+
+  function renderStaff() {
+    const n = Leaderboard.list().length;
+    const s = Store.status();
+    $('staffInfo').textContent = n + '/' + LEADERBOARD_SIZE + ' places · storage ' +
+      (s === 'blocked' ? 'NOT SAVING' : 'OK') + (TEST_MODE ? ' · test mode' : '');
+    renderLeaderboard($('staffList'), true);
+  }
+
+  // ---- Dialogs ----
+  function openDialog(name) {
+    state.dialog = name;
+    dlgPin.hidden = name !== 'pin';
+    dlgConfirm.hidden = name !== 'confirm';
+    Object.keys(SCREEN_EL).forEach(function (k) { SCREEN_EL[k].inert = true; });
+  }
+
+  let confirmAction = null;
+  let dialogReturnFocus = null;
+
+  function closeDialog() {
+    state.dialog = null;
+    dlgPin.hidden = true;
+    dlgConfirm.hidden = true;
+    confirmAction = null;
+    Object.keys(SCREEN_EL).forEach(function (k) { SCREEN_EL[k].inert = false; });
+    if (dialogReturnFocus && lastInputWasKey) dialogReturnFocus.focus();
+    dialogReturnFocus = null;
+  }
+
+  function openPinDialog() {
+    if (state.screen !== 'menu' || state.dialog) return;
+    inPin.value = '';
+    pinErr.textContent = '';
+    dialogReturnFocus = $('btnPlay');
+    openDialog('pin');
+    inPin.focus();
+  }
+
+  function openConfirm(title, text, okLabel, action) {
+    $('confirmTitle').textContent = title;
+    $('confirmText').textContent = text;
+    $('btnConfirmOk').textContent = okLabel;
+    confirmAction = action;
+    dialogReturnFocus = document.activeElement;
+    openDialog('confirm');
+    dlgConfirm.querySelector('[data-close]').focus();
+  }
+
+  // ---- Staff long-press on the title ----
+  let holdTimer = 0;
+  function cancelHold() {
+    if (holdTimer) clearTimeout(holdTimer);
+    holdTimer = 0;
+    menuTitle.classList.remove('holding');
+  }
+  menuTitle.addEventListener('pointerdown', function (e) {
+    if (state.screen !== 'menu' || state.dialog) return;
+    e.preventDefault();
+    cancelHold();
+    menuTitle.classList.add('holding');
+    holdTimer = setTimeout(function () {
+      holdTimer = 0;
+      menuTitle.classList.remove('holding');
+      openPinDialog();
+    }, STAFF_HOLD_MS);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { menuTitle.addEventListener(t, cancelHold); });
+
+  // ---- Wiring ----
+  frameEl.addEventListener('click', function (e) {
+    const b = e.target.closest ? e.target.closest('button') : null;
+    if (!b || b.disabled || b.type === 'submit') return;
+    if (b.classList.contains('btn-mute')) { toggleMute(); return; }
+    if (b.hasAttribute('data-close')) { closeDialog(); return; }
+    if (b.dataset.go) { setScreen(b.dataset.go); return; }
+    if (b.hasAttribute('data-back')) { goMenu(); return; }
+    switch (b.id) {
+      case 'btnPlay': goReady(); break;
+      case 'btnPause':
+        if (state.screen === 'paused') resumeGame(); else pauseGame();
+        break;
+      case 'btnResume': resumeGame(); break;
+      case 'btnEndRun': endRunFromPause(); break;
+      case 'btnRetry': if (sim.gameoverArmed) goReady(); break;
+      case 'btnGoMenu': if (sim.gameoverArmed) goMenu(); break;
+      case 'btnSkip':
+        if (sim.gameoverArmed) finishEntry('Score not saved to the leaderboard.');
+        break;
+      case 'btnExportCsv':
+        downloadText('croissant-flap-leaderboard-' + localDateStamp() + '.csv', Leaderboard.toCSV(), 'text/csv;charset=utf-8');
+        break;
+      case 'btnExportJson':
+        downloadText('croissant-flap-leaderboard-' + localDateStamp() + '.json', Leaderboard.toJSON(), 'application/json');
+        break;
+      case 'btnClear':
+        openConfirm('Clear leaderboard?', 'This permanently deletes all ' + Leaderboard.list().length +
+          ' scores and contacts on this device. Export first if you need a copy.', 'Clear', function () {
+          Leaderboard.clear();
+          renderStaff();
+          updateNotices();
+        });
+        break;
+      case 'btnConfirmOk': {
+        const act = confirmAction;
+        closeDialog();
+        if (act) act();
+        break;
+      }
+    }
+  });
+
+  entryForm.addEventListener('submit', onSaveEntry);
+  [inName, inContact, inConsent].forEach(function (c) {
+    c.addEventListener('input', validateForm);
+    c.addEventListener('change', validateForm);
+  });
+
+  $('pinForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (inPin.value === String(EVENT_CONFIG.adminPin)) {
+      dialogReturnFocus = null;
+      closeDialog();
+      setScreen('staff');
+    } else {
+      pinErr.textContent = 'Wrong PIN.';
+      inPin.value = '';
+      inPin.focus();
+    }
+  });
+
+  function fillStaticText() {
+    document.querySelectorAll('[data-prizes]').forEach(function (ul) {
+      ul.textContent = '';
+      EVENT_CONFIG.prizes.forEach(function (p, i) {
+        const li = el('li');
+        li.appendChild(el('span', 'badge p' + (i + 1), p.place));
+        li.appendChild(el('span', '', p.prize));
+        ul.appendChild(li);
+      });
+    });
+    const terms = $('termsList');
+    EVENT_CONFIG.termsText.forEach(function (t) { terms.appendChild(el('li', '', t)); });
+    $('eventEnd').textContent = EVENT_CONFIG.eventEndText;
+    $('lbNote').textContent = 'Prizes go to the top 3 by highest score at the end of the event. ' + EVENT_CONFIG.eventEndText;
+    $('consentText').textContent = 'I agree that ' + EVENT_CONFIG.shopName + ' may use this contact only to tell me if I win.';
+    if (EVENT_CONFIG.shopName && EVENT_CONFIG.shopName !== 'Croissant Flap') {
+      $('menuShop').textContent = 'by ' + EVENT_CONFIG.shopName;
+      $('menuShop').hidden = false;
+    }
+    const lvl = $('levelList');
+    LEVELS.forEach(function (L) {
+      lvl.appendChild(el('li', '', 'Level ' + L.level + (L.startsAt ? ': ' + L.startsAt + ' pts' : ': start')));
+    });
+    $('testBadge').hidden = !TEST_MODE;
+  }
+
+  // ---- Layout: fixed 360x640 playfield, letterboxed and scaled to fit ----
+  let lastFW = 0;
+  let lastFH = 0;
+  function layout() {
+    const box = safeEl.getBoundingClientRect();
+    const scale = Math.max(0.05, Math.min(box.width / W, box.height / H));
+    const fw = Math.max(1, Math.floor(W * scale));
+    const fh = Math.max(1, Math.floor(H * scale));
+    frameEl.style.width = fw + 'px';
+    frameEl.style.height = fh + 'px';
+    frameEl.style.left = Math.floor((box.width - fw) / 2) + 'px';
+    frameEl.style.top = Math.floor((box.height - fh) / 2) + 'px';
+    frameEl.style.fontSize = clamp(15 * fw / W, 13, 26).toFixed(2) + 'px';
+    frameEl.style.setProperty('--k', (fw / W).toFixed(4));
+    const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    document.getElementById('rotateHint').hidden = !(coarse && box.width > box.height && fw < 300);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cw = Math.round(fw * dpr);
+    const ch = Math.round(fh * dpr);
+    if (cw !== canvas.width || ch !== canvas.height) {
+      canvas.width = cw;
+      canvas.height = ch;
+      R = cw / W;
+      buildSprites();
+    }
+    const changed = lastFW && (fw !== lastFW || fh !== lastFH);
+    lastFW = fw;
+    lastFH = fh;
+    if (changed) pauseGame();
+  }
+
+  // ==========================================================================
+  // GAME LOOP
+  // ==========================================================================
+
+  let manualClock = false;
+  let lastFrameTime = 0;
+
+  function advance(seconds) {
+    sim.acc += Math.min(Math.max(seconds, 0), MAX_FRAME);
+    // The tiny epsilon keeps float error from turning one step into zero or two.
+    while (sim.acc >= DT - 1e-9) {
+      update(DT);
+      sim.acc -= DT;
+    }
+    state.alpha = clamp(sim.acc / DT, 0, 1);
+  }
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const elapsed = lastFrameTime ? (now - lastFrameTime) / 1000 : 0;
+    lastFrameTime = now;
+    if (!manualClock) advance(elapsed);
+    render();
+  }
+
+  function getState() {
+    return {
+      screen: state.screen,
+      dialog: state.dialog,
+      score: sim.score,
+      level: sim.level,
+      levelLocked: sim.levelLocked,
+      best: Store.best(),
+      flaps: sim.flaps,
+      seed: sim.seed,
+      croissant: { x: CROISSANT_X, y: sim.y, vy: sim.vy, rx: HITBOX_RX, ry: HITBOX_RY, peakY: sim.peakY, rot: sim.rot },
+      phys: { speed: sim.phys.speed, gravity: sim.phys.gravity, flap: sim.phys.flap },
+      obstacles: sim.obstacles.map(function (o) {
+        return { x: o.x - sim.distance, w: OBSTACLE_W, gap: o.gap, gapCenter: o.gapCenter, gapTop: o.gapTop, gapBottom: o.gapBottom, scored: o.scored };
+      }),
+      distance: sim.distance,
+      audio: Sound.info(),
+      muted: Sound.isMuted(),
+      storage: Store.status(),
+      storageKey: STORAGE_KEY,
+      gameoverArmed: sim.gameoverArmed,
+      qualifies: sim.qualifies,
+      manualClock: manualClock
+    };
+  }
+
+  function init() {
+    Store.onChange(updateNotices);
+    Store.load();
+    Sound.setMuted(Store.get().muted);
+    Sound.onReady(syncMusic);
+    fillStaticText();
+    updateMuteButtons();
+    updateNotices();
+    layout();
+    resetRun();
+    setScreen('menu');
+    requestAnimationFrame(frame);
+  }
+
+  if (TEST_MODE) {
+    window.__croissant = {
+      getState: getState,
+      getConfig: function () {
+        return {
+          LEVELS: LEVELS.map(function (L) { return Object.assign({}, L); }),
+          EVENT_CONFIG: JSON.parse(JSON.stringify(EVENT_CONFIG)),
+          constants: {
+            W: W, H: H, GROUND_Y: GROUND_Y, OBSTACLE_W: OBSTACLE_W, GAP_MARGIN: GAP_MARGIN,
+            CROISSANT_X: CROISSANT_X, HITBOX_RX: HITBOX_RX, HITBOX_RY: HITBOX_RY, CEILING_Y: CEILING_Y,
+            START_Y: START_Y, TERMINAL_VY: TERMINAL_VY, DT: DT, MAX_FRAME: MAX_FRAME,
+            GAMEOVER_PANEL_DELAY: GAMEOVER_PANEL_DELAY, BUTTON_ARM_DELAY: BUTTON_ARM_DELAY,
+            LEADERBOARD_SIZE: LEADERBOARD_SIZE, STAFF_HOLD_MS: STAFF_HOLD_MS
+          }
+        };
+      },
+      setSeed: function (n) { sim.seedOverride = n >>> 0; },
+      startAtLevel: function (n, lockLevel) {
+        n = clamp(Math.round(n), 1, LEVELS.length);
+        if (state.dialog) closeDialog();
+        resetRun();
+        setLevel(n, true);
+        sim.levelLocked = !!lockLevel;
+        updateHud(true);
+        startRun();
+      },
+      // Advances the simulation by exactly `seconds`, in frames of `frameMs`, and freezes the real-time clock.
+      step: function (seconds, frameMs) {
+        manualClock = true;
+        const f = (frameMs > 0 ? frameMs : 1000 / 60) / 1000;
+        let remaining = Math.max(0, seconds);
+        while (remaining > 1e-9) {
+          const d = Math.min(f, remaining);
+          advance(d);
+          remaining -= d;
+        }
+        return getState();
+      },
+      realtime: function () { manualClock = false; lastFrameTime = 0; },
+      flap: function () { requestFlap(); },
+      resetPeak: function () { sim.peakY = sim.y; },
+      endRunWithScore: function (score, level) {
+        if (state.dialog) closeDialog();
+        resetRun();
+        startRun();
+        sim.score = score;
+        setLevel(level || levelForScore(score), true);
+        crash();
+      },
+      leaderboard: {
+        list: function () { return Leaderboard.list(); },
+        add: function (e) { return Leaderboard.add(e); },
+        qualifies: function (s) { return Leaderboard.qualifies(s); },
+        clear: function () { return Leaderboard.clear(); }
+      }
+    };
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+node_modules/
+screenshots/
+last-results.json
+package-lock.json
