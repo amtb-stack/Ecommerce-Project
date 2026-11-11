@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kejar Tempahan Raya · The Baker</title>
+<meta name="description" content="Tempahan kuih raya tak putus-putus! Siapkan sebanyak mungkin sebelum Malam Raya. Permainan Raya 2027 oleh The Baker.">
+<meta name="theme-color" content="#0A3D2A">
+<meta property="og:title" content="Kejar Tempahan Raya">
+<meta property="og:description" content="Boleh siapkan semua tempahan kuih raya sebelum Malam Raya?">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<!-- Meta Pixel: paste the base code from Events Manager here. game.js sends the custom events listed in README.md. -->
+</head>
+<body>
+<div id="stage">
+  <canvas id="game" aria-label="Permainan Kejar Tempahan Raya"></canvas>
+
+  <button id="sound-btn" class="icon-btn" type="button" aria-label="Matikan bunyi" aria-pressed="false">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path class="spk" d="M2 6h3l4-3v10l-4-3H2z"/><path class="wave" d="M11 5.5c1 .8 1 4.2 0 5M12.8 3.8c2 1.8 2 6.6 0 8.4"/><path class="mute" d="M11 6l4 4M15 6l-4 4"/></svg>
+  </button>
+
+  <section id="title-screen" class="overlay" aria-labelledby="game-title">
+    <div class="panel">
+      <img class="logo" src="assets/thebaker-logo.png" alt="The Baker">
+      <h1 id="game-title">Kejar Tempahan Raya!</h1>
+      <p class="tagline">Tempahan kuih raya tak putus-putus. Siapkan sebanyak mungkin sebelum Malam Raya!</p>
+      <ul class="howto">
+        <li><span class="howto-ico" data-ico="cookie"></span><span>Seret kuih ke balang pelanggan</span></li>
+        <li><span class="howto-ico" data-ico="lever"></span><span>Mixer penuh? Tarik tuas untuk kumpulan turbo</span></li>
+        <li><span class="howto-ico" data-ico="pelita"></span><span>Setiap tempahan siap menyalakan pelita. 10 pelita, 3 bintang</span></li>
+      </ul>
+      <p id="challenge-line" class="challenge" hidden></p>
+      <button id="play-btn" class="btn btn-red" type="button">MAIN</button>
+      <p id="best-line" class="small-line"></p>
+    </div>
+  </section>
+
+  <section id="end-screen" class="overlay" aria-labelledby="end-title" hidden>
+    <div class="panel">
+      <p class="eyebrow">Selamat Hari Raya!</p>
+      <div class="stars" id="stars" aria-label="0 bintang"><span></span><span></span><span></span></div>
+      <h2 id="end-title">Juara Tart Nenas</h2>
+      <p class="score-big"><span id="end-score">0</span> <small>mata</small></p>
+      <p class="small-line" id="end-stats"></p>
+      <p class="next-star" id="next-star"></p>
+      <div class="actions">
+        <button id="replay-btn" class="btn btn-red" type="button">MAIN LAGI</button>
+        <button id="share-btn" class="btn btn-ghost" type="button">Kongsi &amp; cabar kawan</button>
+      </div>
+      <a class="product-card" id="product-card" href="#" target="_blank" rel="noopener">
+        <img id="product-img" src="assets/e1ag-oven.jpg" alt="">
+        <span class="product-text"><b id="product-q">Oven dalam game ni?</b> <span id="product-name">Ini The Baker E-1AG Convection Oven.</span> <span class="product-link">Lihat di Shopee ›</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section id="share-screen" class="overlay" aria-labelledby="share-title" hidden>
+    <div class="panel">
+      <h2 id="share-title">Kongsi skor anda</h2>
+      <img id="share-img" class="share-img" alt="Kad skor Kejar Tempahan Raya">
+      <p class="small-line">Tekan lama pada gambar untuk simpan.</p>
+      <div class="actions">
+        <button id="native-share-btn" class="btn btn-red" type="button" hidden>Kongsi</button>
+        <button id="copy-link-btn" class="btn btn-ghost" type="button">Salin pautan cabaran</button>
+        <button id="close-share-btn" class="btn-text" type="button">Tutup</button>
+      </div>
+      <p id="share-status" class="small-line" role="status"></p>
+    </div>
+  </section>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
