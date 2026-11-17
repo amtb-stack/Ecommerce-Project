@@ -1,7 +1,7 @@
 # Vespa Raya The Baker
 
-Permainan runner pixel art 2D: bawa vespa, hantar kuih raya ke 30 rumah kampung dari siang hingga malam raya.
-Semua grafik dilukis dengan kod (tiada fail imej), bunyi disintesis dengan WebAudio.
+Permainan runner kartun 2D gaya chibi: bawa vespa, hantar kuih raya ke 30 rumah kampung dari siang hingga malam raya.
+Semua grafik dilukis dengan kod sebagai vektor (tiada fail imej), muzik & bunyi disintesis dengan WebAudio.
 
 ![Contoh frame](preview/frames.png)
 
@@ -20,6 +20,16 @@ npx serve vespa-raya
 | Lompat (tekan lama = lebih tinggi) | Tekan mana-mana bahagian skrin | Space / ↑ |
 | Hantar kuih | Butang **HANTAR** | Enter / → |
 | Rehat | Butang ‖ | P / Esc |
+
+## Muzik (gubahan asal)
+
+| Keadaan | Rentak & alat |
+| --- | --- |
+| Menu, keputusan | Gamelan Melayu: saron, keromong, gambang, kenong, gong agung, gendang ibu/anak |
+| Siang → petang | Joget raya 6/8 (hemiola): biola, akordion, gendang Melayu, rebana, kompang |
+| Senja → malam | Zapin: gambus, marwas, dok, kompang + warna gamelan, lebih dramatik |
+| Nyawa tinggal 1 | Versi tegang: tremolo gambus, gendang laju, degupan jantung |
+| ALAHAI OPPS | Lagu "pening": nada beralun, wisel jatuh, burung bercicip |
 
 ## Aliran skrin
 
@@ -41,7 +51,8 @@ Tambah `?frame=<nama>` pada URL untuk paparan statik satu skrin:
 | Nama & ayat fasa (Siang/Petang/...) | `PHASES` |
 | Warna langit ikut masa | `SKY` |
 | Teks bila terlanggar | `HURT_TEXT` |
-| Watak, vespa, angsa, rumah | `drawRider`, `drawVespa`, `drawGoose`, `drawHouse` |
+| Watak chibi, vespa, angsa, rumah | `drawChibi`/`chibiHead`, `drawVespaV`, `drawGooseV`, `drawHouseV` |
+| Muzik (melodi, rentak, tempo) | `SONG_MENU`, `SONG_JOGET`, `SONG_PLAY`, `KOMPANG_*`, `Sfx.step*` |
 | Susunan halangan setiap fasa | `fillHazards` (pemberat `weights`) |
 | Markah hantaran / combo | `deliver`, `comboMult` |
 | Skrin jatuh | `drawCrashScene` |
