@@ -8,6 +8,19 @@ Living document. Ask Claude to "update the plan with new results" and paste your
 - Market: assumed Shopee Malaysia, budgets in RM (confirm)
 - Last updated: 2026-11-17
 
+## Live setup (as built in Ads Manager)
+- Campaign: C1 Prospecting, Sales objective, Auction buying type, Shopee MY catalog
+- Scope: Deep fryers only (Ovens and Bundles paused for now)
+- Budget: RM15/day at ad set level (about RM105/week; normal spend was RM100/week). Budget sharing off.
+- Start: planned 2026-11-18 12:00 AM (GMT+8), no end date. Review after 7 days.
+- Conversion: Website and app, dataset "Shopee MY Website's Pixel", app "Shopee MY", event Purchase, Maximize number of conversions, Standard attribution, Highest volume bid
+- Audience: Advantage+ on, Malaysia, min age 25, all languages. Suggestions only: Restaurant, Food truck, Catering, Bakery, Small business. Stayed in current setup (no value rules).
+- Placements: Advantage+ (WhatsApp Status included; check placement breakdown after 7 days)
+- Ad: Product media, Carousel, Deep Fryers product set, multi-advertiser ads off
+- Destination: Manual. Default App (Shopee MY) with deep link to the fryer category; backup Website with web link of the same page.
+- Copy: 3 primary texts, 3 headlines (Commercial Deep Fryers / Built for Busy Kitchens / Fry More, Wait Less), description "Shop on Shopee MY", CTA Shop now
+- Constraints: user is an employee with no control of price, margin or target. Target ROAS or cost per sale still to be asked from manager.
+
 ## Steps
 
 ### Phase 0: Eligibility and access
@@ -81,3 +94,4 @@ Living document. Ask Claude to "update the plan with new results" and paste your
 
 ## Change history
 - 2026-11-17: Initial plan created.
+- 2026-11-17: First campaign (deep fryers, RM15/day) published. Live setup recorded.
