@@ -46,7 +46,7 @@ Tambah `?frame=<nama>` pada URL untuk paparan statik satu skrin:
 | Nak ubah | Lokasi dalam `game.js` |
 | --- | --- |
 | Jumlah rumah, kelajuan, lompatan | `TOTAL`, `SPEED_MIN/MAX`, `JUMP_V/GRAV` (atas fail) |
-| Warna sprite | `PAL` |
+| Warna watak & rumah | `SKIN`, `TEAL`, `CREAM`, `HOUSE_STYLE` (atas bahagian sprite) |
 | Nama penerima kuih | `NAMES` |
 | Nama & ayat fasa (Siang/Petang/...) | `PHASES` |
 | Warna langit ikut masa | `SKY` |
