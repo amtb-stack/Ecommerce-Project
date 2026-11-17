@@ -14,7 +14,7 @@ const CANAL_TOP = 300, CANAL_BOT = 324;
 const PX = 30;                  // kedudukan x vespa di skrin
 const TOTAL = 30;               // jumlah rumah
 const JUMP_V = 330, GRAV = 1000, HOLD_G = 0.7;
-const SPEED_MIN = 74, SPEED_MAX = 132;
+const SPEED_MIN = 88, SPEED_MAX = 140;
 const FONT_PIX = '"Press Start 2P", monospace';
 const FONT_BODY = '"Pixelify Sans", "Trebuchet MS", sans-serif';
 const QS = new URLSearchParams(location.search);
@@ -461,84 +461,310 @@ function heartURI(fill, shine) {
 }
 
 // ============================================================
-// Audio (WebAudio, sintesis chiptune)
+// Audio — gamelan Melayu & zapin raya (gubahan asal, disintesis WebAudio)
+//   menu   : gamelan (saron, bonang, peking, kenong, gong) skala pelog D
+//   main   : zapin (gambus, marwas, dok) + lapisan gamelan, makin rancak ikut fasa
+//   tegang : versi dramatik bila nyawa tinggal satu
+//   pening : lagu "pening-pening" untuk skrin ALAHAI OPPS
 // ============================================================
+const MIDI = (n) => { const m = n.match(/^([A-G])(b|#)?(\d)$/); return { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (+m[3] + 1) * 12; };
+const mf = (m) => 440 * Math.pow(2, (m - 69) / 12);
+const noteF = (n) => mf(MIDI(n));
+
+// [nota, panjang dalam 1/16]. '-' = rehat
+function seqToSong(bars, roots) {
+  const len = bars.length * 16, onset = new Array(len).fill(null), held = new Array(len).fill(0);
+  let s = 0;
+  for (const bar of bars) for (const [n, l] of bar) { if (n !== '-') onset[s] = { m: MIDI(n), len: l }; for (let k = 0; k < l; k++) held[s + k] = n === '-' ? -1 : MIDI(n); s += l; }
+  for (let i = 0; i < len; i++) if (held[i] < 0) held[i] = held[(i + len - 1) % len] > 0 ? held[(i + len - 1) % len] : MIDI('D4');
+  return { len, bars: bars.length, onset, held, roots: (roots || []).map(MIDI) };
+}
+// Lagu tema zapin (mod Hijaz D: D Eb F# G A Bb C)
+const Z_A = [
+  [['A4', 2], ['Bb4', 2], ['A4', 2], ['G4', 2], ['F#4', 2], ['G4', 2], ['A4', 4]],
+  [['Bb4', 2], ['C5', 2], ['Bb4', 1], ['A4', 1], ['G4', 2], ['A4', 8]],
+  [['D5', 2], ['C5', 2], ['Bb4', 2], ['A4', 2], ['G4', 1], ['A4', 1], ['Bb4', 2], ['A4', 4]],
+  [['G4', 2], ['F#4', 2], ['Eb4', 2], ['F#4', 2], ['D4', 8]],
+];
+const Z_B = [
+  [['D4', 2], ['F#4', 2], ['A4', 2], ['D5', 4], ['C5', 2], ['D5', 2], ['Eb5', 2]],
+  [['D5', 2], ['C5', 2], ['Bb4', 2], ['C5', 2], ['A4', 8]],
+  [['Bb4', 2], ['A4', 2], ['G4', 2], ['A4', 2], ['F#4', 2], ['G4', 2], ['A4', 4]],
+  [['G4', 2], ['F#4', 1], ['G4', 1], ['Eb4', 2], ['F#4', 2], ['D4', 8]],
+];
+const Z_C = [
+  [['D5', 2], ['Eb5', 2], ['D5', 2], ['C5', 2], ['Bb4', 2], ['C5', 2], ['D5', 4]],
+  [['G5', 2], ['F#5', 2], ['Eb5', 2], ['D5', 2], ['C5', 2], ['D5', 6]],
+  [['Bb4', 2], ['C5', 2], ['D5', 2], ['Bb4', 2], ['A4', 2], ['Bb4', 2], ['C5', 4]],
+  [['Bb4', 2], ['A4', 2], ['G4', 2], ['F#4', 2], ['G4', 8]],
+  [['G4', 2], ['A4', 2], ['Bb4', 2], ['A4', 2], ['G4', 2], ['F#4', 2], ['G4', 4]],
+  [['A4', 2], ['Bb4', 2], ['A4', 2], ['G4', 2], ['F#4', 8]],
+  [['D4', 2], ['Eb4', 2], ['F#4', 2], ['G4', 2], ['A4', 2], ['Bb4', 2], ['C5', 2], ['Bb4', 2]],
+  [['A4', 2], ['G4', 1], ['A4', 1], ['F#4', 2], ['Eb4', 2], ['D4', 8]],
+];
+const SONG_PLAY = seqToSong([...Z_A, ...Z_B, ...Z_A, ...Z_C],
+  ['D3', 'G2', 'D3', 'D3', 'D3', 'C3', 'G2', 'D3', 'D3', 'G2', 'D3', 'D3', 'D3', 'C3', 'G2', 'G2', 'G2', 'D3', 'C3', 'D3']);
+SONG_PLAY.gongBars = new Set([0, 4, 8, 12, 16]);
+// Versi tegang (nyawa tinggal satu)
+const SONG_TENSE = seqToSong([
+  [['D4', 1], ['Eb4', 1], ['F#4', 1], ['G4', 1], ['A4', 2], ['G4', 2], ['F#4', 2], ['Eb4', 2], ['D4', 4]],
+  [['A4', 1], ['Bb4', 1], ['C5', 1], ['Bb4', 1], ['A4', 2], ['G4', 2], ['A4', 8]],
+  [['D5', 2], ['C5', 1], ['Bb4', 1], ['A4', 2], ['G4', 1], ['F#4', 1], ['G4', 2], ['A4', 2], ['Bb4', 4]],
+  [['A4', 2], ['G4', 2], ['F#4', 2], ['Eb4', 2], ['D4', 2], ['Eb4', 2], ['D4', 4]],
+], ['D2', 'D2', 'G2', 'D2']);
+SONG_TENSE.gongBars = new Set([0, 2]);
+// Menu: gamelan pelog D (D Eb F A Bb), satu not balungan setiap ketukan
+const PEL = { 1: 'D4', 2: 'Eb4', 3: 'F4', 5: 'A4', 6: 'Bb4', '1.': 'D5', '2.': 'Eb5', '3.': 'F5', '5.': 'A5' };
+const BAL = ('5 6 5 3  2 3 5 1.  6 5 3 2  3 2 1 1  ' +
+  '3 5 6 1.  2. 1. 6 5  6 1. 5 3  2 3 5 5  ' +
+  '1. 6 5 3  5 6 1. 2.  3. 2. 1. 6  5 3 2 1').trim().split(/\s+/);
+const SONG_MENU = (() => {
+  const beats = BAL.map((d) => MIDI(PEL[d]));
+  return { len: beats.length * 4, beats, gongEvery: 16 };
+})();
+// Rentak
+const MARWAS_A = 'D..T..D.T.D.T...';
+const MARWAS_B = '..t..t.t...t..tt';
+const DOK = 'B.....B...B.....';
+const FILL = 'D.TTD.TTDTDTD.D.';
+const TENSE_DRUM = 'TtTtDtTtTtDtTtDT';
+const HEART = 'B..B......B..B..';
+const BPM_PLAY = [0, 108, 114, 118, 124];
+
 const Sfx = {
-  ctx: null, master: null, musicGain: null, muted: store.get('vrtb_muted', false), musicOn: false, timer: null, step: 0, nextT: 0,
+  ctx: null, master: null, musicGain: null, muted: store.get('vrtb_muted', false),
+  musicOn: false, timer: null, step: 0, nextT: 0, track: 'menu', level: 1, tense: false, ksCache: {},
   init() {
     if (FRAME) return;
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC();
-      this.master = this.ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.55; this.master.connect(this.ctx.destination);
-      this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = 0.32; this.musicGain.connect(this.master);
-      const len = this.ctx.sampleRate * 0.6; this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-      const d = this.noiseBuf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    } catch (e) { this.ctx = null; }
+    try { const AC = window.AudioContext || window.webkitAudioContext; this.attach(new AC()); } catch (e) { this.ctx = null; }
   },
-  setMuted(m) { this.muted = m; store.set('vrtb_muted', m); if (this.master) this.master.gain.value = m ? 0 : 0.55; },
-  tone(freq, dur, type = 'square', vol = 0.12, slide = 0, delay = 0, dest) {
-    if (!this.ctx) return;
-    const t = this.ctx.currentTime + delay, o = this.ctx.createOscillator(), g = this.ctx.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.linearRampToValueAtTime(Math.max(30, freq + slide), t + dur);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-    o.connect(g); g.connect(dest || this.master); o.start(t); o.stop(t + dur + 0.02);
+  attach(ctx, forceOn) {
+    this.ctx = ctx; this.ksCache = {};
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.2; comp.connect(ctx.destination);
+    this.master = ctx.createGain(); this.master.gain.value = (this.muted && !forceOn) ? 0 : 0.7; this.master.connect(comp);
+    this.musicGain = ctx.createGain(); this.musicGain.gain.value = 0.6; this.musicGain.connect(this.master);
+    const len = Math.floor(ctx.sampleRate * 0.6); this.noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = this.noiseBuf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
   },
-  noise(dur, vol = 0.2, freq = 1200, delay = 0) {
-    if (!this.ctx) return;
-    const t = this.ctx.currentTime + delay, s = this.ctx.createBufferSource(), f = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-    s.buffer = this.noiseBuf; f.type = 'lowpass'; f.frequency.value = freq;
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-    s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t + dur + 0.02);
+  setMuted(m) { this.muted = m; store.set('vrtb_muted', m); if (this.master) this.master.gain.value = m ? 0 : 0.7; },
+  now() { return this.ctx ? this.ctx.currentTime : 0; },
+
+  // ---------- blok binaan bunyi ----------
+  env(type, f, t, decay, vol, dest, o = {}) {
+    const c = this.ctx, osc = c.createOscillator(), g = c.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(o.f0 || f, t);
+    if (o.f0) osc.frequency.exponentialRampToValueAtTime(f, t + (o.glide || 0.02));
+    if (o.fEnd) osc.frequency.exponentialRampToValueAtTime(o.fEnd, t + (o.glide || decay));
+    if (o.wob) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.wob; lg.gain.value = f * (o.wobDepth || 0.03); l.connect(lg); lg.connect(osc.frequency); l.start(t); l.stop(t + decay + 0.05); }
+    const a = o.attack || 0.002;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + decay);
+    osc.connect(g); g.connect(dest || this.master); osc.start(t); osc.stop(t + a + decay + 0.05);
   },
-  jump() { this.tone(300, 0.14, 'square', 0.09, 380); },
-  coin() { this.tone(988, 0.06, 'square', 0.07); this.tone(1319, 0.12, 'square', 0.07, 0, 0.06); },
-  jar() { [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, 0.08, 'square', 0.07, 0, i * 0.05)); },
-  life() { [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.1, 'triangle', 0.14, 0, i * 0.06)); },
+  noiseHit(t, decay, vol, ftype, freq, q, dest) {
+    const c = this.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = this.noiseBuf; f.type = ftype; f.frequency.value = freq; if (q) f.Q.value = q;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    s.connect(f); f.connect(g); g.connect(dest || this.master); s.start(t, Math.random() * 0.3); s.stop(t + decay + 0.02);
+  },
+  // gambus: tali dipetik (Karplus-Strong)
+  ks(f) {
+    const sr = this.ctx.sampleRate, N = Math.max(2, Math.round(sr / f));
+    if (this.ksCache[N]) return this.ksCache[N];
+    const len = Math.floor(sr * 1.3), buf = this.ctx.createBuffer(1, len, sr), d = buf.getChannelData(0), line = new Float32Array(N);
+    let prev = 0; for (let i = 0; i < N; i++) { prev = prev * 0.35 + (Math.random() * 2 - 1) * 0.65; line[i] = prev; }
+    let idx = 0, mx = 0;
+    for (let i = 0; i < len; i++) { const a = line[idx], b = line[(idx + 1) % N]; d[i] = a; line[idx] = (a + b) * 0.5 * 0.9968; idx = (idx + 1) % N; if (Math.abs(a) > mx) mx = Math.abs(a); }
+    for (let i = 0; i < len; i++) d[i] /= (mx || 1);
+    return (this.ksCache[N] = { buf, N });
+  },
+  gambus(f, t, vol, dur, o = {}) {
+    const c = this.ctx, k = this.ks(f), s = c.createBufferSource(), g = c.createGain(), lp = c.createBiquadFilter(), pk = c.createBiquadFilter();
+    s.buffer = k.buf; const rate = f * k.N / c.sampleRate; s.playbackRate.setValueAtTime(rate, t);
+    if (o.bend) s.playbackRate.exponentialRampToValueAtTime(rate * o.bend, t + (o.bendT || 0.3));
+    lp.type = 'lowpass'; lp.frequency.value = o.dark ? 1100 : 3800;
+    pk.type = 'peaking'; pk.frequency.value = 750; pk.Q.value = 1.2; pk.gain.value = 5;
+    const end = t + Math.max(0.12, dur) + 0.22;
+    g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, end - 0.22); g.gain.exponentialRampToValueAtTime(0.0001, end);
+    s.connect(lp); lp.connect(pk); pk.connect(g); g.connect(o.dest || this.musicGain); s.start(t); s.stop(end + 0.02);
+  },
+  metal(f, t, vol, decay, parts, beat, dest, o) {
+    for (const [r, a, dk] of parts) this.env('sine', f * r, t, decay * dk, vol * a, dest, o);
+    if (beat) this.env('sine', f + beat, t, decay, vol * 0.45, dest, o);
+  },
+  saron(f, t, vol, decay = 1.1, dest) { this.metal(f, t, vol, decay, [[1, 1, 1], [2.76, 0.32, 0.25], [5.4, 0.12, 0.1]], 2.4, dest || this.musicGain); },
+  bonang(f, t, vol, dest, o) { this.metal(f, t, vol, 0.65, [[1, 1, 1], [2.42, 0.28, 0.3], [4.1, 0.09, 0.12]], 1.7, dest || this.musicGain, { f0: f * 1.015, glide: 0.025, ...(o || {}) }); },
+  kenong(f, t, vol, dest) { this.metal(f, t, vol, 1.4, [[1, 1, 1], [2.01, 0.22, 0.35], [3.1, 0.08, 0.15]], 1.3, dest || this.musicGain, { attack: 0.006 }); },
+  gong(t, vol, dest) {
+    const d = dest || this.musicGain, f = 68;
+    this.env('sine', f, t, 4.2, vol, d, { attack: 0.025, f0: f * 1.04, glide: 0.25 });
+    this.env('sine', f + 0.7, t, 4.2, vol * 0.8, d, { attack: 0.025 });
+    this.env('sine', f * 2.01, t, 1.6, vol * 0.25, d, { attack: 0.02 });
+    this.env('sine', f * 2.93, t, 0.7, vol * 0.1, d, { attack: 0.01 });
+    this.noiseHit(t, 0.12, vol * 0.25, 'lowpass', 220, 0, d);
+  },
+  dung(t, vol, dest) { this.env('sine', 88, t, 0.2, vol, dest || this.musicGain, { f0: 170, glide: 0.09 }); this.noiseHit(t, 0.03, vol * 0.3, 'lowpass', 900, 0, dest || this.musicGain); },
+  tak(t, vol, bp = 2600, dest) { this.noiseHit(t, 0.07, vol, 'bandpass', bp, 1.3, dest || this.musicGain); this.env('triangle', 540, t, 0.04, vol * 0.35, dest || this.musicGain); },
+  dok(t, vol, dest) { this.env('sine', 54, t, 0.36, vol, dest || this.musicGain, { f0: 100, glide: 0.18 }); },
+  kesi(t, vol, dest) { this.noiseHit(t, 0.1, vol, 'highpass', 6500, 0, dest || this.musicGain); },
+
+  // ---------- kesan bunyi ----------
+  at(delay = 0) { return this.now() + delay; },
+  jump() { if (!this.ctx) return; this.env('square', 620, this.at(), 0.12, 0.05, this.master, { f0: 300, glide: 0.1 }); },
+  coin() { if (!this.ctx) return; const t = this.at(); this.bonang(noteF('A5'), t, 0.1, this.master); this.bonang(noteF('D6'), t + 0.06, 0.09, this.master); },
+  jar() { if (!this.ctx) return; const t = this.at(); ['D5', 'F#5', 'A5', 'D6'].forEach((n, i) => this.bonang(noteF(n), t + i * 0.05, 0.1, this.master)); },
+  life() { if (!this.ctx) return; const t = this.at(); ['D5', 'F#5', 'A5', 'C6', 'D6'].forEach((n, i) => this.saron(noteF(n), t + i * 0.07, 0.11, 0.8, this.master)); this.kenong(noteF('D5'), t + 0.38, 0.12, this.master); },
   deliver(perfect) {
-    const n = perfect ? [523, 659, 784, 1047, 1319] : [523, 659, 784, 1047];
-    n.forEach((f, i) => this.tone(f, 0.12, 'square', 0.08, 0, i * 0.055));
-    this.tone(perfect ? 2093 : 1568, 0.25, 'triangle', 0.08, 0, n.length * 0.055);
+    if (!this.ctx) return; const t = this.at();
+    const ns = perfect ? ['D5', 'F#5', 'A5', 'Bb5', 'D6'] : ['D5', 'F#5', 'A5', 'D6'];
+    ns.forEach((n, i) => this.bonang(noteF(n), t + i * 0.055, 0.1, this.master));
+    this.kenong(noteF(perfect ? 'D5' : 'A4'), t + ns.length * 0.055, 0.14, this.master);
   },
-  throwIt() { this.tone(600, 0.15, 'triangle', 0.08, 500); },
-  nope() { this.tone(160, 0.1, 'square', 0.07); },
-  hit() { this.noise(0.25, 0.3, 900); this.tone(160, 0.3, 'sawtooth', 0.12, -100); },
-  honk() { this.tone(330, 0.16, 'sawtooth', 0.09, -60); this.tone(310, 0.2, 'sawtooth', 0.09, -60, 0.2); },
-  splash() { this.noise(0.5, 0.3, 2000); this.tone(400, 0.3, 'sine', 0.1, -300); },
-  thud() { this.tone(110, 0.15, 'triangle', 0.25, -50); this.noise(0.12, 0.15, 500); },
-  whistle() { this.tone(1400, 0.6, 'sine', 0.04, -900); },
-  miss() { [392, 330, 262].forEach((f, i) => this.tone(f, 0.14, 'triangle', 0.13, 0, i * 0.12)); },
-  phase() { [659, 784, 988, 1319].forEach((f, i) => this.tone(f, 0.18, 'triangle', 0.1, 0, i * 0.09)); },
-  boom() { this.noise(0.6, 0.12, 700); },
-  pop() { this.noise(0.05, 0.05, 4000); },
-  tick() { this.tone(880, 0.08, 'square', 0.07); },
-  go() { this.tone(1320, 0.3, 'square', 0.08); },
-  win() { [523, 659, 784, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.16, 'square', 0.08, 0, i * 0.11)); },
-  crash() { this.noise(0.6, 0.35, 700); [330, 262, 196, 131].forEach((f, i) => this.tone(f, 0.2, 'sawtooth', 0.08, -20, 0.1 + i * 0.13)); },
-  // Muzik latar: gelung pentatonik ceria (gubahan asal)
-  startMusic() {
-    if (!this.ctx || this.musicOn) return; this.musicOn = true; this.step = 0; this.nextT = this.ctx.currentTime + 0.05;
-    this.timer = setInterval(() => this.schedule(), 30);
+  throwIt() { if (!this.ctx) return; this.env('triangle', 1100, this.at(), 0.15, 0.06, this.master, { f0: 500, glide: 0.14 }); },
+  nope() { if (!this.ctx) return; this.tak(this.at(), 0.12, 1800, this.master); },
+  hit() { if (!this.ctx) return; const t = this.at(); this.noiseHit(t, 0.25, 0.3, 'lowpass', 900); this.env('sawtooth', 70, t, 0.3, 0.12, this.master, { f0: 170, glide: 0.25 }); this.gambus(noteF('Eb3'), t, 0.35, 0.3, { bend: 0.75, dest: this.master }); },
+  honk() { if (!this.ctx) return; const t = this.at(); this.env('sawtooth', 300, t, 0.16, 0.08, this.master, { f0: 340 }); this.env('sawtooth', 280, t + 0.2, 0.2, 0.08, this.master, { f0: 330 }); },
+  splash() { if (!this.ctx) return; const t = this.at(); this.noiseHit(t, 0.5, 0.3, 'lowpass', 2000); this.env('sine', 120, t, 0.3, 0.1, this.master, { f0: 400, glide: 0.3 }); },
+  thud() { if (!this.ctx) return; const t = this.at(); this.dok(t, 0.4, this.master); this.noiseHit(t, 0.12, 0.15, 'lowpass', 500); },
+  whistle() { if (!this.ctx) return; this.env('sine', 500, this.at(), 0.6, 0.04, this.master, { f0: 1400, glide: 0.6 }); },
+  miss() { if (!this.ctx) return; const t = this.at(); ['A4', 'F#4', 'Eb4'].forEach((n, i) => this.gambus(noteF(n), t + i * 0.13, 0.4, 0.15, { dest: this.master })); },
+  phase() { if (!this.ctx) return; const t = this.at(); this.gong(t, 0.35, this.master); ['D5', 'Eb5', 'F#5', 'A5', 'D6'].forEach((n, i) => this.bonang(noteF(n), t + 0.05 + i * 0.07, 0.08, this.master)); },
+  boom() { if (!this.ctx) return; const t = this.at(); this.noiseHit(t, 0.6, 0.12, 'lowpass', 700); this.kesi(t + 0.15, 0.03, this.master); },
+  tick() { if (!this.ctx) return; this.kenong(noteF('A4'), this.at(), 0.16, this.master); },
+  go() { if (!this.ctx) return; const t = this.at(); this.gong(t, 0.45, this.master); this.tak(t, 0.3, 2600, this.master); this.bonang(noteF('D6'), t, 0.1, this.master); },
+  win() {
+    if (!this.ctx) return; const t = this.at();
+    // larian gambus + "tahtim" marwas + gong penutup
+    ['D4', 'Eb4', 'F#4', 'G4', 'A4', 'Bb4', 'C5', 'D5'].forEach((n, i) => this.gambus(noteF(n), t + i * 0.07, 0.4, 0.1, { dest: this.master }));
+    for (let i = 0; i < 8; i++) this.tak(t + 0.6 + i * 0.06, 0.25 + i * 0.02, 2600, this.master);
+    this.dung(t + 1.1, 0.6, this.master); this.gong(t + 1.1, 0.6, this.master);
+    ['D5', 'F#5', 'A5', 'D6'].forEach((n, i) => this.saron(noteF(n), t + 1.1 + i * 0.12, 0.12, 1.2, this.master));
   },
-  stopMusic() { this.musicOn = false; clearInterval(this.timer); },
-  schedule() {
-    const MEL = ['E5', 'G5', 'A5', 'G5', 'E5', 'D5', 'C5', 'D5', 'E5', '-', 'G5', 'E5', 'D5', 'C5', 'A4', '-',
-      'C5', 'D5', 'E5', 'G5', 'A5', 'C6', 'A5', 'G5', 'E5', 'D5', 'C5', 'D5', 'C5', '-', '-', '-',
-      'A4', 'C5', 'D5', 'E5', 'D5', 'C5', 'A4', 'G4', 'A4', '-', 'C5', 'D5', 'E5', '-', 'G5', '-',
-      'A5', 'G5', 'E5', 'D5', 'E5', 'G5', 'E5', 'D5', 'C5', 'D5', 'E5', 'D5', 'C5', '-', '-', '-'];
-    const BASS = ['C3', 'G3', 'A2', 'E3', 'F2', 'C3', 'G2', 'D3'];
-    const dt = 60 / 132 / 2;
-    while (this.nextT < this.ctx.currentTime + 0.12) {
-      const s = this.step % MEL.length, t = this.nextT - this.ctx.currentTime;
-      const n = MEL[s]; if (n !== '-') this.tone(noteF(n), dt * 0.9, 'square', 0.05, 0, t, this.musicGain);
-      if (s % 4 === 0) this.tone(noteF(BASS[(s / 4 | 0) % BASS.length]), dt * 1.8, 'triangle', 0.16, 0, t, this.musicGain);
-      if (s % 2 === 1) this.noiseAt(t, 0.03);
-      this.step++; this.nextT += dt;
+  crash() {
+    if (!this.ctx) return; const t = this.at();
+    this.noiseHit(t, 0.6, 0.35, 'lowpass', 700);
+    ['D5', 'C5', 'Bb4', 'A4', 'G4', 'F#4', 'Eb4', 'D4'].forEach((n, i) => this.gambus(noteF(n), t + 0.15 + i * 0.09, 0.4, 0.12, { dest: this.master }));
+    this.gong(t + 0.9, 0.5, this.master);
+  },
+
+  // ---------- muzik latar ----------
+  bpm() { if (this.track === 'menu') return 92; if (this.track === 'dizzy') return 72; if (this.tense) return Math.max(128, BPM_PLAY[this.level] + 8); return BPM_PLAY[this.level] || 108; },
+  play(track, level) {
+    if (!this.ctx) return;
+    const changed = track !== this.track || !this.musicOn;
+    this.track = track; if (level != null) this.level = level;
+    if (!changed) return;
+    this.stopMusic(); this.musicOn = true; this.step = 0; this.nextT = this.ctx.currentTime + 0.08;
+    this.timer = setInterval(() => this.pump(), 25); this.pump();
+  },
+  setLevel(l) { this.level = l; },
+  setTense(on) { if (this.tense !== on) { this.tense = on; this.pendingSwitch = true; } },
+  stopMusic() { this.musicOn = false; clearInterval(this.timer); this.timer = null; },
+  pump() {
+    if (!this.musicOn || !this.ctx) return;
+    while (this.nextT < this.ctx.currentTime + 0.15) { this.playStep(this.step, this.nextT); this.step++; this.nextT += 60 / this.bpm() / 4; }
+  },
+  playStep(step, t) {
+    if (this.track === 'menu') return this.stepMenu(step, t);
+    if (this.track === 'dizzy') return this.stepDizzy(step, t);
+    // tukar antara tema & versi tegang hanya pada permulaan bar
+    if (this.pendingSwitch && step % 16 === 0) { this.pendingSwitch = false; this.step = step = 0; this.curSong = this.tense ? SONG_TENSE : SONG_PLAY; }
+    const song = this.curSong || (this.curSong = SONG_PLAY);
+    return song === SONG_TENSE ? this.stepTense(step, t) : this.stepZapin(step, t);
+  },
+  stepZapin(step, t) {
+    const S0 = SONG_PLAY, s = step % S0.len, bar = s >> 4, b = s & 15, L = this.level, d16 = 60 / this.bpm() / 4;
+    if (b === 0 && S0.gongBars.has(bar)) this.gong(t, 0.5);
+    if (b === 8) this.kenong(mf(bar % 2 ? 62 : 57), t, 0.09);
+    const on = S0.onset[s];
+    if (on) {
+      this.gambus(mf(on.m), t, 0.34, on.len * d16);
+      if (L >= 4) this.gambus(mf(on.m + 12), t, 0.12, on.len * d16);
+      if (on.len >= 4 && L >= 2) for (let k = 2; k < on.len; k += (L >= 3 ? 1 : 2)) this.gambus(mf(on.m), t + k * d16, L >= 3 ? 0.13 : 0.17, d16);
     }
+    if (L >= 2 && b % 4 === 0) this.saron(mf(S0.held[s] + 12), t, 0.05, 0.9);
+    if (L >= 3 && b % 2 === 0) { const cur = S0.held[s], nx = S0.held[(s - (s % 4) + 4) % S0.len]; this.bonang(mf((b % 4 === 0 ? nx : cur) + 12), t, 0.035); }
+    if (L >= 2 && (b === 0 || b === 6 || b === 10)) this.gambus(mf(S0.roots[bar] + (b === 6 ? 7 : 0)), t, 0.26, d16 * 3, { dark: true });
+    if (L === 1 && (b === 0 || b === 10)) this.gambus(mf(S0.roots[bar]), t, 0.2, d16 * 3, { dark: true });
+    const fill = bar === S0.bars - 1 || (L >= 4 && bar % 4 === 3);
+    const ch = (fill ? FILL : MARWAS_A)[b];
+    if (ch === 'D') this.dung(t, 0.42); else if (ch === 'T') this.tak(t, 0.26);
+    if (L >= 2 && MARWAS_B[b] === 't') this.tak(t, 0.13, 3600);
+    if (L >= 3 && DOK[b] === 'B') this.dok(t, 0.4);
+    if (L >= 4 && b % 4 === 2) this.kesi(t, 0.04);
   },
-  noiseAt(delay, vol) { this.noise(0.04, vol, 6000, delay); },
+  stepTense(step, t) {
+    const S0 = SONG_TENSE, s = step % S0.len, bar = s >> 4, b = s & 15, d16 = 60 / this.bpm() / 4;
+    if (b === 0 && S0.gongBars.has(bar)) this.gong(t, 0.55);
+    const on = S0.onset[s];
+    if (on) this.gambus(mf(on.m), t, 0.34, on.len * d16);
+    // tremolo gambus rendah (bunyi cemas)
+    this.gambus(mf(S0.roots[bar] + 12 + (b % 8 === 7 ? 1 : 0)), t, 0.1, d16, { dark: true });
+    // bonang tinggi bertembung Eb/D
+    if (b % 2 === 0) this.bonang(noteF(b % 4 === 0 ? 'Eb6' : 'D6'), t, 0.025);
+    if (b % 4 === 0) this.saron(mf(S0.held[s] + 12), t, 0.05, 0.6);
+    const ch = TENSE_DRUM[b];
+    if (ch === 'D') this.dung(t, 0.45); else if (ch === 'T') this.tak(t, 0.24); else if (ch === 't') this.tak(t, 0.12, 3600);
+    if (HEART[b] === 'B') this.dok(t, 0.5);
+    if (b === 12) this.kenong(noteF('Eb4'), t, 0.08);
+  },
+  stepMenu(step, t) {
+    const M = SONG_MENU, s = step % M.len, beat = s >> 2, sub = s & 3, bal = M.beats[beat], nxt = M.beats[(beat + 1) % M.beats.length];
+    const inG = beat % 16;
+    if (sub === 0) {
+      this.saron(mf(bal + 12), t, 0.09, 1.2);              // saron: balungan
+      this.saron(mf(bal), t, 0.05, 1.6);                   // demung
+      if (inG === 15) this.gong(t, 0.55);
+      else if (inG % 4 === 3) this.kenong(mf(bal), t, 0.1);
+      else if (inG % 4 === 1) this.kenong(mf(bal - 12 + 12), t, 0.04);
+      if (inG % 8 === 0) this.dok(t, 0.25);
+    }
+    // bonang imbal: menjangka not seterusnya
+    const bn = sub % 2 === 0 ? nxt : (sub === 1 ? bal : nxt + (nxt < 74 ? 0 : -12));
+    this.bonang(mf(bn + 12), t, 0.03);
+    // peking: gandaan not dalam 1/8
+    if (sub === 0 || sub === 2) this.bonang(mf((sub === 0 ? bal : nxt) + 24), t, 0.012);
+    // ketuk lembut di luar ketukan
+    if (sub === 2) this.env('sine', 190, t, 0.12, 0.05, this.musicGain, { f0: 230, glide: 0.03 });
+    if (inG % 4 === 2 && sub === 2) this.tak(t, 0.06, 1800);
+  },
+  // lagu "pening-pening": nada beralun, wisel jatuh, burung bercicip
+  stepDizzy(step, t) {
+    const s = step % 32, b = s & 15, d16 = 60 / this.bpm() / 4;
+    const LEAD = { 0: 'A5', 3: 'F#5', 6: 'Eb5', 8: 'C5', 11: 'A4', 14: 'F#4', 16: 'Eb4', 19: 'D4', 22: 'Eb4', 24: 'D4', 27: 'C#4', 28: 'D4' };
+    if (LEAD[s]) {
+      const f = noteF(LEAD[s]);
+      this.env('triangle', f, t, 0.55, 0.16, this.musicGain, { wob: 5.5, wobDepth: 0.045 });
+      this.env('sine', f * 1.012, t, 0.55, 0.09, this.musicGain, { wob: 4.1, wobDepth: 0.05 });
+    }
+    // bass "boing" berpegas
+    if (b === 0 || b === 8) this.gambus(noteF(b === 0 ? 'D3' : 'A2'), t, 0.5, d16 * 3, { bend: 0.82, bendT: 0.35, dark: true });
+    // rentak terhuyung-hayang
+    if (b === 4 || b === 13) this.tak(t, 0.12, 2200);
+    if (b === 0) this.dok(t, 0.25);
+    // wisel jatuh "wiiuuu"
+    if (s === 2) this.env('sine', 380, t, 0.9, 0.08, this.musicGain, { f0: 1500, glide: 0.9, wob: 7, wobDepth: 0.04 });
+    // burung bercicip (bintang pening)
+    if (s === 20 || s === 23 || s === 30) { this.env('sine', 2900, t, 0.06, 0.03, this.musicGain, { f0: 2200, glide: 0.05 }); this.env('sine', 3100, t + 0.07, 0.05, 0.025, this.musicGain, { f0: 2500, glide: 0.04 }); }
+  },
+  // rakam muzik secara luar talian (untuk ujian / demo)
+  async renderDemo(parts, sr = 44100) {
+    const total = parts.reduce((a, p) => a + p.secs, 0);
+    const off = new OfflineAudioContext(1, Math.ceil(sr * (total + 1)), sr);
+    const keep = { ctx: this.ctx, master: this.master, musicGain: this.musicGain, noiseBuf: this.noiseBuf, ksCache: this.ksCache, track: this.track, level: this.level, tense: this.tense, curSong: this.curSong };
+    this.attach(off, true);
+    let t0 = 0.05;
+    for (const p of parts) {
+      this.track = p.track; this.level = p.level || 1; this.tense = !!p.tense; this.curSong = p.tense ? SONG_TENSE : SONG_PLAY; this.pendingSwitch = false;
+      let t = t0, step = 0;
+      while (t < t0 + p.secs) { this.playStep(step, t); step++; t += 60 / this.bpm() / 4; }
+      t0 += p.secs;
+    }
+    const buf = await off.startRendering();
+    Object.assign(this, keep);
+    return buf.getChannelData(0);
+  },
 };
-function noteF(n) { const m = n.match(/([A-G])(#?)(\d)/); const idx = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] ? 1 : 0); return 440 * Math.pow(2, (idx + (+m[3] + 1) * 12 - 69) / 12); }
 function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* tiada */ } }
 
 // ============================================================
@@ -551,16 +777,16 @@ function buildLevel(seed, decorOnly = false) {
   rand = mulberry32(seed);
   const L = { houses: [], obs: [], items: [], crossings: [], decor: [], geese: [], signs: [], endX: 0 };
   const names = shuffle(NAMES);
-  let x = 380;
+  let x = 300;
   const kets = new Set([10, 18, 25]);
   for (let i = 0; i < TOTAL; i++) {
     const ph = phaseOfIdx(i), sp = speedAtIdx(i);
-    const spacing = Math.round(lerp(330, 420, i / (TOTAL - 1))) + ri(-15, 15);
+    const spacing = Math.round(lerp(330, 410, i / (TOTAL - 1))) + ri(-15, 15);
     const hx = x + spacing;
     if (!decorOnly) fillHazards(L, x + 20, hx - 30, i, ph, sp);
     else if (rand() < 0.4) L.crossings.push({ x: x + 120, len: 60, broken: false });
     if (!decorOnly && kets.has(i)) L.items.push({ type: 'ketupat', x: hx - 40, y: GY - 46, taken: false });
-    const house = { x: hx, w: 78, idx: i + 1, name: names[i], state: decorOnly ? 'deco' : 'pending', v: ri(0, 3), zone: [hx + 8, hx + 70], thanks: 0 };
+    const house = { x: hx, w: 78, idx: i + 1, name: names[i], state: decorOnly ? 'deco' : 'pending', v: ri(0, 3), zone: [hx + 12, hx + 66], thanks: 0 };
     L.houses.push(house);
     // kuih di depan rumah sebagai panduan
     if (!decorOnly && rand() < 0.5) for (let k = 0; k < 3; k++) L.items.push({ type: 'kuih', k: ri(0, 3), x: hx + 26 + k * 12, y: GY - 12, taken: false });
@@ -592,15 +818,15 @@ function buildLevel(seed, decorOnly = false) {
 }
 
 function fillHazards(L, a, b, i, ph, sp) {
-  const minGap = sp * 0.95 + 26;
+  const minGap = sp * 0.85 + 24;
   let cur = a + rr(10, 40);
   const weights = [
-    { lubang: 3, batu: 3, bridge: 1.2, kuih: 2 },
+    { lubang: 3, batu: 3, tahi: 1.5, angsa: i >= 3 ? 1 : 0, broken: i >= 5 ? 0.8 : 0, bridge: 1, kuih: 1.4 },
     { lubang: 2, batu: 2, tahi: 2.5, angsa: 1.6, kelapa: 1.8, bridge: 0.6, kuih: 1.5, broken: 0.4 },
     { lubang: 2, batu: 2, tahi: 2, angsa: 1.5, kelapa: 1.5, broken: 2, kuih: 1.2 },
     { lubang: 2, batu: 2.2, tahi: 2, angsa: 1.6, kelapa: 1.2, broken: 2.2, kuih: 1 },
   ][ph];
-  const count = [1, 2, 2, 3][ph];
+  const count = [i < 2 ? 1 : 2, i < 12 ? 2 : 3, 3, 3][ph];
   let placed = 0, guard = 0;
   while (cur < b - 16 && guard++ < 20) {
     let total = 0; for (const k in weights) total += weights[k];
@@ -1415,6 +1641,7 @@ function hurt(kind, o, force) {
   popup(HURT_TEXT[kind] || 'ADUH!', PX + 50, GY - 56, '#ff7b7b', 6.5, 1.2);
   burst(PX + 6, GY - 26, 8, ['#f2cf86', '#f4c271', '#fbf3e4', '#e94f64'], { ang: -Math.PI * 0.7, spread: 0.6, min: 40, max: 90, g: 300, life: 0.8, size: 2 });
   updateHud(true);
+  if (G.lives === 1) Sfx.setTense(true);
   if (G.lives <= 0) startCrash();
 }
 
@@ -1424,7 +1651,7 @@ function collect(it) {
   if (it.type === 'kuih') { G.score += 10; G.kuih++; Sfx.coin(); popup('+10', x, it.y - 10, '#fff6dc', 5, 0.6); }
   else if (it.type === 'jar') { G.score += 50; G.kuih += 5; Sfx.jar(); popup('+50 BALANG!', x, it.y - 12, '#ffd447', 6); }
   else if (it.type === 'ketupat') {
-    if (G.lives < 3) { G.lives++; Sfx.life(); popup('+1 NYAWA!', x, it.y - 12, '#7dff8a', 6.5); updateHud(true, true); }
+    if (G.lives < 3) { G.lives++; Sfx.life(); if (G.lives > 1) Sfx.setTense(false); popup('+1 NYAWA!', x, it.y - 12, '#7dff8a', 6.5); updateHud(true, true); }
     else { G.score += 100; Sfx.jar(); popup('+100 KETUPAT!', x, it.y - 12, '#7dff8a', 6); }
   }
   burst(x, it.y, 6, ['#ffd447', '#ffffff'], { min: 20, max: 50, g: 0, life: 0.35 });
@@ -1459,12 +1686,12 @@ function deliver() {
 }
 
 function startCrash() {
-  G.state = 'crashing'; G.player.crashT = 0; Sfx.stopMusic(); Sfx.crash(); vibrate([60, 40, 120]);
+  G.state = 'crashing'; G.player.crashT = 0; Sfx.stopMusic(); Sfx.setTense(false); Sfx.crash(); vibrate([60, 40, 120]);
   setHud(false);
 }
 
 function finish() {
-  G.state = 'done'; G.doneT = 0; Sfx.stopMusic(); Sfx.win();
+  G.state = 'done'; G.doneT = 0; Sfx.stopMusic(); Sfx.setTense(false); Sfx.win();
   const lifeBonus = G.lives * 150, allBonus = G.delivered === TOTAL ? 500 : 0;
   G.finalBonus = lifeBonus + allBonus; G.score += G.finalBonus;
   setHud(false);
@@ -1492,7 +1719,7 @@ function updatePlay(dt) {
   G.cam += G.speed * dt;
   G.tod = todAt(G.cam);
   const ph = phaseOfTod(G.tod);
-  if (ph !== G.phaseIdx) { G.phaseIdx = ph; G.banner = { title: PHASES[ph].name, sub: PHASES[ph].sub, t: 0, dur: 2.4 }; Sfx.phase(); }
+  if (ph !== G.phaseIdx) { G.phaseIdx = ph; G.banner = { title: PHASES[ph].name, sub: PHASES[ph].sub, t: 0, dur: 2.4 }; Sfx.phase(); Sfx.setLevel(ph + 1); }
   updatePlayer(dt);
   // halangan
   const camL = G.cam - 40, camR = G.cam + W + 40;
@@ -1527,7 +1754,7 @@ function updatePlay(dt) {
   if (gs) {
     if (gs.warn > 0) gs.warn -= dt;
     else {
-      gs.x += 100 * dt;
+      gs.x += 110 * dt;
       if (gs.hitT > 0) gs.hitT += dt;
       if (!gs.hit && p.inv <= 0 && p.splashT <= 0 && overlap(gs.x + 6, gs.x + 23, PX + 13, PX + 30) && p.y > GY - 16) { gs.hit = true; gs.hitT = 0.01; Sfx.honk(); hurt('angsa', null); }
       if (!gs.hit && !gs.passed && gs.x > PX + 30) { gs.passed = true; G.score += 25; popup('ELAK! +25', PX + 40, GY - 50, '#8cff6a', 6); }
@@ -1615,7 +1842,7 @@ function playerLabel() {
 }
 
 function enterMenu() {
-  Sfx.stopMusic();
+  Sfx.setTense(false); Sfx.play('menu');
   G.state = 'menu'; G.paused = false; G.todForced = null; G.tod = 0.06;
   G.level = buildLevel(4242, true); G.cam = 0; G.player = newPlayer(); G.goose = null;
   G.particles.length = 0; G.popups.length = 0; G.fireworks.length = 0; G.confetti.length = 0; G.banner = null;
@@ -1630,11 +1857,12 @@ function startGame(seed) {
   hudCache = {}; buildHearts(); updateHud();
   $('jump-hint').classList.remove('fade');
   showScreens(); setHud(true);
-  Sfx.startMusic();
+  Sfx.tense = false; Sfx.pendingSwitch = false; Sfx.curSong = SONG_PLAY; Sfx.stopMusic(); Sfx.play('play', 1);
 }
 
 function showCrash() {
   G.state = 'crash'; setHud(false); showScreens('scr-crash');
+  Sfx.play('dizzy');
   const left = TOTAL - G.processed;
   $('crash-sub').textContent = `${G.delivered} kuih sampai, ${left} rumah masih menunggu`;
 }
@@ -1666,6 +1894,7 @@ function renderBoard(el, list, max, meIdx = -1) {
 }
 function showResult(sample) {
   G.state = 'result'; setHud(false); showScreens('scr-result');
+  if (!sample) Sfx.play('menu');
   $('r-del').textContent = `${G.delivered}/${TOTAL}`;
   $('r-time').textContent = fmtTime(G.time);
   $('r-kuih').textContent = String(G.kuih);
@@ -1686,7 +1915,7 @@ async function share() {
 function pause(on) {
   if (G.state !== 'play') return;
   G.paused = on; showScreens(on ? 'scr-pause' : null);
-  if (on) Sfx.stopMusic(); else Sfx.startMusic();
+  if (on) Sfx.stopMusic(); else { Sfx.stopMusic(); Sfx.play('play'); }
 }
 
 function validatePdpa() {
@@ -1725,6 +1954,8 @@ function bindUI() {
   });
   window.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'z' || e.key === 'Z') G.player.holding = false; });
 
+  const unlock = () => { Sfx.init(); if (G.state === 'menu' && !Sfx.musicOn) Sfx.play('menu'); };
+  window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
   $('btn-start').addEventListener('click', () => {
     Sfx.init();
     if (G.consent && G.playerName) startGame(); else { $('in-name').value = G.playerName; $('in-agree').checked = G.consent; validatePdpa(); showScreens('scr-pdpa'); }
@@ -1865,7 +2096,7 @@ function loop(ts) {
 }
 
 function boot() {
-  if (QS.get('debug')) window.__vrtb = { G, deliver, startGame, update, render, PX, GY, W, supported, showResult };
+  if (QS.get('debug')) window.__vrtb = { G, Sfx, deliver, startGame, update, render, PX, GY, W, supported, showResult };
   buildSprites();
   buildHearts();
   bindUI();
