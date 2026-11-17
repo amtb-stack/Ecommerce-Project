@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Vespa Raya The Baker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Permainan pixel art: hantar kuih raya dengan vespa dari siang hingga malam raya.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="fit">
+    <div id="frame">
+      <canvas id="cv" aria-label="Vespa Raya The Baker"></canvas>
+
+      <!-- Tap zone: tekan skrin untuk LOMPAT -->
+      <div id="tapzone" class="layer" hidden></div>
+
+      <!-- HUD -->
+      <div id="hud" class="layer" hidden>
+        <div class="hud-row">
+          <div class="hud-cell"><span class="lbl">SKOR</span><span id="h-score" class="val">0</span></div>
+          <div class="hud-cell mid"><span class="lbl">HANTARAN</span><span id="h-del" class="val">00/30</span></div>
+          <div class="hud-cell right"><span class="lbl">NYAWA</span><span id="h-lives" class="hearts"></span></div>
+        </div>
+        <div class="hud-sub">
+          <button id="btn-pause" class="icon-btn" type="button" aria-label="Rehat"><span class="pause-ico"></span></button>
+          <div class="progress" aria-hidden="true">
+            <span class="ph-ico sun"></span>
+            <div class="track"><div id="h-prog" class="fill"></div><div id="h-marker" class="marker"></div></div>
+            <span class="ph-ico moon"></span>
+          </div>
+          <span id="h-clock" class="clock">08:00</span>
+        </div>
+      </div>
+
+      <!-- Kawalan: hanya butang HANTAR -->
+      <div id="controls" class="layer" hidden>
+        <div id="jump-hint" class="jump-hint"><span class="tap-ico"></span>TEKAN SKRIN<br>= LOMPAT</div>
+        <button id="btn-deliver" class="btn btn-green btn-deliver" type="button"><span class="gift-ico"></span>HANTAR</button>
+      </div>
+
+      <!-- 1. Menu utama -->
+      <section id="scr-menu" class="screen">
+        <div class="logo" aria-label="Vespa Raya The Baker">
+          <span class="logo-1">Vespa Raya</span>
+          <span class="logo-2">The Baker</span>
+        </div>
+        <p class="tagline">Hantar 30 kuih raya sebelum malam raya!</p>
+        <div class="menu-bottom">
+          <button id="btn-start" class="btn btn-green btn-xl" type="button">MULA</button>
+          <button id="btn-board" class="btn btn-blue" type="button">PAPAN KEDUDUKAN</button>
+          <div class="menu-row">
+            <button id="btn-howto" class="btn btn-ghost" type="button">CARA MAIN</button>
+            <button id="btn-sound" class="btn btn-ghost" type="button" aria-label="Bunyi">BUNYI: ON</button>
+          </div>
+          <button id="btn-player" class="linkish" type="button" hidden></button>
+        </div>
+      </section>
+
+      <!-- 2. Persetujuan PDPA -->
+      <section id="scr-pdpa" class="screen dim center" hidden>
+        <form id="pdpa-form" class="panel" novalidate>
+          <p class="panel-text">Sila bersetuju dengan syarat &amp; dasar PDPA untuk bermain.</p>
+          <label class="field-lbl" for="in-name">Nama untuk papan kedudukan</label>
+          <input id="in-name" class="field" type="text" maxlength="14" autocomplete="nickname" placeholder="cth: Ahmad" spellcheck="false">
+          <details class="policy">
+            <summary>Baca dasar ringkas</summary>
+            <p>Kami hanya simpan nama panggilan dan skor anda untuk papan kedudukan. Tiada nombor telefon, e-mel atau lokasi dikumpul. Anda boleh tukar nama bila-bila masa dari menu utama.</p>
+          </details>
+          <div class="pdpa-row">
+            <label class="check" for="in-agree"><input id="in-agree" type="checkbox"><span class="box"></span>Saya setuju</label>
+            <button id="btn-continue" class="btn btn-blue" type="submit" disabled>TERUSKAN</button>
+          </div>
+          <button id="btn-pdpa-back" class="linkish" type="button">Kembali ke menu</button>
+        </form>
+      </section>
+
+      <!-- Cara main -->
+      <section id="scr-howto" class="screen dim center" hidden>
+        <div class="panel">
+          <h2 class="panel-title">CARA MAIN</h2>
+          <ul class="howto">
+            <li><b>Tekan skrin</b> untuk LOMPAT. Tekan lama untuk lompat lebih tinggi.</li>
+            <li>Elak lubang, batu, tahi lembu, kelapa jatuh, angsa pengejar dan jambatan patah.</li>
+            <li>Tekan <b>HANTAR</b> bila vespa dalam <b>zon kuning</b> depan rumah bertanda. Tepat di tengah = <b>SEMPURNA +50</b>.</li>
+            <li>Hantar berturut-turut untuk <b>COMBO</b>. Kutip kuih (+10), balang (+50), ketupat (+1 nyawa).</li>
+            <li>30 rumah, dari siang ke malam raya. Jangan biar nyawa habis!</li>
+          </ul>
+          <p class="keys">Papan kekunci: Space/&uarr; = lompat, Enter/&rarr; = hantar, P = rehat</p>
+          <button id="btn-howto-close" class="btn btn-blue" type="button">FAHAM!</button>
+        </div>
+      </section>
+
+      <!-- Papan kedudukan (dari menu) -->
+      <section id="scr-board" class="screen dim center" hidden>
+        <div class="panel">
+          <h2 class="panel-title">PAPAN KEDUDUKAN</h2>
+          <ol id="board-list" class="board"></ol>
+          <button id="btn-board-close" class="btn btn-blue" type="button">TUTUP</button>
+        </div>
+      </section>
+
+      <!-- Rehat -->
+      <section id="scr-pause" class="screen dim center" hidden>
+        <div class="panel narrow">
+          <h2 class="panel-title">REHAT</h2>
+          <button id="btn-resume" class="btn btn-green" type="button">SAMBUNG</button>
+          <button id="btn-sound2" class="btn btn-ghost" type="button">BUNYI: ON</button>
+          <button id="btn-quit" class="btn btn-blue" type="button">MENU</button>
+        </div>
+      </section>
+
+      <!-- 8. Skrin jatuh (gagal) -->
+      <section id="scr-crash" class="screen" hidden>
+        <button id="btn-crash-x" class="btn btn-red btn-x" type="button" aria-label="Tutup">X</button>
+        <div class="crash-title"><span>ALAHAI!</span><span>OPPS!</span></div>
+        <p id="crash-sub" class="crash-sub">Kuih raya bersepah...</p>
+        <div class="crash-btns">
+          <button id="btn-retry" class="btn btn-red" type="button">CUBA LAGI</button>
+          <button id="btn-crash-menu" class="btn btn-blue" type="button">MENU</button>
+        </div>
+      </section>
+
+      <!-- 7. Zon penghantaran / selesai -->
+      <section id="scr-done" class="screen center" hidden>
+        <div class="badge">
+          <span class="check-ico"></span>
+          <span id="done-title" class="badge-title">BERJAYA!</span>
+          <span id="done-sub" class="badge-sub">30/30 hantaran</span>
+        </div>
+        <p class="tap-cont">tekan untuk teruskan</p>
+      </section>
+
+      <!-- 9. Keputusan -->
+      <section id="scr-result" class="screen dim center" hidden>
+        <div class="panel result">
+          <h2 class="panel-title gold">KEPUTUSAN</h2>
+          <dl class="stats">
+            <div><dt>HANTARAN</dt><dd id="r-del">0/30</dd></div>
+            <div><dt>MASA</dt><dd id="r-time">00:00</dd></div>
+            <div><dt>KUIH</dt><dd id="r-kuih">0</dd></div>
+            <div><dt>COMBO</dt><dd id="r-combo">x0</dd></div>
+            <div class="total"><dt>SKOR</dt><dd id="r-score">0</dd></div>
+          </dl>
+          <div class="subpanel">
+            <h3 class="sub-title">PAPAN KEDUDUKAN</h3>
+            <ol id="result-board" class="board compact"></ol>
+          </div>
+        </div>
+        <div class="result-btns">
+          <button id="btn-share" class="btn btn-blue" type="button">KONGSI</button>
+          <button id="btn-again" class="btn btn-green" type="button">MAIN SEMULA</button>
+        </div>
+        <button id="btn-result-menu" class="linkish" type="button">Menu utama</button>
+      </section>
+
+      <div id="toast" class="toast" hidden></div>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
