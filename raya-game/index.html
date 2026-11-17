@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kejar Tempahan Raya · The Baker</title>
-<meta name="description" content="Tempahan kuih raya tak putus-putus! Siapkan sebanyak mungkin sebelum Malam Raya. Permainan Raya 2027 oleh The Baker.">
-<meta name="theme-color" content="#0A3D2A">
-<meta property="og:title" content="Kejar Tempahan Raya">
-<meta property="og:description" content="Boleh siapkan semua tempahan kuih raya sebelum Malam Raya?">
+<title>Isi Balang Raya Opah · The Baker</title>
+<meta name="description" content="Malam Raya di dapur Opah. Isi 10 balang kuih raya secepat mungkin dan rebut hadiah misteri. Permainan Raya 2027 oleh The Baker.">
+<meta name="theme-color" content="#3A2214">
+<meta property="og:title" content="Isi Balang Raya Opah">
+<meta property="og:description" content="Berapa pantas anda boleh isi 10 balang kuih raya Opah?">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="style.css">
-<!-- Meta Pixel: paste the base code from Events Manager here. game.js sends the custom events listed in README.md. -->
+<!-- Meta Pixel: tampal kod asas dari Events Manager di sini. game.js menghantar acara yang disenaraikan dalam README.md. -->
 </head>
 <body>
 <div id="stage">
-  <canvas id="game" aria-label="Permainan Kejar Tempahan Raya"></canvas>
+  <canvas id="game" aria-label="Permainan Isi Balang Raya Opah"></canvas>
 
   <button id="sound-btn" class="icon-btn" type="button" aria-label="Matikan bunyi" aria-pressed="false">
     <svg viewBox="0 0 16 16" aria-hidden="true"><path class="spk" d="M2 6h3l4-3v10l-4-3H2z"/><path class="wave" d="M11 5.5c1 .8 1 4.2 0 5M12.8 3.8c2 1.8 2 6.6 0 8.4"/><path class="mute" d="M11 6l4 4M15 6l-4 4"/></svg>
@@ -25,52 +25,88 @@
   <section id="title-screen" class="overlay" aria-labelledby="game-title">
     <div class="panel">
       <img class="logo" src="assets/thebaker-logo.png" alt="The Baker">
-      <h1 id="game-title">Kejar Tempahan Raya!</h1>
-      <p class="tagline">Tempahan kuih raya tak putus-putus. Siapkan sebanyak mungkin sebelum Malam Raya!</p>
+      <p class="week-pill" id="week-pill">Cabaran Latihan</p>
+      <h1 id="game-title">Isi Balang Raya Opah</h1>
+      <p class="tagline">Malam Raya di dapur Opah. Saudara-mara datang minta kuih. Isi 10 balang secepat mungkin!</p>
       <ul class="howto">
-        <li><span class="howto-ico" data-ico="cookie"></span><span>Seret kuih ke balang pelanggan</span></li>
-        <li><span class="howto-ico" data-ico="lever"></span><span>Mixer penuh? Tarik tuas untuk kumpulan turbo</span></li>
-        <li><span class="howto-ico" data-ico="pelita"></span><span>Setiap tempahan siap menyalakan pelita. 10 pelita, 3 bintang</span></li>
+        <li><span class="ico" data-ico="kuih"></span><span>Seret kuih ke balang yang betul</span></li>
+        <li><span class="ico" data-ico="salah"></span><span>Salah balang? Masa ditambah 1 saat</span></li>
+        <li><span class="ico" data-ico="adik"></span><span>Adik nak tolong? Tekan untuk alihkan</span></li>
       </ul>
+      <div class="prize">
+        <svg class="gift" viewBox="0 0 48 48" aria-hidden="true">
+          <rect x="6" y="18" width="36" height="26" rx="4" fill="#F2B84B"/>
+          <rect x="4" y="12" width="40" height="10" rx="3" fill="#FFD36E"/>
+          <rect x="21" y="12" width="6" height="32" fill="#D90000"/>
+          <path d="M24 12c-6-8-14-6-12-1 1 3 7 2 12 1zm0 0c6-8 14-6 12-1-1 3-7 2-12 1z" fill="#D90000"/>
+          <text x="24" y="38" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="13" fill="#FFF8EC">?</text>
+        </svg>
+        <p><b>Hadiah misteri</b> untuk juara setiap minggu!</p>
+      </div>
       <p id="challenge-line" class="challenge" hidden></p>
-      <button id="play-btn" class="btn btn-red" type="button">MAIN</button>
-      <p id="best-line" class="small-line"></p>
+      <button id="play-btn" class="btn btn-red" type="button">MULA</button>
+      <p id="best-line" class="small"></p>
     </div>
   </section>
 
   <section id="end-screen" class="overlay" aria-labelledby="end-title" hidden>
     <div class="panel">
-      <p class="eyebrow">Selamat Hari Raya!</p>
+      <p class="week-pill" id="week-end"></p>
+      <p class="eyebrow" id="end-eyebrow">Selamat Hari Raya!</p>
       <div class="stars" id="stars" aria-label="0 bintang"><span></span><span></span><span></span></div>
-      <h2 id="end-title">Juara Tart Nenas</h2>
-      <p class="score-big"><span id="end-score">0</span> <small>mata</small></p>
-      <p class="small-line" id="end-stats"></p>
-      <p class="next-star" id="next-star"></p>
+      <h2 id="end-title">Cucu Kesayangan Opah</h2>
+      <p class="time-big"><span id="end-time">0.00</span> <small id="end-unit">saat</small></p>
+      <p class="small" id="end-stats"></p>
+      <p class="note" id="end-note"></p>
       <div class="actions">
         <button id="replay-btn" class="btn btn-red" type="button">MAIN LAGI</button>
+        <button id="board-btn" class="btn btn-green" type="button">Masuk Papan Pemenang</button>
         <button id="share-btn" class="btn btn-ghost" type="button">Kongsi &amp; cabar kawan</button>
       </div>
       <a class="product-card" id="product-card" href="#" target="_blank" rel="noopener">
-        <img id="product-img" src="assets/e1ag-oven.jpg" alt="">
-        <span class="product-text"><b id="product-q">Oven dalam game ni?</b> <span id="product-name">Ini The Baker E-1AG Convection Oven.</span> <span class="product-link">Lihat di Shopee ›</span></span>
+        <img src="assets/e1ag-oven.webp" alt="">
+        <span><b>Oven Opah dalam game ni?</b> Ini The Baker E-1AG Convection Oven. <span class="product-link">Lihat di Shopee ›</span></span>
       </a>
+    </div>
+  </section>
+
+  <section id="board-screen" class="overlay" aria-labelledby="board-title" hidden>
+    <div class="panel">
+      <h2 id="board-title">Papan Pemenang</h2>
+      <p class="week-pill" id="board-week"></p>
+      <ol class="board-list" id="board-list"></ol>
+      <p class="demo-note" id="board-demo" hidden>Papan pemenang sebenar dibuka semasa pelancaran kempen. Dalam versi ujian ini, rekod disimpan dalam peranti anda sahaja.</p>
+      <form id="board-form" novalidate>
+        <p class="board-time">Masa anda: <b id="board-time"></b></p>
+        <label for="f-nama">Nama paparan</label>
+        <input id="f-nama" maxlength="16" autocomplete="nickname" placeholder="contoh: Cucu Opah">
+        <label for="f-tel">No. telefon (untuk menghubungi pemenang)</label>
+        <input id="f-tel" inputmode="tel" autocomplete="tel" placeholder="012-3456789">
+        <label class="check" for="f-setuju"><input type="checkbox" id="f-setuju"> <span>Saya bersetuju dengan Terma &amp; Syarat peraduan dan Notis Privasi (PDPA).</span></label>
+        <button class="btn btn-red" type="submit">Hantar rekod</button>
+        <p class="form-msg" id="form-msg" role="status"></p>
+      </form>
+      <p class="rules">Pemenang ialah masa paling cepat. Jika sama, kesilapan paling sedikit menang. Jika masih sama, rekod yang dihantar dahulu menang.</p>
+      <button id="board-close" class="btn-text" type="button">Kembali</button>
     </div>
   </section>
 
   <section id="share-screen" class="overlay" aria-labelledby="share-title" hidden>
     <div class="panel">
-      <h2 id="share-title">Kongsi skor anda</h2>
-      <img id="share-img" class="share-img" alt="Kad skor Kejar Tempahan Raya">
-      <p class="small-line">Tekan lama pada gambar untuk simpan.</p>
+      <h2 id="share-title">Kongsi masa anda</h2>
+      <img id="share-img" class="share-img" alt="Kad masa Isi Balang Raya Opah">
+      <p class="small">Tekan lama pada gambar untuk simpan.</p>
       <div class="actions">
         <button id="native-share-btn" class="btn btn-red" type="button" hidden>Kongsi</button>
         <button id="copy-link-btn" class="btn btn-ghost" type="button">Salin pautan cabaran</button>
         <button id="close-share-btn" class="btn-text" type="button">Tutup</button>
       </div>
-      <p id="share-status" class="small-line" role="status"></p>
+      <p id="share-status" class="small" role="status"></p>
     </div>
   </section>
 </div>
+<script src="sim.js"></script>
+<script src="audio.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
