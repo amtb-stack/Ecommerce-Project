@@ -1,0 +1,350 @@
+<title>Shopee CPAS Playbook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one reading column. Structure tree first, then settings, then creative mockups in phone frames. */
+:root {
+  --bg: #fbf9f7;
+  --surface: #ffffff;
+  --fg: #231f1d;
+  --muted: #6b625d;
+  --line: #e6dfd9;
+  --accent: #d6401f;
+  --accent-soft: #fde9e3;
+  --steel: #8d96a0;
+  --good: #1f7a4d;
+  --warn: #9a6200;
+  /* phone mockup surface stays the same in both themes */
+  --ad-bg: #ffffff;
+  --ad-fg: #1d1d1f;
+  --ad-muted: #6e6e73;
+  --ad-line: #e4e4e7;
+  --ad-accent: #ee4d2d;
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #181514; --surface: #221e1c; --fg: #f1ebe6; --muted: #a79d96;
+    --line: #38312d; --accent: #ff7a59; --accent-soft: #3a211a;
+    --steel: #8d96a0; --good: #5fd09a; --warn: #f0b84a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #181514; --surface: #221e1c; --fg: #f1ebe6; --muted: #a79d96;
+  --line: #38312d; --accent: #ff7a59; --accent-soft: #3a211a;
+  --steel: #8d96a0; --good: #5fd09a; --warn: #f0b84a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--muted); font-size: 17px; margin-top: 12px; }
+.eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+section { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.note { color: var(--muted); font-size: 13.5px; }
+
+/* checklist */
+.checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+.checks li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.checks b { display: block; font-family: var(--font-display); margin-bottom: 2px; }
+.checks span { color: var(--muted); font-size: 13.5px; }
+
+/* structure tree */
+.tree { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.col > h3 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding-bottom: 8px; border-bottom: 2px solid var(--fg); }
+.node { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.node.hot { border-color: var(--accent); background: var(--accent-soft); }
+.node b { font-family: var(--font-display); display: block; }
+.node span { color: var(--muted); font-size: 13px; display: block; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; background: var(--line); color: var(--fg); margin-top: 6px; }
+
+/* tables */
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* creative specs */
+.specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.spec { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.spec ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.dosdonts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.dosdonts ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.do h3 { color: var(--good); } .dont h3 { color: var(--accent); }
+
+/* phone mockups */
+.phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 28px; justify-items: center; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 12px; align-items: center; min-width: 0; width: 100%; max-width: 320px; }
+figcaption { font-size: 13.5px; color: var(--muted); text-align: left; width: 100%; }
+figcaption b { color: var(--fg); font-family: var(--font-display); display: block; font-size: 15px; }
+.phone { width: 100%; background: var(--ad-bg); color: var(--ad-fg); border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.12); overflow: hidden; font-family: var(--font-body); }
+.ad-head { display: flex; gap: 9px; align-items: center; padding: 10px 12px 6px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: #2f3640; color: #fff; display: grid; place-items: center; font: 700 12px var(--font-display); flex: none; }
+.ad-head b { font-size: 13px; display: block; line-height: 1.2; }
+.ad-head small { font-size: 11px; color: var(--ad-muted); }
+.ad-copy { padding: 0 12px 10px; font-size: 13px; line-height: 1.45; }
+.cards { display: flex; gap: 8px; padding: 0 12px 10px; overflow: hidden; }
+.card { flex: 0 0 62%; border: 1px solid var(--ad-line); border-radius: 8px; overflow: hidden; }
+.card .img { background: #f3f4f6; aspect-ratio: 1; display: grid; place-items: center; position: relative; }
+.card .img svg { width: 82%; height: auto; }
+.card .meta { padding: 8px 10px 10px; }
+.card .meta b { font-size: 12.5px; display: block; line-height: 1.3; }
+.price { color: var(--ad-accent); font-weight: 700; font-size: 14px; }
+.was { color: var(--ad-muted); text-decoration: line-through; font-size: 11px; margin-left: 4px; font-weight: 400; }
+.badge { position: absolute; top: 8px; left: 8px; background: var(--ad-accent); color: #fff; font: 700 11px var(--font-display); padding: 2px 8px; border-radius: 4px; }
+.ship { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(238,77,45,.94); color: #fff; font: 600 10.5px var(--font-body); padding: 4px 8px; text-align: center; }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #f3f4f6; padding: 9px 12px; font-size: 12px; }
+.cta b { font-size: 12.5px; display: block; }
+.cta small { color: var(--ad-muted); font-size: 11px; }
+.btn { background: var(--ad-accent); color: #fff; font-weight: 600; font-size: 12px; padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+.cover { position: relative; aspect-ratio: 16/10; background: linear-gradient(135deg, #2a2320, #4a3226 60%, #7a4a2a); display: grid; place-items: center; }
+.cover svg { width: 46%; }
+.cover .over { position: absolute; left: 12px; bottom: 10px; right: 12px; color: #fff; font: 700 18px/1.1 var(--font-display); text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.cover .play { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.9); display: grid; place-items: center; }
+.cover .play::after { content: ""; border-left: 9px solid #222; border-top: 6px solid transparent; border-bottom: 6px solid transparent; margin-left: 2px; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 12px 10px; }
+.grid4 .card { flex: none; }
+.frame { position: relative; margin: 0 12px 10px; border-radius: 10px; overflow: hidden; background: linear-gradient(180deg, #fff6ef, #ffe4d4); aspect-ratio: 1; display: grid; place-items: center; border: 3px solid var(--ad-accent); }
+.frame svg { width: 70%; }
+.frame .top { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+.frame .pct { background: var(--ad-accent); color: #fff; font: 700 15px/1 var(--font-display); padding: 8px 9px; border-radius: 50%; }
+.frame .tagline { background: #fff; color: var(--ad-fg); font: 700 11px var(--font-display); padding: 4px 8px; border-radius: 4px; }
+.frame .bar { position: absolute; left: 0; right: 0; bottom: 0; background: var(--ad-accent); color: #fff; display: flex; justify-content: space-between; padding: 7px 10px; font: 600 11.5px var(--font-body); }
+.frame .bar b { font: 700 15px var(--font-display); }
+
+/* calendar */
+.cal { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.cal div { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; min-width: 0; }
+.cal b { font-family: var(--font-display); display: block; }
+.cal span { color: var(--muted); font-size: 13.5px; }
+
+@media (max-width: 760px) { .tree { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .node { transition: border-color .15s; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="oven" viewBox="0 0 120 100">
+      <rect x="6" y="8" width="108" height="84" rx="8" fill="#aab2bb"/>
+      <rect x="6" y="8" width="108" height="20" rx="8" fill="#8d96a0"/>
+      <circle cx="24" cy="18" r="5" fill="#3a4048"/><circle cx="42" cy="18" r="5" fill="#3a4048"/>
+      <rect x="70" y="12" width="36" height="12" rx="2" fill="#1f262c"/><rect x="74" y="16" width="14" height="4" rx="1" fill="#f39a3d"/>
+      <rect x="16" y="33" width="88" height="5" rx="2.5" fill="#d9dee3"/>
+      <rect x="18" y="40" width="84" height="44" rx="5" fill="#20262b"/>
+      <rect x="22" y="44" width="76" height="36" rx="3" fill="#f39a3d" opacity=".85"/>
+      <rect x="22" y="62" width="76" height="2" fill="#7a4a1a"/>
+      <ellipse cx="38" cy="58" rx="10" ry="6" fill="#c9803a"/><ellipse cx="60" cy="58" rx="10" ry="6" fill="#d38f45"/><ellipse cx="82" cy="58" rx="10" ry="6" fill="#c9803a"/>
+      <ellipse cx="38" cy="76" rx="10" ry="6" fill="#d38f45"/><ellipse cx="60" cy="76" rx="10" ry="6" fill="#c9803a"/><ellipse cx="82" cy="76" rx="10" ry="6" fill="#d38f45"/>
+    </symbol>
+    <symbol id="fryer" viewBox="0 0 120 100">
+      <rect x="2" y="24" width="18" height="5" rx="2.5" fill="#20262b"/><rect x="100" y="24" width="18" height="5" rx="2.5" fill="#20262b"/>
+      <rect x="16" y="20" width="40" height="28" rx="3" fill="#2b3138"/><rect x="64" y="20" width="40" height="28" rx="3" fill="#2b3138"/>
+      <ellipse cx="30" cy="34" rx="8" ry="6" fill="#d99a3a"/><ellipse cx="44" cy="31" rx="7" ry="5" fill="#e3a94a"/><ellipse cx="38" cy="40" rx="8" ry="5" fill="#c98a2e"/>
+      <ellipse cx="78" cy="34" rx="8" ry="6" fill="#e3a94a"/><ellipse cx="92" cy="31" rx="7" ry="5" fill="#d99a3a"/><ellipse cx="86" cy="40" rx="8" ry="5" fill="#c98a2e"/>
+      <rect x="10" y="44" width="100" height="46" rx="6" fill="#aab2bb"/>
+      <rect x="10" y="44" width="100" height="14" rx="4" fill="#8d96a0"/>
+      <circle cx="28" cy="51" r="4.5" fill="#3a4048"/><circle cx="92" cy="51" r="4.5" fill="#3a4048"/>
+      <rect x="48" y="47" width="24" height="8" rx="2" fill="#1f262c"/><rect x="52" y="50" width="10" height="3" rx="1" fill="#f39a3d"/>
+      <rect x="22" y="64" width="76" height="20" rx="3" fill="#9aa3ad"/><rect x="54" y="70" width="12" height="3" rx="1.5" fill="#6d7680"/>
+      <rect x="18" y="90" width="10" height="6" fill="#3a4048"/><rect x="92" y="90" width="10" height="6" fill="#3a4048"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main>
+  <header>
+    <div class="eyebrow">Meta Ads × Shopee CPAS</div>
+    <h1>Shopee CPAS Playbook for Ovens and Deep Fryers</h1>
+    <p class="lede">Campaign, ad set and ad setup for commercial kitchen equipment, plus what the creative should look like. Written for Shopee Malaysia with the ringgit amounts below as examples. Confirm formats and attribution settings with your Shopee CPAS contact, since Meta and Shopee change them often.</p>
+  </header>
+
+  <section>
+    <div>
+      <div class="eyebrow">Step 0</div>
+      <h2>Before you create anything</h2>
+    </div>
+    <p>With CPAS, Shopee holds the catalog and the checkout. You buy the Meta ad, and the sale happens on Shopee. That changes what you control: the ad creative is mostly built from your Shopee product images, titles and prices.</p>
+    <ul class="checks">
+      <li><b>Shopee side</b><span>Seller account enrolled in the Shopee CPAS programme, with your account manager or the CPAS onboarding form.</span></li>
+      <li><b>Meta side</b><span>Business Manager, Facebook Page, an ad account, and partner access shared with Shopee's Business Manager.</span></li>
+      <li><b>Catalog</b><span>Your products synced into the shared catalog. Group them into three product sets: Ovens, Deep Fryers, Bundles.</span></li>
+      <li><b>Tracking</b><span>Purchases are measured by Shopee's data, not your own pixel. Ask how the order and GMV reports reach you.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Step 1</div>
+      <h2>Account structure: campaign, ad set, ad</h2>
+    </div>
+    <div class="tree">
+      <div class="col">
+        <h3>Campaign</h3>
+        <div class="node hot"><b>C1 · Prospecting</b><span>Objective: Sales with catalog. Reaches new people likely to buy on Shopee.</span><span class="tag">60% of budget</span></div>
+        <div class="node"><b>C2 · Retargeting</b><span>Objective: Sales with catalog. People who viewed or added to cart on Shopee.</span><span class="tag">30% of budget</span></div>
+        <div class="node"><b>C3 · Sales moments</b><span>Switched on for 12.12, year-end and pre-CNY stocking. Same structure, bigger budget for 3 to 5 days.</span><span class="tag">10% base, 3x on event days</span></div>
+      </div>
+      <div class="col">
+        <h3>Ad set</h3>
+        <div class="node hot"><b>C1 · AS1 Ovens</b><span>Product set: Ovens. Audience: Malaysia, 25 to 55, Advantage+ audience with F&amp;B owner interests as a hint.</span></div>
+        <div class="node hot"><b>C1 · AS2 Deep Fryers</b><span>Product set: Deep Fryers. Same audience as AS1, so you compare products, not people.</span></div>
+        <div class="node hot"><b>C1 · AS3 Bundles</b><span>Product set: Bundles (oven + fryer, starter kitchen). Same audience.</span></div>
+        <div class="node"><b>C2 · AS1 Added to cart, 7 days</b><span>All product sets.</span></div>
+        <div class="node"><b>C2 · AS2 Viewed, 14 days</b><span>Exclude people who bought.</span></div>
+      </div>
+      <div class="col">
+        <h3>Ad</h3>
+        <div class="node hot"><b>Ad 1 · Catalog carousel</b><span>Dynamic cards for each product in the set. Your workhorse.</span></div>
+        <div class="node hot"><b>Ad 2 · Single product with frame</b><span>Product photo, price badge and delivery strip from the catalog template.</span></div>
+        <div class="node hot"><b>Ad 3 · Collection with video cover</b><span>A 10 to 15 second kitchen video on top, products in a grid below.</span></div>
+        <div class="node"><b>Retargeting ads</b><span>Same three formats. Headline changes to "Still looking?" and the frame shows price drops.</span></div>
+      </div>
+    </div>
+    <p class="note">Oven and fryer orders are high value, so Shopee will record fewer purchases than for small items. If your total budget is under about RM100 a day, start with two ad sets in C1 (Ovens and Fryers, bundles inside both) and split out the third later.</p>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Step 2</div>
+      <h2>Settings to use</h2>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Setting</th><th>C1 Prospecting</th><th>C2 Retargeting</th></tr></thead>
+        <tbody>
+          <tr><td>Objective</td><td>Sales, catalog from Shopee</td><td>Sales, catalog from Shopee</td></tr>
+          <tr><td>Optimisation</td><td>Purchases, lowest cost</td><td>Purchases, lowest cost</td></tr>
+          <tr><td>Audience</td><td>Malaysia, 25 to 55, Advantage+ audience, no narrow stacking</td><td>Added to cart 7 days, viewed 14 days, exclude purchasers</td></tr>
+          <tr><td>Placements</td><td>Advantage+ placements. Check that Reels and Stories accept your catalog format.</td><td>Same</td></tr>
+          <tr><td>Example budget</td><td class="num">RM30 a day per ad set, three ad sets</td><td class="num">RM45 a day across both ad sets</td></tr>
+          <tr><td>Frequency</td><td>Let Meta manage it</td><td>Watch it. If it passes 4 in 7 days, refresh the creative.</td></tr>
+          <tr><td>Attribution</td><td colspan="2">Use what the CPAS reporting offers, normally 7-day click and 1-day view. Do not edit anything for the first 5 to 7 days.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Once an ad set records about 50 purchases a week, move to a ROAS goal or cost cap. Before that, lowest cost gives the learning phase the most room.</p>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Step 3</div>
+      <h2>What the creative should look like</h2>
+    </div>
+    <p>In CPAS the catalog builds most of the ad, so the quality of your Shopee listing is your creative. Fix the listing first, then add the frame and a video.</p>
+    <div class="specs">
+      <div class="spec"><h3>Main product image</h3>
+        <ul><li>1080 × 1080, square</li><li>Clean light background, no text or watermark</li><li>Machine fills about 80% of the frame</li><li>Show the front with door or baskets visible</li></ul></div>
+      <div class="spec"><h3>Extra images in the listing</h3>
+        <ul><li>In use: fried chicken in the basket, trays of bread</li><li>Size reference with a person or a standard tray</li><li>Capacity and power spec image (litres, kW, voltage)</li></ul></div>
+      <div class="spec"><h3>Product title and price</h3>
+        <ul><li>Put the key words first: "Commercial Deep Fryer 2×6L Electric"</li><li>Only about 35 characters show on a card</li><li>Keep sale price and original price correct, mismatches get ads rejected</li></ul></div>
+      <div class="spec"><h3>Frame and badges</h3>
+        <ul><li>One accent colour, matching your brand</li><li>Price badge, discount %, "Free delivery" strip</li><li>Keep it to three elements, so the product stays the hero</li></ul></div>
+      <div class="spec"><h3>Video for the collection cover</h3>
+        <ul><li>9:16 or 4:5, 10 to 15 seconds</li><li>First 2 seconds: golden food coming out of the machine</li><li>Then the machine, then one claim (capacity, speed or oil saving)</li><li>Burn in captions, many people watch muted</li></ul></div>
+      <div class="spec"><h3>Primary text</h3>
+        <ul><li>One line on the pain point: running cost, speed, consistency</li><li>One line on proof: warranty, rating, units sold</li><li>Call to action: Shop Now</li></ul></div>
+    </div>
+
+    <h3>Visual mockups</h3>
+    <p class="note">Mockups with example products and prices. Replace "Your Brand" and the numbers with your own listing.</p>
+    <div class="phones">
+      <figure>
+        <div class="phone">
+          <div class="ad-head"><div class="avatar">YB</div><div><b>Your Brand Kitchen</b><small>Sponsored</small></div></div>
+          <div class="ad-copy">Fry 12 kg of chicken an hour with less oil. Commercial fryers with 1 year warranty.</div>
+          <div class="cards">
+            <div class="card"><div class="img"><svg viewBox="0 0 120 100"><use href="#fryer"/></svg><span class="badge">-22%</span><span class="ship">Free delivery</span></div><div class="meta"><b>Commercial Deep Fryer 2×6L Electric</b><span class="price">RM 389<span class="was">RM 499</span></span></div></div>
+            <div class="card"><div class="img"><svg viewBox="0 0 120 100"><use href="#fryer"/></svg><span class="badge">-15%</span><span class="ship">Free delivery</span></div><div class="meta"><b>Single Tank Fryer 10L Stainless</b><span class="price">RM 249<span class="was">RM 289</span></span></div></div>
+          </div>
+          <div class="cta"><div><b>Shopee</b><small>Browse all deep fryers</small></div><span class="btn">Shop Now</span></div>
+        </div>
+        <figcaption><b>Ad 1: Catalog carousel</b>Cards come from the product set. Price, sale price and delivery strip are the only overlays.</figcaption>
+      </figure>
+
+      <figure>
+        <div class="phone">
+          <div class="ad-head"><div class="avatar">YB</div><div><b>Your Brand Kitchen</b><small>Sponsored</small></div></div>
+          <div class="ad-copy">Crispy every batch. Tap to see the full range.</div>
+          <div class="cover"><svg viewBox="0 0 120 100"><use href="#fryer"/></svg><span class="play"></span><div class="over">Crispy every batch</div></div>
+          <div class="grid4">
+            <div class="card"><div class="img"><svg viewBox="0 0 120 100"><use href="#oven"/></svg></div><div class="meta"><b>Deck Oven 2 Tray</b><span class="price">RM 1,290</span></div></div>
+            <div class="card"><div class="img"><svg viewBox="0 0 120 100"><use href="#fryer"/></svg></div><div class="meta"><b>Fryer 2×6L</b><span class="price">RM 389</span></div></div>
+          </div>
+          <div class="cta"><div><b>Shopee</b><small>See the range</small></div><span class="btn">Shop Now</span></div>
+        </div>
+        <figcaption><b>Ad 3: Collection with video cover</b>The video sells the result. The grid below handles the purchase. Best for people who need convincing.</figcaption>
+      </figure>
+
+      <figure>
+        <div class="phone">
+          <div class="ad-head"><div class="avatar">YB</div><div><b>Your Brand Kitchen</b><small>Sponsored</small></div></div>
+          <div class="ad-copy">Bake 6 trays at once. Warranty included.</div>
+          <div class="frame">
+            <div class="top"><span class="tagline">COMMERCIAL GRADE</span><span class="pct">-25%</span></div>
+            <svg viewBox="0 0 120 100"><use href="#oven"/></svg>
+            <div class="bar"><span>Free delivery · 1 yr warranty</span><b>RM 1,290</b></div>
+          </div>
+          <div class="cta"><div><b>Shopee</b><small>Commercial Deck Oven 2 Deck 4 Tray</small></div><span class="btn">Shop Now</span></div>
+        </div>
+        <figcaption><b>Ad 2: Single product with frame</b>One product, three overlays. Use for retargeting and sale days.</figcaption>
+      </figure>
+    </div>
+
+    <div class="dosdonts">
+      <div class="do"><h3>Do</h3><ul>
+        <li>Show food in at least one image per product</li>
+        <li>Keep capacity and power visible, buyers compare specs</li>
+        <li>Refresh frames and video every 2 to 3 weeks</li>
+        <li>Name the buyer in the primary text: café, bakery, hawker stall</li></ul></div>
+      <div class="dont"><h3>Don't</h3><ul>
+        <li>Crowd the product with text, badges or logos</li>
+        <li>Use blurry supplier photos or stock images of other brands</li>
+        <li>Promise results you cannot show, such as "save 50% oil"</li>
+        <li>Leave sale badges up after the promotion ends</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Step 4</div>
+      <h2>Launch and review</h2>
+    </div>
+    <div class="cal">
+      <div><b>Days 1 to 7</b><span>Launch C1 with all ad sets and three ads each. Change nothing.</span></div>
+      <div><b>Week 2</b><span>Turn off the weakest ad in each ad set by cost per purchase. Add a new hook.</span></div>
+      <div><b>Week 3</b><span>Launch C2 once Shopee shows enough viewers and cart adders to retarget.</span></div>
+      <div><b>12.12 and year-end</b><span>Switch on C3 with sale frames. Raise budget 3x for the 3 to 5 days around the event.</span></div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Metric</th><th>What it tells you</th><th>Act when</th></tr></thead>
+        <tbody>
+          <tr><td>Cost per purchase</td><td>Whether the ad set earns its budget against order value</td><td>Above your break-even for 7 days</td></tr>
+          <tr><td>ROAS</td><td>GMV on Shopee divided by ad spend</td><td>Below target after 50+ purchases</td></tr>
+          <tr><td>Outbound CTR</td><td>Whether the creative earns the click to Shopee</td><td>Under about 1%, change the creative</td></tr>
+          <tr><td>Frequency (C2)</td><td>Fatigue in the retargeting pool</td><td>Above 4 in 7 days</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
