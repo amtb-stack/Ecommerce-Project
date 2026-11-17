@@ -462,8 +462,9 @@ function heartURI(fill, shine) {
 
 // ============================================================
 // Audio — gamelan Melayu & zapin raya (gubahan asal, disintesis WebAudio)
-//   menu   : gamelan (saron, bonang, peking, kenong, gong) skala pelog D
-//   main   : zapin (gambus, marwas, dok) + lapisan gamelan, makin rancak ikut fasa
+//   menu   : gamelan Melayu (saron, keromong, gambang, kenong, gong agung, gendang ibu/anak)
+//   siang/petang : rentak joget 6/8 (biola, akordion, gendang Melayu, rebana, gong)
+//   senja/malam  : zapin (gambus, marwas, dok) + lapisan gamelan, lebih dramatik
 //   tegang : versi dramatik bila nyawa tinggal satu
 //   pening : lagu "pening-pening" untuk skrin ALAHAI OPPS
 // ============================================================
@@ -472,8 +473,8 @@ const mf = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const noteF = (n) => mf(MIDI(n));
 
 // [nota, panjang dalam 1/16]. '-' = rehat
-function seqToSong(bars, roots) {
-  const len = bars.length * 16, onset = new Array(len).fill(null), held = new Array(len).fill(0);
+function seqToSong(bars, roots, barLen = 16) {
+  const len = bars.length * barLen, onset = new Array(len).fill(null), held = new Array(len).fill(0);
   let s = 0;
   for (const bar of bars) for (const [n, l] of bar) { if (n !== '-') onset[s] = { m: MIDI(n), len: l }; for (let k = 0; k < l; k++) held[s + k] = n === '-' ? -1 : MIDI(n); s += l; }
   for (let i = 0; i < len; i++) if (held[i] < 0) held[i] = held[(i + len - 1) % len] > 0 ? held[(i + len - 1) % len] : MIDI('D4');
@@ -513,15 +514,41 @@ const SONG_TENSE = seqToSong([
   [['A4', 2], ['G4', 2], ['F#4', 2], ['Eb4', 2], ['D4', 2], ['Eb4', 2], ['D4', 4]],
 ], ['D2', 'D2', 'G2', 'D2']);
 SONG_TENSE.gongBars = new Set([0, 2]);
-// Menu: gamelan pelog D (D Eb F A Bb), satu not balungan setiap ketukan
-const PEL = { 1: 'D4', 2: 'Eb4', 3: 'F4', 5: 'A4', 6: 'Bb4', '1.': 'D5', '2.': 'Eb5', '3.': 'F5', '5.': 'A5' };
-const BAL = ('5 6 5 3  2 3 5 1.  6 5 3 2  3 2 1 1  ' +
-  '3 5 6 1.  2. 1. 6 5  6 1. 5 3  2 3 5 5  ' +
-  '1. 6 5 3  5 6 1. 2.  3. 2. 1. 6  5 3 2 1').trim().split(/\s+/);
-const SONG_MENU = (() => {
-  const beats = BAL.map((d) => MIDI(PEL[d]));
-  return { len: beats.length * 4, beats, gongEvery: 16 };
-})();
+// Menu: gamelan Melayu (gaya Terengganu) — pentatonik major D E F# A B, satu not balungan setiap ketukan
+const MENU_TUNE = ('A4 B4 A4 F#4  E4 F#4 A4 A4  B4 D5 B4 A4  F#4 E4 D4 D4  ' +
+  'F#4 A4 B4 D5  E5 D5 B4 A4  B4 A4 F#4 E4  F#4 E4 D4 D4  ' +
+  'D5 E5 D5 B4  A4 B4 D5 D5  E5 D5 B4 A4  B4 A4 F#4 F#4  ' +
+  'A4 F#4 E4 D4  E4 F#4 A4 B4  A4 F#4 E4 F#4  E4 D4 D4 D4').trim().split(/\s+/);
+const SONG_MENU = { beats: MENU_TUNE.map(MIDI), len: MENU_TUNE.length * 4 };
+const PENTA = []; for (let o = 3; o <= 7; o++) for (const n of [2, 4, 6, 9, 11]) PENTA.push(o * 12 + n);
+const pentaIdx = (m) => { let best = 0; for (let i = 0; i < PENTA.length; i++) if (Math.abs(PENTA[i] - m) < Math.abs(PENTA[best] - m)) best = i; return best; };
+const GENDANG_IBU = 'D..T.DT.', GENDANG_ANAK = '.t.t..t.';
+// Kompang raya: induk (P), anak (p), peningkah (K)
+const KOMPANG_A = 'P.pK.pP.pK.p', KOMPANG_B = 'P.pKP.pKP.pK', KOMPANG_16 = 'P.pK.pP.pK.pP.KK';
+// Lagu joget raya (6/8, D mixolydian). 12 langkah 1/16 setiap bar.
+// Bar ganjil = 3+3, bar genap = hemiola 2+2+2 (lenggok khas joget).
+const SONG_JOGET = seqToSong([
+  [['A4', 2], ['B4', 2], ['A4', 2], ['F#4', 3], ['G4', 1], ['A4', 2]],
+  [['D5', 4], ['C5', 2], ['B4', 2], ['A4', 4]],
+  [['B4', 2], ['A4', 2], ['G4', 2], ['F#4', 2], ['E4', 2], ['F#4', 2]],
+  [['G4', 4], ['A4', 4], ['D4', 4]],
+  [['F#4', 2], ['G4', 2], ['A4', 2], ['D5', 3], ['E5', 1], ['D5', 2]],
+  [['C5', 4], ['B4', 2], ['C5', 2], ['A4', 4]],
+  [['G4', 2], ['B4', 2], ['A4', 2], ['G4', 2], ['F#4', 2], ['E4', 2]],
+  [['D4', 8], ['-', 4]],
+  [['D5', 2], ['E5', 2], ['F#5', 2], ['E5', 3], ['D5', 1], ['C5', 2]],
+  [['D5', 4], ['B4', 4], ['A4', 4]],
+  [['G4', 2], ['A4', 2], ['B4', 2], ['C5', 2], ['B4', 2], ['A4', 2]],
+  [['B4', 4], ['A4', 4], ['F#4', 4]],
+  [['E4', 2], ['F#4', 2], ['G4', 2], ['A4', 3], ['B4', 1], ['A4', 2]],
+  [['D5', 4], ['C5', 4], ['A4', 4]],
+  [['G4', 2], ['F#4', 2], ['E4', 2], ['F#4', 2], ['G4', 2], ['E4', 2]],
+  [['D4', 8], ['-', 4]],
+], ['D3', 'G2', 'D3', 'A2', 'D3', 'C3', 'A2', 'D3', 'D3', 'G2', 'C3', 'D3', 'A2', 'D3', 'A2', 'D3'], 12);
+const JOGET_SCALE = [62, 64, 66, 67, 69, 71, 72];           // D E F# G A B C
+const JOGET_DQ = [0, 100, 108, 108, 108];                    // tempo (dotted quarter)
+const GENDANG_A = 'D...T.D.T.T.', GENDANG_B = 'D.t.T.t.D.T.', GENDANG_FILL = 'D...T.DTTTTT';
+const REBANA_A = '..t...t..t.t', REBANA_B = '.t.t.t.t.t.t';
 // Rentak
 const MARWAS_A = 'D..T..D.T.D.T...';
 const MARWAS_B = '..t..t.t...t..tt';
@@ -608,6 +635,38 @@ const Sfx = {
   dok(t, vol, dest) { this.env('sine', 54, t, 0.36, vol, dest || this.musicGain, { f0: 100, glide: 0.18 }); },
   kesi(t, vol, dest) { this.noiseHit(t, 0.1, vol, 'highpass', 6500, 0, dest || this.musicGain); },
 
+  // biola: dua gergaji sedikit sumbang + vibrato lambat masuk
+  violin(f, t, dur, vol, dest) {
+    const c = this.ctx, g = c.createGain(), lp = c.createBiquadFilter(), pk = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 3000; lp.Q.value = 0.7;
+    pk.type = 'peaking'; pk.frequency.value = 1600; pk.Q.value = 1.4; pk.gain.value = 5;
+    const end = t + Math.max(0.07, dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.03); g.gain.setValueAtTime(vol * 0.85, Math.max(t + 0.031, end - 0.02)); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.09);
+    lfo.frequency.value = 5.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.007, t + Math.min(0.25, dur + 0.05)); lfo.connect(lg);
+    for (const det of [-5, 5]) { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det; lg.connect(o.frequency); o.connect(lp); o.start(t); o.stop(end + 0.12); }
+    lp.connect(pk); pk.connect(g); g.connect(dest || this.musicGain); lfo.start(t); lfo.stop(end + 0.12);
+  },
+  // akordion: buluh berganda (musette)
+  accNote(f, t, dur, vol, dark, dest) {
+    const c = this.ctx, g = c.createGain(), lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = dark ? 800 : 2300;
+    const end = t + Math.max(0.05, dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.012); g.gain.setValueAtTime(vol, end); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.06);
+    for (const det of [-9, 9]) { const o = c.createOscillator(); o.type = dark ? 'sawtooth' : 'square'; o.frequency.value = f; o.detune.value = det; o.connect(lp); o.start(t); o.stop(end + 0.08); }
+    lp.connect(g); g.connect(dest || this.musicGain);
+  },
+  accChord(root, t, dur, vol) { const r = 62 + (((root - 62) % 12) + 12) % 12; for (const m of [r, r + 4, r + 7]) this.accNote(mf(m), t, dur, vol); },
+  keromong(f, t, vol, dest) { this.metal(f, t, vol, 0.95, [[1, 1, 1], [2.0, 0.16, 0.3], [3.0, 0.06, 0.12]], 1.1, dest || this.musicGain, { f0: f * 1.01, glide: 0.02, attack: 0.004 }); },
+  gambang(f, t, vol, dest) { const d = dest || this.musicGain; this.env('sine', f, t, 0.22, vol, d); this.env('sine', f * 3.98, t, 0.04, vol * 0.3, d); this.noiseHit(t, 0.015, vol * 0.4, 'bandpass', 2500, 1, d); },
+  kompang(t, vol, open, dest) {
+    const d = dest || this.musicGain;
+    if (open) { this.env('sine', 185, t, 0.12, vol * 0.8, d, { f0: 250, glide: 0.04 }); this.noiseHit(t, 0.05, vol * 0.45, 'bandpass', 900, 1, d); }
+    else { this.noiseHit(t, 0.045, vol, 'bandpass', 1500, 1.5, d); this.env('triangle', 330, t, 0.03, vol * 0.45, d); }
+  },
+  gDung(t, vol, dest) { this.env('sine', 108, t, 0.28, vol, dest || this.musicGain, { f0: 150, glide: 0.05 }); this.noiseHit(t, 0.04, vol * 0.25, 'lowpass', 600, 0, dest || this.musicGain); },
+  gTak(t, vol, dest) { this.noiseHit(t, 0.06, vol, 'bandpass', 2000, 2, dest || this.musicGain); this.env('triangle', 410, t, 0.05, vol * 0.4, dest || this.musicGain); },
+  ching(t, vol, dest) { this.env('sine', 3900, t, 0.22, vol, dest || this.musicGain); this.env('sine', 5300, t, 0.16, vol * 0.6, dest || this.musicGain); this.noiseHit(t, 0.04, vol * 0.5, 'highpass', 7000, 0, dest || this.musicGain); },
+
   // ---------- kesan bunyi ----------
   at(delay = 0) { return this.now() + delay; },
   jump() { if (!this.ctx) return; this.env('square', 620, this.at(), 0.12, 0.05, this.master, { f0: 300, glide: 0.1 }); },
@@ -648,32 +707,67 @@ const Sfx = {
   },
 
   // ---------- muzik latar ----------
-  bpm() { if (this.track === 'menu') return 92; if (this.track === 'dizzy') return 72; if (this.tense) return Math.max(128, BPM_PLAY[this.level] + 8); return BPM_PLAY[this.level] || 108; },
   play(track, level) {
     if (!this.ctx) return;
     const changed = track !== this.track || !this.musicOn;
     this.track = track; if (level != null) this.level = level;
     if (!changed) return;
-    this.stopMusic(); this.musicOn = true; this.step = 0; this.nextT = this.ctx.currentTime + 0.08;
+    this.stopMusic(); this.musicOn = true; this.sstep = 0; this.cur = null; this.nextT = this.ctx.currentTime + 0.08;
     this.timer = setInterval(() => this.pump(), 25); this.pump();
   },
   setLevel(l) { this.level = l; },
-  setTense(on) { if (this.tense !== on) { this.tense = on; this.pendingSwitch = true; } },
+  setTense(on) { this.tense = on; },
   stopMusic() { this.musicOn = false; clearInterval(this.timer); this.timer = null; },
   pump() {
     if (!this.musicOn || !this.ctx) return;
-    while (this.nextT < this.ctx.currentTime + 0.15) { this.playStep(this.step, this.nextT); this.step++; this.nextT += 60 / this.bpm() / 4; }
+    while (this.nextT < this.ctx.currentTime + 0.15) this.nextT += this.playStep(this.nextT);
   },
-  playStep(step, t) {
-    if (this.track === 'menu') return this.stepMenu(step, t);
-    if (this.track === 'dizzy') return this.stepDizzy(step, t);
-    // tukar antara tema & versi tegang hanya pada permulaan bar
-    if (this.pendingSwitch && step % 16 === 0) { this.pendingSwitch = false; this.step = step = 0; this.curSong = this.tense ? SONG_TENSE : SONG_PLAY; }
-    const song = this.curSong || (this.curSong = SONG_PLAY);
-    return song === SONG_TENSE ? this.stepTense(step, t) : this.stepZapin(step, t);
+  // satu langkah muzik; pulangkan tempoh langkah (saat)
+  playStep(t) {
+    if (this.track === 'menu') { this.stepMenu(this.sstep++, t); return 60 / 92 / 4; }
+    if (this.track === 'dizzy') { this.stepDizzy(this.sstep++, t); return 60 / 72 / 4; }
+    const want = this.tense ? 'tense' : (this.level <= 2 ? 'joget' : 'zapin');
+    // tukar lagu hanya di permulaan bar
+    if (!this.cur || (want !== this.cur && this.sstep % (this.cur === 'joget' ? 12 : 16) === 0)) { this.cur = want; this.sstep = 0; }
+    const st = this.sstep++;
+    if (this.cur === 'joget') { this.stepJoget(st, t); return 60 / (JOGET_DQ[this.level] * 6); }
+    if (this.cur === 'zapin') { this.stepZapin(st, t); return 60 / BPM_PLAY[this.level] / 4; }
+    this.stepTense(st, t); return 60 / Math.max(128, BPM_PLAY[this.level] + 8) / 4;
+  },
+  stepJoget(step, t) {
+    const J = SONG_JOGET, s = step % J.len, bar = Math.floor(s / 12), b = s % 12, L = this.level, d = 60 / (JOGET_DQ[L] * 6);
+    const hem = bar % 2 === 1, fill = bar % 8 === 7;
+    if (b === 0 && bar % 8 === 0) this.gong(t, 0.45);
+    if (b === 0 && bar % 8 === 4) this.kenong(noteF('A3'), t, 0.1);
+    // biola + cengkok (not hiasan atas) pada not panjang
+    const on = J.onset[s];
+    if (on) {
+      const f = mf(on.m), long = on.len >= 3;
+      if (long && L >= 1) {
+        const i = JOGET_SCALE.indexOf(((on.m - 62) % 12 + 12) % 12 + 62);
+        const up = i >= 0 ? JOGET_SCALE[(i + 1) % 7] + (on.m - (((on.m - 62) % 12 + 12) % 12 + 62)) + (i === 6 ? 12 : 0) : on.m + 2;
+        this.violin(mf(up), t, 0.045, 0.07); this.violin(f, t + 0.05, on.len * d - 0.05, 0.09);
+      } else this.violin(f, t, on.len * d * 0.92, 0.09);
+      if (L >= 2) this.env('sine', mf(on.m + 12), t, on.len * d + 0.1, 0.035, this.musicGain, { attack: 0.03, wob: 5, wobDepth: 0.006 });
+    }
+    // akordion: bes + kord (oom-pah-pah 6/8, hemiola pada bar genap)
+    if (b % 2 === 0) {
+      const e = b / 2, root = J.roots[bar];
+      const bass = hem ? [0, 2, 4] : [0, 3], chord = hem ? [1, 3, 5] : [1, 2, 4, 5];
+      const bi = bass.indexOf(e);
+      if (bi >= 0) this.accNote(mf(root + (bi % 2 ? 7 : 0)), t, d * 1.5, 0.12, true);
+      if (chord.includes(e)) this.accChord(root, t, d * 1.2, 0.026);
+    }
+    // gendang Melayu
+    const ch = (fill ? GENDANG_FILL : hem ? GENDANG_B : GENDANG_A)[b];
+    if (ch === 'D') this.gDung(t, 0.5); else if (ch === 'T') this.gTak(t, 0.3); else if (ch === 't') this.gTak(t, 0.13);
+    if (L >= 2 && (hem ? REBANA_B : REBANA_A)[b] === 't') this.tak(t, 0.1, 3400);
+    if (L >= 2 && (hem ? b % 4 === 0 : b % 6 === 0)) this.ching(t, 0.03);
+    const kp = (hem ? KOMPANG_B : KOMPANG_A)[b];
+    if (kp === 'P') this.kompang(t, 0.26, false); else if (kp === 'p') this.kompang(t, 0.13, false); else if (kp === 'K') this.kompang(t, 0.22, true);
   },
   stepZapin(step, t) {
-    const S0 = SONG_PLAY, s = step % S0.len, bar = s >> 4, b = s & 15, L = this.level, d16 = 60 / this.bpm() / 4;
+    const S0 = SONG_PLAY, s = step % S0.len, bar = s >> 4, b = s & 15, L = this.level, d16 = 60 / BPM_PLAY[L] / 4;
     if (b === 0 && S0.gongBars.has(bar)) this.gong(t, 0.5);
     if (b === 8) this.kenong(mf(bar % 2 ? 62 : 57), t, 0.09);
     const on = S0.onset[s];
@@ -683,7 +777,7 @@ const Sfx = {
       if (on.len >= 4 && L >= 2) for (let k = 2; k < on.len; k += (L >= 3 ? 1 : 2)) this.gambus(mf(on.m), t + k * d16, L >= 3 ? 0.13 : 0.17, d16);
     }
     if (L >= 2 && b % 4 === 0) this.saron(mf(S0.held[s] + 12), t, 0.05, 0.9);
-    if (L >= 3 && b % 2 === 0) { const cur = S0.held[s], nx = S0.held[(s - (s % 4) + 4) % S0.len]; this.bonang(mf((b % 4 === 0 ? nx : cur) + 12), t, 0.035); }
+    if (L >= 3 && b % 4 === 0) this.keromong(mf(S0.held[s] + 12), t, 0.04);
     if (L >= 2 && (b === 0 || b === 6 || b === 10)) this.gambus(mf(S0.roots[bar] + (b === 6 ? 7 : 0)), t, 0.26, d16 * 3, { dark: true });
     if (L === 1 && (b === 0 || b === 10)) this.gambus(mf(S0.roots[bar]), t, 0.2, d16 * 3, { dark: true });
     const fill = bar === S0.bars - 1 || (L >= 4 && bar % 4 === 3);
@@ -692,9 +786,12 @@ const Sfx = {
     if (L >= 2 && MARWAS_B[b] === 't') this.tak(t, 0.13, 3600);
     if (L >= 3 && DOK[b] === 'B') this.dok(t, 0.4);
     if (L >= 4 && b % 4 === 2) this.kesi(t, 0.04);
+    if (b === 0 || b === 10) this.gDung(t, 0.3);
+    const kp = KOMPANG_16[b];
+    if (kp === 'P') this.kompang(t, 0.2, false); else if (kp === 'p') this.kompang(t, 0.1, false); else if (kp === 'K') this.kompang(t, 0.17, true);
   },
   stepTense(step, t) {
-    const S0 = SONG_TENSE, s = step % S0.len, bar = s >> 4, b = s & 15, d16 = 60 / this.bpm() / 4;
+    const S0 = SONG_TENSE, s = step % S0.len, bar = s >> 4, b = s & 15, d16 = 60 / Math.max(128, BPM_PLAY[this.level] + 8) / 4;
     if (b === 0 && S0.gongBars.has(bar)) this.gong(t, 0.55);
     const on = S0.onset[s];
     if (on) this.gambus(mf(on.m), t, 0.34, on.len * d16);
@@ -707,30 +804,27 @@ const Sfx = {
     if (ch === 'D') this.dung(t, 0.45); else if (ch === 'T') this.tak(t, 0.24); else if (ch === 't') this.tak(t, 0.12, 3600);
     if (HEART[b] === 'B') this.dok(t, 0.5);
     if (b === 12) this.kenong(noteF('Eb4'), t, 0.08);
+    if (KOMPANG_16[b] === 'K') this.kompang(t, 0.18, true); else if (KOMPANG_16[b] === 'P') this.kompang(t, 0.16, false);
   },
   stepMenu(step, t) {
-    const M = SONG_MENU, s = step % M.len, beat = s >> 2, sub = s & 3, bal = M.beats[beat], nxt = M.beats[(beat + 1) % M.beats.length];
-    const inG = beat % 16;
+    const M = SONG_MENU, s = step % M.len, beat = s >> 2, sub = s & 3, n = M.beats[beat], nx = M.beats[(beat + 1) % M.beats.length], inP = beat % 16;
+    const ni = pentaIdx(n), xi = pentaIdx(nx), dir = xi > ni ? 1 : xi < ni ? -1 : 1;
     if (sub === 0) {
-      this.saron(mf(bal + 12), t, 0.09, 1.2);              // saron: balungan
-      this.saron(mf(bal), t, 0.05, 1.6);                   // demung
-      if (inG === 15) this.gong(t, 0.55);
-      else if (inG % 4 === 3) this.kenong(mf(bal), t, 0.1);
-      else if (inG % 4 === 1) this.kenong(mf(bal - 12 + 12), t, 0.04);
-      if (inG % 8 === 0) this.dok(t, 0.25);
+      this.saron(mf(n + 12), t, 0.08, 1.1);                       // saron: balungan
+      if (inP === 15) this.gong(t, 0.6);                           // gong agung
+      else if (inP === 7) this.kenong(mf(n - 12), t, 0.14);        // gong suwukan / kenong besar
+      else if (inP % 4 === 3) this.kenong(mf(n), t, 0.07);
+      this.keromong(mf(n + 12), t, 0.06);
     }
-    // bonang imbal: menjangka not seterusnya
-    const bn = sub % 2 === 0 ? nxt : (sub === 1 ? bal : nxt + (nxt < 74 ? 0 : -12));
-    this.bonang(mf(bn + 12), t, 0.03);
-    // peking: gandaan not dalam 1/8
-    if (sub === 0 || sub === 2) this.bonang(mf((sub === 0 ? bal : nxt) + 24), t, 0.012);
-    // ketuk lembut di luar ketukan
-    if (sub === 2) this.env('sine', 190, t, 0.12, 0.05, this.musicGain, { f0: 230, glide: 0.03 });
-    if (inG % 4 === 2 && sub === 2) this.tak(t, 0.06, 1800);
+    if (sub === 2) this.keromong(mf(PENTA[ni + dir] + 12), t, 0.045);   // keromong: not lalu ke not seterusnya
+    if (beat % 8 >= 4 && beat % 8 < 7) this.gambang(mf(PENTA[clamp(ni + dir * sub, 0, PENTA.length - 1)] + 24), t, 0.035);
+    const k = s % 8;                                                // gendang ibu & anak
+    if (GENDANG_IBU[k] === 'D') this.gDung(t, 0.42); else if (GENDANG_IBU[k] === 'T') this.gTak(t, 0.24);
+    if (GENDANG_ANAK[k] === 't') this.gTak(t, 0.1);
   },
   // lagu "pening-pening": nada beralun, wisel jatuh, burung bercicip
   stepDizzy(step, t) {
-    const s = step % 32, b = s & 15, d16 = 60 / this.bpm() / 4;
+    const s = step % 32, b = s & 15, d16 = 60 / 72 / 4;
     const LEAD = { 0: 'A5', 3: 'F#5', 6: 'Eb5', 8: 'C5', 11: 'A4', 14: 'F#4', 16: 'Eb4', 19: 'D4', 22: 'Eb4', 24: 'D4', 27: 'C#4', 28: 'D4' };
     if (LEAD[s]) {
       const f = noteF(LEAD[s]);
@@ -751,13 +845,13 @@ const Sfx = {
   async renderDemo(parts, sr = 44100) {
     const total = parts.reduce((a, p) => a + p.secs, 0);
     const off = new OfflineAudioContext(1, Math.ceil(sr * (total + 1)), sr);
-    const keep = { ctx: this.ctx, master: this.master, musicGain: this.musicGain, noiseBuf: this.noiseBuf, ksCache: this.ksCache, track: this.track, level: this.level, tense: this.tense, curSong: this.curSong };
+    const keep = { ctx: this.ctx, master: this.master, musicGain: this.musicGain, noiseBuf: this.noiseBuf, ksCache: this.ksCache, track: this.track, level: this.level, tense: this.tense, cur: this.cur, sstep: this.sstep };
     this.attach(off, true);
     let t0 = 0.05;
     for (const p of parts) {
-      this.track = p.track; this.level = p.level || 1; this.tense = !!p.tense; this.curSong = p.tense ? SONG_TENSE : SONG_PLAY; this.pendingSwitch = false;
-      let t = t0, step = 0;
-      while (t < t0 + p.secs) { this.playStep(step, t); step++; t += 60 / this.bpm() / 4; }
+      this.track = p.track; this.level = p.level || 1; this.tense = !!p.tense; this.cur = null; this.sstep = 0;
+      let t = t0;
+      while (t < t0 + p.secs) t += this.playStep(t);
       t0 += p.secs;
     }
     const buf = await off.startRendering();
@@ -1857,7 +1951,7 @@ function startGame(seed) {
   hudCache = {}; buildHearts(); updateHud();
   $('jump-hint').classList.remove('fade');
   showScreens(); setHud(true);
-  Sfx.tense = false; Sfx.pendingSwitch = false; Sfx.curSong = SONG_PLAY; Sfx.stopMusic(); Sfx.play('play', 1);
+  Sfx.tense = false; Sfx.stopMusic(); Sfx.play('play', 1);
 }
 
 function showCrash() {
