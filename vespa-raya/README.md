@@ -1,7 +1,7 @@
 # Vespa Raya The Baker
 
-Permainan runner kartun 2D gaya chibi: bawa vespa, hantar kuih raya ke 30 rumah kampung dari siang hingga malam raya.
-Semua grafik dilukis dengan kod sebagai vektor (tiada fail imej), muzik & bunyi disintesis dengan WebAudio.
+Permainan runner pixel art 2D dengan sentuhan arked (shading tebal, letupan, asap, serpihan, HUD logam berivet): bawa vespa, hantar kuih raya ke 30 rumah kampung dari siang hingga malam raya.
+Semua grafik dilukis dengan kod (tiada fail imej), muzik & bunyi disintesis dengan WebAudio.
 
 ![Contoh frame](preview/frames.png)
 
@@ -39,19 +39,20 @@ Nyawa habis → skrin "ALAHAI! OPPS!".
 ## Pratonton setiap frame
 
 Tambah `?frame=<nama>` pada URL untuk paparan statik satu skrin:
-`menu`, `pdpa`, `caramain`, `siang`, `petang`, `hantar`, `senja`, `malam`, `banner`, `zon`, `jatuh`, `keputusan`, `aset`.
+`menu`, `pdpa`, `caramain`, `siang`, `petang`, `hantar`, `langgar`, `senja`, `malam`, `banner`, `zon`, `jatuh`, `keputusan`, `aset`.
 
 ## Di mana nak ubah
 
 | Nak ubah | Lokasi dalam `game.js` |
 | --- | --- |
 | Jumlah rumah, kelajuan, lompatan | `TOTAL`, `SPEED_MIN/MAX`, `JUMP_V/GRAV` (atas fail) |
-| Warna watak & rumah | `SKIN`, `TEAL`, `CREAM`, `HOUSE_STYLE` (atas bahagian sprite) |
+| Warna sprite | `PAL`, `MS` (tona tambahan), `HOUSE_VARIANTS` |
 | Nama penerima kuih | `NAMES` |
 | Nama & ayat fasa (Siang/Petang/...) | `PHASES` |
 | Warna langit ikut masa | `SKY` |
 | Teks bila terlanggar | `HURT_TEXT` |
-| Watak chibi, vespa, angsa, rumah | `drawChibi`/`chibiHead`, `drawVespaV`, `drawGooseV`, `drawHouseV` |
+| Watak, vespa, angsa, rumah | `drawRider`, `drawVespa`, `drawGoose`, `drawHouse` |
+| Letupan, asap, debu, serpihan | `drawExplo`, `drawPuff`, `fx()`, `debris()`, `hurt` |
 | Muzik (melodi, rentak, tempo) | `SONG_MENU`, `SONG_JOGET`, `SONG_PLAY`, `KOMPANG_*`, `Sfx.step*` |
 | Susunan halangan setiap fasa | `fillHazards` (pemberat `weights`) |
 | Markah hantaran / combo | `deliver`, `comboMult` |

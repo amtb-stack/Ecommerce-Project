@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Vespa Raya The Baker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Permainan kartun 2D: hantar kuih raya dengan vespa dari siang hingga malam raya.">
+<meta name="description" content="Permainan pixel art: hantar kuih raya dengan vespa dari siang hingga malam raya.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -118,6 +118,7 @@
       <!-- 8. Skrin jatuh (gagal) -->
       <section id="scr-crash" class="screen" hidden>
         <button id="btn-crash-x" class="btn btn-red btn-x" type="button" aria-label="Tutup">X</button>
+        <p class="mission fail">MISI GAGAL</p>
         <div class="crash-title"><span>ALAHAI!</span><span>OPPS!</span></div>
         <p id="crash-sub" class="crash-sub">Kuih raya bersepah...</p>
         <div class="crash-btns">
@@ -128,6 +129,7 @@
 
       <!-- 7. Zon penghantaran / selesai -->
       <section id="scr-done" class="screen center" hidden>
+        <p class="mission">MISI SELESAI!</p>
         <div class="badge">
           <span class="check-ico"></span>
           <span id="done-title" class="badge-title">BERJAYA!</span>
