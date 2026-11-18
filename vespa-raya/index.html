@@ -80,26 +80,15 @@
         </form>
       </section>
 
-      <!-- Pilih kampung -->
-      <section id="scr-village" class="screen dim center" hidden>
-        <h2 class="mission">PILIH KAMPUNG</h2>
-        <div class="vcards">
-          <button id="btn-kg-ketupat" class="vcard ketupat" type="button">
-            <span class="vtag">A</span>
-            <span class="vicon ico-ketupat"></span>
-            <span class="vname">KAMPUNG KETUPAT</span>
-            <span class="vdesc">Sawah padi terbuka &amp; rumah kampung. Lubang, angsa garang, kelapa jatuh, jambatan patah.</span>
-            <span id="best-ketupat" class="vbest">Belum dimain</span>
-          </button>
-          <button id="btn-kg-lemang" class="vcard lemang" type="button">
-            <span class="vtag">B</span>
-            <span class="vicon ico-lemang"></span>
-            <span class="vname">KAMPUNG LEMANG</span>
-            <span class="vdesc">Hutan lebat &amp; redup, rumah gonjong. Pokok tumbang, tahi burung, motor besar (-2 nyawa). Orang tepi jalan tunggu balang!</span>
-            <span id="best-lemang" class="vbest">Belum dimain</span>
-          </button>
-        </div>
-        <button id="btn-village-back" class="linkish" type="button">Kembali ke menu</button>
+      <!-- Simpang: pilih jalan dalam 5 saat -->
+      <section id="scr-fork" class="screen fork" hidden>
+        <button id="btn-fork-a" class="fork-btn a" type="button" aria-label="Kampung A">
+          <span class="fork-arrow up"></span><span class="fork-name">KAMPUNG A</span><span class="fork-q">???</span>
+        </button>
+        <div class="fork-mid"><span class="fork-title">SIMPANG!</span><span id="fork-count" class="fork-count">5</span><span class="fork-sub">Pilih jalan</span></div>
+        <button id="btn-fork-b" class="fork-btn b" type="button" aria-label="Kampung B">
+          <span class="fork-q">???</span><span class="fork-name">KAMPUNG B</span><span class="fork-arrow down"></span>
+        </button>
       </section>
 
       <!-- Cara main -->
@@ -108,11 +97,12 @@
           <h2 class="panel-title">CARA MAIN</h2>
           <ul class="howto">
             <li><b>Tekan skrin</b> untuk LOMPAT. Tekan lama untuk lompat lebih tinggi.</li>
-            <li>Elak lubang, batu, tahi lembu, kelapa jatuh, angsa pengejar dan jambatan patah.</li>
+            <li>Elak lubang, batu, bonggol, ayam melintas, angsa pengejar dan jambatan patah.</li>
             <li>Tekan <b>HANTAR</b> bila vespa dalam <b>zon kuning</b> depan rumah bertanda. Tepat di tengah = <b>SEMPURNA +50</b>.</li>
-            <li>Hantar berturut-turut untuk <b>COMBO</b>. Kutip kuih (+10), balang (+50), ketupat (+1 nyawa).</li>
+            <li>Hantar berturut-turut untuk <b>COMBO</b>. Kutip kuih (+10), balang (+50), ketupat (+1 nyawa). Orang tepi jalan juga tunggu balang!</li>
+            <li>Selepas 10 hantaran ada <b>SIMPANG</b>: pilih Kampung A atau B dalam 5 saat. Apa yang menunggu? Rahsia!</li>
+            <li><b>Rumah terbuka</b> = tekan HANTAR 2x. <b>Rumah Opah</b> di hujung = 3x! Kutip <b>duit raya</b> (+50).</li>
             <li>30 hantaran, dari siang ke malam raya. Jangan biar nyawa habis!</li>
-            <li><b>Kampung Lemang:</b> rumah berjauhan, tekan HANTAR bila orang tepi jalan menunggu balang. Elak motor besar (-2 nyawa).</li>
           </ul>
           <p class="keys">Papan kekunci: Space/&uarr; = lompat, Enter/&rarr; = hantar, P = rehat</p>
           <button id="btn-howto-close" class="btn btn-blue" type="button">FAHAM!</button>
