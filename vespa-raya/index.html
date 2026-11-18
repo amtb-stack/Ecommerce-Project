@@ -65,17 +65,24 @@
       <!-- 2. Persetujuan PDPA -->
       <section id="scr-pdpa" class="screen dim center" hidden>
         <form id="pdpa-form" class="panel" novalidate>
-          <p class="panel-text">Sila bersetuju dengan syarat &amp; dasar PDPA untuk bermain.</p>
-          <label class="field-lbl" for="in-name">Nama untuk papan kedudukan</label>
-          <input id="in-name" class="field" type="text" maxlength="14" autocomplete="nickname" placeholder="cth: Ahmad" spellcheck="false">
+          <p class="panel-text">Daftar &amp; setuju dengan notis PDPA untuk bermain.</p>
+          <label class="field-lbl" for="in-name">Nama (dipapar di papan kedudukan)</label>
+          <input id="in-name" class="field" type="text" maxlength="24" autocomplete="name" placeholder="cth: Ahmad Faiz" spellcheck="false">
+          <label class="field-lbl" for="in-phone" data-if="askPhone">No. telefon <span data-if="!phoneRequired">(pilihan)</span></label>
+          <input id="in-phone" class="field" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="cth: 012-345 6789" data-if="askPhone">
+          <label class="field-lbl" for="in-email" data-if="askEmail">E-mel <span data-if="!emailRequired">(pilihan)</span></label>
+          <input id="in-email" class="field" type="email" inputmode="email" maxlength="80" autocomplete="email" placeholder="cth: ahmad@email.com" spellcheck="false" data-if="askEmail">
+          <p id="pdpa-err" class="field-err" hidden></p>
           <details class="policy">
-            <summary>Baca dasar ringkas</summary>
-            <p>Kami hanya simpan nama panggilan dan skor anda untuk papan kedudukan. Tiada nombor telefon, e-mel atau lokasi dikumpul. Anda boleh tukar nama bila-bila masa dari menu utama.</p>
+            <summary>Baca notis PDPA</summary>
+            <p><span data-cfg="organiser">The Baker</span> mengumpul nama<span data-if="askPhone">, nombor telefon</span><span data-if="askEmail">, e-mel</span> dan keputusan permainan anda (skor, hantaran, masa, kampung) untuk papan kedudukan, menghubungi pemenang dan menilai penyertaan kempen ini.</p>
+            <p>Hanya nama dan skor dipapar kepada umum. <span data-if="askPhone">Nombor telefon</span><span data-if="askEmail"> dan e-mel</span> tidak dipapar dan tidak dikongsi dengan pihak ketiga tanpa kebenaran anda.</p>
+            <p>Untuk akses, pembetulan, pemadaman data atau tarik balik persetujuan, hubungi <span data-cfg="contact">penganjur</span>.</p>
+            <p class="policy-local" hidden>Mod pratonton: data hanya disimpan dalam peranti ini.</p>
           </details>
-          <div class="pdpa-row">
-            <label class="check" for="in-agree"><input id="in-agree" type="checkbox"><span class="box"></span>Saya setuju</label>
-            <button id="btn-continue" class="btn btn-blue" type="submit" disabled>TERUSKAN</button>
-          </div>
+          <label class="check" for="in-agree"><input id="in-agree" type="checkbox"><span class="box"></span>Saya setuju dengan notis PDPA</label>
+          <label class="check small" for="in-mkt" data-if="askMarketing"><input id="in-mkt" type="checkbox"><span class="box"></span><span>Saya mahu terima promosi <span data-cfg="organiser">The Baker</span> (pilihan)</span></label>
+          <button id="btn-continue" class="btn btn-blue" type="submit" disabled>TERUSKAN</button>
           <button id="btn-pdpa-back" class="linkish" type="button">Kembali ke menu</button>
         </form>
       </section>
@@ -113,6 +120,7 @@
       <section id="scr-board" class="screen dim center" hidden>
         <div class="panel">
           <h2 class="panel-title">PAPAN KEDUDUKAN</h2>
+          <p id="board-src" class="board-src">Peranti ini</p>
           <ol id="board-list" class="board"></ol>
           <button id="btn-board-close" class="btn btn-blue" type="button">TUTUP</button>
         </div>
@@ -164,7 +172,7 @@
             <div class="total"><dt>SKOR</dt><dd id="r-score">0</dd></div>
           </dl>
           <div class="subpanel">
-            <h3 class="sub-title">PAPAN KEDUDUKAN</h3>
+            <h3 class="sub-title">PAPAN KEDUDUKAN <small id="result-src" class="board-src"></small></h3>
             <ol id="result-board" class="board compact"></ol>
           </div>
         </div>
@@ -179,6 +187,7 @@
     </div>
   </div>
 </div>
+<script src="config.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

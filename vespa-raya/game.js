@@ -109,6 +109,66 @@ const store = {
 };
 
 // ============================================================
+// Pengumpulan data: hantar pendaftaran & keputusan ke Google Apps Script (config.js)
+// Rekod disimpan dalam peti keluar dahulu, jadi tiada data hilang bila talian putus.
+// ============================================================
+const CFG = Object.assign({
+  endpoint: '', organiser: 'The Baker', contact: '',
+  askPhone: true, phoneRequired: true, askEmail: true, emailRequired: false, askMarketing: true,
+  globalBoard: true, policyVersion: '1',
+}, window.VRTB_CONFIG || {});
+CFG.endpoint = String(CFG.endpoint || '').trim();
+
+const uid = () => {
+  try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* tiada */ }
+  return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+};
+const Net = {
+  on: !!CFG.endpoint && !FRAME,
+  pid: (() => { let p = store.get('vrtb_pid', ''); if (!p) { p = uid(); store.set('vrtb_pid', p); } return p; })(),
+  busy: null,
+  outbox() { return store.get('vrtb_outbox', []); },
+  send(type, data) {
+    if (!this.on) return Promise.resolve(false);
+    const q = this.outbox();
+    q.push({ id: uid(), type, pid: this.pid, at: new Date().toISOString(), ...data });
+    store.set('vrtb_outbox', q.slice(-200));
+    return this.flush();
+  },
+  flush() {
+    if (!this.on) return Promise.resolve(false);
+    if (this.busy) return this.busy.then(() => this.flush());
+    this.busy = (async () => {
+      let q = this.outbox();
+      while (q.length) {
+        const batch = q.slice(0, 10);
+        try {
+          const r = await fetch(CFG.endpoint, { method: 'POST', body: JSON.stringify({ records: batch }), keepalive: true });
+          const j = await r.json();
+          if (!j || !j.ok) throw new Error((j && j.error) || 'ditolak');
+        } catch (e) { return false; }
+        const sent = new Set(batch.map((b) => b.id));
+        q = this.outbox().filter((b) => !sent.has(b.id)); store.set('vrtb_outbox', q);
+      }
+      return true;
+    })().finally(() => { this.busy = null; });
+    return this.busy;
+  },
+  async board(limit = 10) {
+    if (!this.on || !CFG.globalBoard) return null;
+    if (this.busy) await this.busy.catch(() => {});
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const tm = setTimeout(() => ctl && ctl.abort(), 8000);
+    try {
+      const u = CFG.endpoint + (CFG.endpoint.includes('?') ? '&' : '?') + 'action=board&limit=' + limit + '&pid=' + encodeURIComponent(this.pid);
+      const r = await fetch(u, ctl ? { signal: ctl.signal } : {});
+      const j = await r.json();
+      return j && j.ok && Array.isArray(j.rows) ? j : null;
+    } catch (e) { return null; } finally { clearTimeout(tm); }
+  },
+};
+
+// ============================================================
 // Pembina sprite piksel (dengan garis luar automatik)
 // ============================================================
 class PG {
@@ -1455,7 +1515,7 @@ const G = {
   score: 0, delivered: 0, processed: 0, lives: 3, combo: 0, bestCombo: 0, kuih: 0, time: 0, perfects: 0,
   player: null, goose: null, fx: [], hitstop: 0, particles: [], popups: [], packages: [], fireworks: [], confetti: [],
   shake: 0, flash: 0, phaseIdx: 0, banner: null, countdown: 0, deliverCd: 0, doneT: 0,
-  paused: false, menuScale: 2, lights: [], jumps: 0, playerName: store.get('vrtb_name', ''), consent: store.get('vrtb_consent', false),
+  paused: false, menuScale: 2, lights: [], jumps: 0, playerName: store.get('vrtb_name', ''), consent: store.get('vrtb_consent', false) === CFG.policyVersion, profile: store.get('vrtb_profile', {}), recorded: true,
   lastRank: -1, finalBonus: 0, gooseIdx: 0,
 };
 function newPlayer() { return { y: GY, vy: 0, grounded: true, coyote: 0, buffer: 0, holding: false, inv: 0, falling: false, splashT: 0, ghost: 0, wheelT: 0, crashT: 0, rot: 0, dropIn: 0 }; }
@@ -2821,7 +2881,7 @@ function finish() {
   G.state = 'done'; G.doneT = 0; Sfx.stopMusic(); Sfx.setTense(false); Sfx.rain(false); Sfx.win();
   const lifeBonus = G.lives * 150, allBonus = G.delivered === TOTAL ? 500 : 0;
   G.finalBonus = lifeBonus + allBonus; G.score += G.finalBonus;
-  setHud(false);
+  setHud(false); recordGame('selesai');
   const good = G.delivered >= 20;
   document.getElementById('done-title').textContent = good ? 'BERJAYA!' : 'SELESAI!';
   document.getElementById('done-sub').textContent = `${G.delivered}/${TOTAL} hantaran · Sampai Rumah Opah!`;
@@ -2973,6 +3033,85 @@ function playerLabel() {
   if (G.consent && G.playerName) { b.hidden = false; b.textContent = `Pemain: ${G.playerName} (tukar)`; } else b.hidden = true;
 }
 
+// ---------- pendaftaran (PDPA) ----------
+function profileOk() {
+  const p = G.profile || {};
+  if (!G.consent || !G.playerName) return false;
+  if (CFG.askPhone && CFG.phoneRequired && !p.phone) return false;
+  if (CFG.askEmail && CFG.emailRequired && !p.email) return false;
+  return true;
+}
+// Nombor Malaysia: 012-345 6789 / +60 12-345 6789 -> +60123456789. Nombor luar negara mesti bermula dengan +.
+function normPhone(v) {
+  const raw = String(v || '').trim(); if (!raw) return '';
+  let d = raw.replace(/[^0-9]/g, '');
+  if (raw.startsWith('+') && !d.startsWith('60')) return d.length >= 8 && d.length <= 15 ? '+' + d : null;
+  if (d.startsWith('60')) d = '0' + d.slice(2);
+  return /^0\d{8,10}$/.test(d) ? '+60' + d.slice(1) : null;
+}
+const normEmail = (v) => { const e = String(v || '').trim().toLowerCase(); if (!e) return ''; return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) ? e : null; };
+function showPhone(p) { return p && p.startsWith('+60') ? '0' + p.slice(3) : (p || ''); }
+function applyConfig() {
+  document.querySelectorAll('[data-if]').forEach((el) => {
+    const k = el.dataset.if, neg = k.startsWith('!'); const v = !!CFG[neg ? k.slice(1) : k];
+    el.hidden = neg ? v : !v;
+  });
+  document.querySelectorAll('[data-cfg]').forEach((el) => { const v = CFG[el.dataset.cfg]; if (v) el.textContent = v; });
+  document.querySelectorAll('.policy-local').forEach((el) => (el.hidden = Net.on));
+}
+function openPdpa() {
+  const p = G.profile || {};
+  $('in-name').value = G.playerName; $('in-phone').value = showPhone(p.phone); $('in-email').value = p.email || '';
+  $('in-agree').checked = G.consent; $('in-mkt').checked = !!p.mkt;
+  pdpaError(''); validatePdpa(); showScreens('scr-pdpa');
+}
+function pdpaError(msg, field) {
+  const e = $('pdpa-err'); e.textContent = msg; e.hidden = !msg;
+  for (const id of ['in-name', 'in-phone', 'in-email']) $(id).classList.toggle('bad', id === field);
+}
+function submitPdpa() {
+  const name = $('in-name').value.replace(/\s+/g, ' ').trim().slice(0, 24);
+  const phone = CFG.askPhone ? normPhone($('in-phone').value) : '';
+  const email = CFG.askEmail ? normEmail($('in-email').value) : '';
+  if (name.length < 2) return pdpaError('Sila isi nama (sekurang-kurangnya 2 huruf).', 'in-name');
+  if (phone === null) return pdpaError('No. telefon tidak sah. Contoh: 012-345 6789', 'in-phone');
+  if (CFG.askPhone && CFG.phoneRequired && !phone) return pdpaError('Sila isi no. telefon.', 'in-phone');
+  if (email === null) return pdpaError('E-mel tidak sah. Contoh: ahmad@email.com', 'in-email');
+  if (CFG.askEmail && CFG.emailRequired && !email) return pdpaError('Sila isi e-mel.', 'in-email');
+  pdpaError('');
+  const mkt = CFG.askMarketing && $('in-mkt').checked;
+  G.playerName = name; G.consent = true; G.profile = { phone, email, mkt };
+  store.set('vrtb_name', name); store.set('vrtb_consent', CFG.policyVersion); store.set('vrtb_profile', G.profile);
+  Net.send('player', { name, phone, email, consent: true, marketing: mkt, policy: CFG.policyVersion });
+  startGame();
+}
+
+// ---------- rekod permainan ----------
+function recordGame(result) {
+  if (G.recorded || !G.level) return Promise.resolve(false);
+  G.recorded = true;
+  return Net.send('game', {
+    name: G.playerName, result, score: G.score, delivered: G.delivered, total: TOTAL,
+    time: Math.round(G.time), kuih: G.kuih, combo: G.bestCombo, lives: G.lives, route: G.route || '', seed: G.level.seed,
+  });
+}
+function renderGlobal(el, j, max) {
+  const list = j.rows.slice(0, max);
+  let meIdx = list.findIndex((r) => r.me);
+  if (meIdx < 0 && j.me && j.me.rank > max) { meIdx = j.me.rank - 1; list[meIdx] = j.me; }
+  renderBoard(el, list, max, meIdx);
+}
+function loadGlobalBoard(el, srcEl, max, screenId, after) {
+  if (!Net.on || !CFG.globalBoard) return;
+  srcEl.textContent = 'Memuatkan papan semua pemain...';
+  const tok = (loadGlobalBoard.tok = (loadGlobalBoard.tok || 0) + 1);
+  Promise.resolve(after).then(() => Net.board(max)).then((j) => {
+    if (tok !== loadGlobalBoard.tok || $(screenId).hidden) return;
+    if (j) { renderGlobal(el, j, max); srcEl.textContent = 'Semua pemain'; }
+    else srcEl.textContent = 'Peranti ini (talian tiada)';
+  });
+}
+
 function enterMenu() {
   Sfx.setTense(false); Sfx.rain(false); Sfx.play('menu');
   G.state = 'menu'; G.paused = false; G.todForced = null; G.tod = 0.06; G.village = 'ketupat'; G.chaser = null; G.lightning = 0; G.wipe = 0;
@@ -2987,7 +3126,7 @@ function startGame(seed) {
   const sd = seed != null ? seed : (Date.now() & 0x7fffffff);
   G.level = buildLevel(sd);
   G.chaser = null; G.chaserIdx = 0; G.lightning = 0; G.wipe = 0; G.rainStopped = false; G.ltT = null; Sfx.village = 'shared';
-  Object.assign(G, { state: 'play', cam: 0, speed: SPEED_MIN, tod: 0, todForced: null, score: 0, delivered: 0, processed: 0, lives: 3, combo: 0, bestCombo: 0, kuih: 0, time: 0, perfects: 0, goose: null, phaseIdx: 0, banner: null, countdown: 2.1, goTimer: 0, deliverCd: 0, paused: false, jumps: 0, gooseIdx: 0, finalBonus: 0 });
+  Object.assign(G, { state: 'play', cam: 0, speed: SPEED_MIN, tod: 0, todForced: null, score: 0, delivered: 0, processed: 0, lives: 3, combo: 0, bestCombo: 0, kuih: 0, time: 0, perfects: 0, goose: null, phaseIdx: 0, banner: null, countdown: 2.1, goTimer: 0, deliverCd: 0, paused: false, jumps: 0, gooseIdx: 0, finalBonus: 0, recorded: false });
   G.player = newPlayer(); G.fx.length = 0; G.hitstop = 0; G.particles.length = 0; G.popups.length = 0; G.packages.length = 0; G.fireworks.length = 0; G.confetti.length = 0;
   hudCache = {}; buildHearts(); updateHud();
   $('jump-hint').classList.remove('fade');
@@ -2996,7 +3135,7 @@ function startGame(seed) {
 }
 
 function showCrash() {
-  G.state = 'crash'; setHud(false); showScreens('scr-crash'); Sfx.rain(false);
+  G.state = 'crash'; setHud(false); showScreens('scr-crash'); Sfx.rain(false); recordGame('gagal');
   setTimeout(() => { if (G.state === 'crash') Sfx.play('dizzy'); }, 1500);
   const left = TOTAL - G.processed;
   $('crash-sub').textContent = `${G.delivered} kuih sampai, ${left} rumah masih menunggu`;
@@ -3038,6 +3177,8 @@ function showResult(sample) {
   $('r-kg').textContent = G.route ? VILLAGES[G.route].short : '-';
   const list = sample || saveScore();
   renderBoard($('result-board'), list, 5, sample ? 3 : G.lastRank);
+  $('result-src').textContent = Net.on && CFG.globalBoard ? '' : '(peranti ini)';
+  if (!sample) loadGlobalBoard($('result-board'), $('result-src'), 5, 'scr-result', recordGame('selesai'));
 }
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => (t.hidden = true), 1800); }
@@ -3055,7 +3196,9 @@ function pause(on) {
 }
 
 function validatePdpa() {
-  const ok = $('in-agree').checked && $('in-name').value.trim().length >= 2;
+  let ok = $('in-agree').checked && $('in-name').value.trim().length >= 2;
+  if (CFG.askPhone && CFG.phoneRequired && !$('in-phone').value.trim()) ok = false;
+  if (CFG.askEmail && CFG.emailRequired && !$('in-email').value.trim()) ok = false;
   $('btn-continue').disabled = !ok;
 }
 
@@ -3095,20 +3238,21 @@ function bindUI() {
   window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
   $('btn-start').addEventListener('click', () => {
     Sfx.init();
-    if (G.consent && G.playerName) startGame(); else { $('in-name').value = G.playerName; $('in-agree').checked = G.consent; validatePdpa(); showScreens('scr-pdpa'); }
+    if (profileOk()) startGame(); else openPdpa();
   });
-  $('btn-player').addEventListener('click', () => { $('in-name').value = G.playerName; $('in-agree').checked = G.consent; validatePdpa(); showScreens('scr-pdpa'); });
+  $('btn-player').addEventListener('click', openPdpa);
   $('in-agree').addEventListener('change', validatePdpa);
-  $('in-name').addEventListener('input', validatePdpa);
+  for (const id of ['in-name', 'in-phone', 'in-email']) $(id).addEventListener('input', () => { validatePdpa(); if ($(id).classList.contains('bad')) pdpaError(''); });
   $('pdpa-form').addEventListener('submit', (e) => {
     e.preventDefault(); if ($('btn-continue').disabled) return;
-    G.playerName = $('in-name').value.trim().slice(0, 14); G.consent = true;
-    store.set('vrtb_name', G.playerName); store.set('vrtb_consent', true);
-    startGame();
+    submitPdpa();
   });
   $('btn-pdpa-back').addEventListener('click', () => showScreens('scr-menu'));
   for (const [id, v] of [['btn-fork-a', 'ketupat'], ['btn-fork-b', 'lemang']]) $(id).addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); chooseRoad(v); });
-  $('btn-board').addEventListener('click', () => { renderBoard($('board-list'), store.get('vrtb_board', []), 10); showScreens('scr-board'); });
+  $('btn-board').addEventListener('click', () => {
+    renderBoard($('board-list'), store.get('vrtb_board', []), 10); $('board-src').textContent = 'Peranti ini'; showScreens('scr-board');
+    loadGlobalBoard($('board-list'), $('board-src'), 10, 'scr-board');
+  });
   $('btn-board-close').addEventListener('click', () => showScreens('scr-menu'));
   $('btn-howto').addEventListener('click', () => showScreens('scr-howto'));
   $('btn-howto-close').addEventListener('click', () => showScreens('scr-menu'));
@@ -3118,7 +3262,7 @@ function bindUI() {
   $('btn-pause').addEventListener('click', (e) => { e.stopPropagation(); pause(true); });
   $('btn-pause').addEventListener('pointerdown', (e) => e.stopPropagation());
   $('btn-resume').addEventListener('click', () => pause(false));
-  $('btn-quit').addEventListener('click', () => enterMenu());
+  $('btn-quit').addEventListener('click', () => { if (G.state === 'play') recordGame('berhenti'); enterMenu(); });
   $('btn-retry').addEventListener('click', () => startGame());
   $('btn-crash-menu').addEventListener('click', () => enterMenu());
   $('btn-crash-x').addEventListener('click', () => enterMenu());
@@ -3159,7 +3303,7 @@ function setupFrame(name) {
   const cross = (sx, len, broken) => { const gw = 40; G.level.crossings.push({ x: at(sx), len, broken, gap: broken ? [at(sx) + (len - gw) / 2, at(sx) + (len + gw) / 2] : null }); G.level.crossings.sort((a, b) => a.x - b.x); if (broken) G.level.signs.push({ x: at(sx) - 30 }); };
   switch (name) {
     case 'menu': enterMenu(); G.cam = 150; break;
-    case 'pdpa': enterMenu(); G.cam = 150; $('in-name').value = 'Ahmad'; $('in-agree').checked = true; validatePdpa(); showScreens('scr-pdpa'); break;
+    case 'pdpa': enterMenu(); G.cam = 150; openPdpa(); $('in-name').value = 'Ahmad Faiz'; $('in-phone').value = '012-345 6789'; $('in-agree').checked = true; $('in-mkt').checked = true; validatePdpa(); break;
     case 'caramain': enterMenu(); G.cam = 150; showScreens('scr-howto'); break;
     case 'siang':
       stage(3, 150, 0.1); cross(PX - 14, 60, false);
@@ -3294,10 +3438,12 @@ function loop(ts) {
 
 function boot() {
   buildLights();
-  if (QS.get('debug')) window.__vrtb = { G, S, Sfx, chooseRoad, extendLevel, deliver, startGame, update, render, PX, GY, W, supported, showResult };
+  if (QS.get('debug')) window.__vrtb = { G, S, Sfx, chooseRoad, extendLevel, deliver, startGame, update, render, PX, GY, W, supported, showResult, showCrash, finish, Net, CFG };
   buildSprites();
   buildHearts();
+  applyConfig();
   bindUI();
+  if (Net.on) setTimeout(() => Net.flush(), 1500);
   resize();
   if (FRAME) {
     document.body.classList.add('frame-mode');

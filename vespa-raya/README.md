@@ -56,8 +56,66 @@ Dalam permainan, muzik mengikut ciri lagu raya klasik 1950-90an: tonaliti major,
 
 ## Aliran skrin
 
-Menu → PDPA (nama + setuju, sekali sahaja) → Kiraan 3-2-1 → Jalan bersama → SIMPANG (5 saat) → Kampung A/B → Rumah Opah → Misi Selesai → Keputusan.
+Menu → Daftar PDPA (nama, telefon, e-mel pilihan, setuju; sekali sahaja) → Kiraan 3-2-1 → Jalan bersama → SIMPANG (5 saat) → Kampung A/B → Rumah Opah → Misi Selesai → Keputusan.
 Nyawa habis → skrin "ALAHAI! OPPS!".
+
+## Terbitkan & kumpul data
+
+Pautan artifak Claude sesuai untuk **pratonton** sahaja: pemain perlu log masuk claude.ai dan data kekal dalam peranti mereka.
+Untuk kempen sebenar, hos folder ini di laman sendiri dan hantar data ke **Google Sheet** anda (percuma, tiada pelayan).
+
+### 1. Sediakan Google Sheet (penerima data)
+
+1. Cipta Google Sheet baharu, cth. "Vespa Raya - Data Pemain".
+2. **Extensions → Apps Script**. Padam kod contoh, tampal semua kandungan [`apps-script/Code.gs`](apps-script/Code.gs), Save.
+3. Pilih fungsi `setup` di bar atas → **Run** → benarkan akses. Helaian **Pemain** dan **Permainan** akan dicipta.
+4. **Deploy → New deployment →** ikon gear → **Web app**.
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+5. **Deploy**, salin **Web app URL** (berakhir dengan `/exec`).
+
+### 2. Isi `config.js`
+
+```js
+endpoint: 'https://script.google.com/macros/s/XXXX/exec',
+organiser: 'The Baker',
+contact: 'e-mel atau WhatsApp rasmi anda',
+```
+
+Medan borang (telefon wajib, e-mel pilihan, kotak promosi) boleh dihidup/matikan dalam fail yang sama.
+Semak teks notis PDPA dalam `index.html` (bahagian `scr-pdpa`). Jika teks diubah, tukar `policyVersion` supaya pemain diminta setuju semula.
+
+### 3. Hos laman (pilih satu, semua percuma dengan HTTPS)
+
+| Hos | Cara |
+| --- | --- |
+| **Netlify Drop** (paling mudah) | Buka app.netlify.com/drop, seret folder `vespa-raya`. Daftar akaun percuma supaya laman kekal. Boleh tukar nama laman atau guna domain sendiri. |
+| Cloudflare Pages | Workers & Pages → Create → Pages → **Upload assets** → muat naik folder `vespa-raya`. |
+| GitHub Pages | Repositori awam → Settings → Pages → pilih cawangan. Laman di `/vespa-raya/`. |
+
+Setiap kali `config.js` atau permainan diubah, muat naik semula folder itu.
+
+### 4. Uji
+
+Main sekali di telefon. Dalam 1 hingga 2 saat, baris baharu muncul dalam helaian **Pemain** dan **Permainan**.
+Papan kedudukan dalam permainan kini menunjukkan **Semua pemain**.
+
+### Data yang dikumpul
+
+| Helaian | Lajur |
+| --- | --- |
+| Pemain (satu baris setiap pemain) | Kemas kini, ID Pemain, Nama, No. Telefon (+60…), E-mel, Setuju PDPA, Setuju Promosi, Versi Notis, Daftar Pertama, Bil. Main, Skor Terbaik |
+| Permainan (satu baris setiap pusingan) | Diterima, ID Pemain, Nama, Keputusan (Selesai / Gagal / Berhenti), Skor, Hantaran, Masa (s), Kuih, Combo, Nyawa, Kampung, Benih, Masa Peranti, ID Rekod |
+
+Muat turun sebagai Excel/CSV: **File → Download** dalam Google Sheet.
+Papan kedudukan awam hanya mendedahkan nama, skor dan kampung. Telefon dan e-mel tidak pernah keluar dari Sheet.
+
+### Nota
+
+- Rekod disimpan dalam peti keluar peranti dahulu. Jika talian putus, ia dihantar semula bila permainan dibuka lagi. Rekod berulang ditapis oleh `ID Rekod`.
+- Apps Script percuma sesuai untuk ratusan hingga beberapa ribu pemain sehari. Untuk kempen besar (ribuan serentak), pindah ke Supabase atau Firebase.
+- Skor permainan pelayar boleh dipalsukan oleh orang yang mahir. Semak pemenang (Skor, Masa, Benih) sebelum memberi hadiah.
+- Bila `Code.gs` diubah: Deploy → Manage deployments → Edit → Version: **New version** → Deploy. URL kekal sama.
 
 ## Pratonton setiap frame
 
@@ -68,6 +126,8 @@ Tambah `?frame=<nama>` pada URL untuk paparan statik satu skrin:
 
 | Nak ubah | Lokasi dalam `game.js` |
 | --- | --- |
+| URL Google Sheet, medan borang, penganjur | `config.js` |
+| Pendaftaran, hantar data, papan semua pemain | `Net`, `submitPdpa`, `recordGame`, `loadGlobalBoard` |
 | Jumlah hantaran, kelajuan, lompatan | `TOTAL`, `SPEED_MIN/MAX`, `JUMP_V/GRAV` (atas fail) |
 | Tetapan setiap kampung (langit, fasa, jam) | `VILLAGES`, `SKY_KETUPAT`, `SKY_LEMANG`, `PHASES`, `PHASES_LEMANG` |
 | Jalan bersama & simpang | `buildLevel`, `SHARED_STOPS`, `checkFork`, `chooseRoad` |
@@ -84,4 +144,4 @@ Tambah `?frame=<nama>` pada URL untuk paparan statik satu skrin:
 | Markah hantaran / combo | `deliver`, `comboMult` |
 
 Teks butang & panel ada dalam `index.html`; gaya dalam `style.css`.
-Papan kedudukan disimpan dalam `localStorage` pelayar pemain, ditanda ikut kampung.
+Papan kedudukan setempat disimpan dalam `localStorage`. Bila `endpoint` diisi, papan semua pemain diambil dari Google Sheet.
