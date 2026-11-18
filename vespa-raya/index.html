@@ -80,6 +80,28 @@
         </form>
       </section>
 
+      <!-- Pilih kampung -->
+      <section id="scr-village" class="screen dim center" hidden>
+        <h2 class="mission">PILIH KAMPUNG</h2>
+        <div class="vcards">
+          <button id="btn-kg-ketupat" class="vcard ketupat" type="button">
+            <span class="vtag">A</span>
+            <span class="vicon ico-ketupat"></span>
+            <span class="vname">KAMPUNG KETUPAT</span>
+            <span class="vdesc">Sawah padi terbuka &amp; rumah kampung. Lubang, angsa garang, kelapa jatuh, jambatan patah.</span>
+            <span id="best-ketupat" class="vbest">Belum dimain</span>
+          </button>
+          <button id="btn-kg-lemang" class="vcard lemang" type="button">
+            <span class="vtag">B</span>
+            <span class="vicon ico-lemang"></span>
+            <span class="vname">KAMPUNG LEMANG</span>
+            <span class="vdesc">Hutan lebat &amp; redup, rumah gonjong. Pokok tumbang, tahi burung, motor besar (-2 nyawa). Orang tepi jalan tunggu balang!</span>
+            <span id="best-lemang" class="vbest">Belum dimain</span>
+          </button>
+        </div>
+        <button id="btn-village-back" class="linkish" type="button">Kembali ke menu</button>
+      </section>
+
       <!-- Cara main -->
       <section id="scr-howto" class="screen dim center" hidden>
         <div class="panel">
@@ -89,7 +111,8 @@
             <li>Elak lubang, batu, tahi lembu, kelapa jatuh, angsa pengejar dan jambatan patah.</li>
             <li>Tekan <b>HANTAR</b> bila vespa dalam <b>zon kuning</b> depan rumah bertanda. Tepat di tengah = <b>SEMPURNA +50</b>.</li>
             <li>Hantar berturut-turut untuk <b>COMBO</b>. Kutip kuih (+10), balang (+50), ketupat (+1 nyawa).</li>
-            <li>30 rumah, dari siang ke malam raya. Jangan biar nyawa habis!</li>
+            <li>30 hantaran, dari siang ke malam raya. Jangan biar nyawa habis!</li>
+            <li><b>Kampung Lemang:</b> rumah berjauhan, tekan HANTAR bila orang tepi jalan menunggu balang. Elak motor besar (-2 nyawa).</li>
           </ul>
           <p class="keys">Papan kekunci: Space/&uarr; = lompat, Enter/&rarr; = hantar, P = rehat</p>
           <button id="btn-howto-close" class="btn btn-blue" type="button">FAHAM!</button>
@@ -143,6 +166,7 @@
         <div class="panel result">
           <h2 class="panel-title gold">KEPUTUSAN</h2>
           <dl class="stats">
+            <div><dt>KAMPUNG</dt><dd id="r-kg">Kg. Ketupat</dd></div>
             <div><dt>HANTARAN</dt><dd id="r-del">0/30</dd></div>
             <div><dt>MASA</dt><dd id="r-time">00:00</dd></div>
             <div><dt>KUIH</dt><dd id="r-kuih">0</dd></div>
